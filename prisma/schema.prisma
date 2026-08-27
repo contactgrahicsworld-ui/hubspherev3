@@ -1,0 +1,355 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// TENANT
+// ============================================
+
+model Tenant {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  domain      String?
+  logoUrl     String?
+  status      String   @default("ACTIVE") // ACTIVE, SUSPENDED, TRIAL
+  plan        String   @default("FREE") // FREE, STARTER, PRO, ENTERPRISE
+  maxUsers    Int      @default(5)
+  settings    String   @default("{}") // JSON settings
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  memberships    Membership[]
+  subscriptions  Subscription[]
+  featureFlags   TenantFeatureFlag[]
+  auditLogs      AuditLog[]
+  roles          Role[]
+  calls          Call[]
+}
+
+// ============================================
+// USER
+// ============================================
+
+model User {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  passwordHash      String
+  name              String?
+  avatarUrl         String?
+  emailVerified     Boolean   @default(false)
+  isSuperAdmin      Boolean   @default(false)
+  status            String    @default("ACTIVE") // ACTIVE, INACTIVE, SUSPENDED
+  lastLoginAt       DateTime?
+  passwordChangedAt DateTime  @default(now())
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  memberships         Membership[]
+  auditLogs           AuditLog[]
+  refreshTokens       RefreshToken[]
+  passwordResetTokens PasswordResetToken[]
+  emailVerifyTokens   EmailVerificationToken[]
+}
+
+// ============================================
+// MEMBERSHIP (User <-> Tenant)
+// ============================================
+
+model Membership {
+  id         String   @id @default(cuid())
+  userId     String
+  tenantId   String
+  roleCode   String?  @default("VIEWER")
+  status     String   @default("ACTIVE") // ACTIVE, INACTIVE
+  invitedBy  String?
+  joinedAt   DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  role   Role?  @relation(fields: [roleCode], references: [code])
+
+  @@unique([userId, tenantId])
+  @@index([tenantId])
+  @@index([userId])
+}
+
+// ============================================
+// ROLE
+// ============================================
+
+model Role {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  description String?
+  isSystem    Boolean  @default(false)
+  tenantId    String?  // null = platform-level role
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant     Tenant?          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  permissions RolePermission[]
+  memberships Membership[]
+
+  @@unique([code, tenantId])
+  @@index([tenantId])
+}
+
+// ============================================
+// PERMISSION
+// ============================================
+
+model Permission {
+  id          String   @id @default(cuid())
+  code        String   @unique // module.action e.g. users.view
+  name        String
+  description String?
+  module      String
+  action      String
+  createdAt   DateTime @default(now())
+
+  roles RolePermission[]
+}
+
+// ============================================
+// ROLE <-> PERMISSION
+// ============================================
+
+model RolePermission {
+  id           String @id @default(cuid())
+  roleCode     String
+  permissionId String
+  createdAt    DateTime @default(now())
+
+  role       Role       @relation(fields: [roleCode], references: [code], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleCode, permissionId])
+  @@index([roleCode])
+}
+
+// ============================================
+// SUBSCRIPTION
+// ============================================
+
+model Subscription {
+  id           String   @id @default(cuid())
+  tenantId     String
+  plan         String   @default("FREE")
+  status       String   @default("ACTIVE") // ACTIVE, CANCELLED, PAST_DUE, TRIALING
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+}
+
+// ============================================
+// FEATURE FLAG
+// (Platform-level defaults)
+// ============================================
+
+model FeatureFlag {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  description String?
+  enabled     Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenantOverrides TenantFeatureFlag[]
+}
+
+// ============================================
+// TENANT FEATURE FLAG OVERRIDE
+// ============================================
+
+model TenantFeatureFlag {
+  id           String  @id @default(cuid())
+  tenantId     String
+  featureFlagId String
+  enabled      Boolean
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  featureFlag FeatureFlag @relation(fields: [featureFlagId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, featureFlagId])
+  @@index([tenantId])
+}
+
+// ============================================
+// AUDIT LOG
+// ============================================
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  tenantId   String?
+  action     String   // e.g. user.login, tenant.create
+  targetType String?  // e.g. User, Tenant, Role
+  targetId   String?
+  metadata   String?  @default("{}") // Safe JSON, NEVER passwords/tokens
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  actor  User?   @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+
+  @@index([actorId])
+  @@index([tenantId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+// ============================================
+// REFRESH TOKEN
+// ============================================
+
+model RefreshToken {
+  id         String   @id @default(cuid())
+  token      String   @unique
+  userId     String
+  tenantId   String?  // Active tenant context when token was issued
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+// ============================================
+// PASSWORD RESET TOKEN
+// ============================================
+
+model PasswordResetToken {
+  id         String   @id @default(cuid())
+  token      String   @unique
+  userId     String
+  expiresAt  DateTime
+  usedAt     DateTime?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+}
+
+// ============================================
+// EMAIL VERIFICATION TOKEN
+// ============================================
+
+model EmailVerificationToken {
+  id         String   @id @default(cuid())
+  token      String   @unique
+  userId     String
+  expiresAt  DateTime
+  usedAt     DateTime?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+}
+
+// ============================================
+// CALL (Future-ready for call recording)
+// ============================================
+
+model Call {
+  id                String   @id @default(cuid())
+  tenantId          String
+  leadId            String?
+  contactId         String?
+  dealId            String?
+  agentId           String?
+  direction         String?  // INBOUND, OUTBOUND
+  callType          String?  // WEBRTC, VOIP, PSTN
+  callStartTime     DateTime?
+  callEndTime       DateTime?
+  duration          Int?
+  callStatus        String?  // RINGING, CONNECTED, ENDED, FAILED, MISSED
+  recordingStatus   String?  // RECORDING, PROCESSING, READY, FAILED, NOT_AVAILABLE
+  recordingUrl      String?
+  recordingProvider String?
+  recordingSize     Int?
+  recordingMeta     String?  @default("{}")
+  failureReason     String?
+  retryCount        Int      @default(0)
+  lastRetryAt       DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([agentId])
+  @@index([callStatus])
+  @@index([createdAt])
+}
+
+// ============================================
+// PROVIDER CONFIG (Platform-level)
+// ============================================
+
+model ProviderConfig {
+  id          String   @id @default(cuid())
+  providerId  String   @unique // e.g. openai, google-stt, twilio
+  name        String
+  category    String   // AIProvider, SpeechToTextProvider, TextToSpeechProvider, etc.
+  enabled     Boolean  @default(false)
+  configured  Boolean  @default(false)
+  healthy     Boolean? // null = not yet checked
+  config      String   @default("{}") // Encrypted provider config (API keys etc.)
+  priority    Int      @default(0)
+  lastCheckAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+  @@index([enabled])
+}
+
+// ============================================
+// AI USAGE TRACKING (Future-ready)
+// ============================================
+
+model AiUsageLog {
+  id          String   @id @default(cuid())
+  tenantId    String?
+  userId      String?
+  providerId  String?
+  model       String?
+  agentName   String?  // Nova, Vox, etc.
+  inputTokens Int?
+  outputTokens Int?
+  promptHash  String?
+  durationMs  Int?
+  status      String   @default("SUCCESS") // SUCCESS, FAILED, RATE_LIMITED
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([providerId])
+  @@index([createdAt])
+}

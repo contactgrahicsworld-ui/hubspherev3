@@ -1,0 +1,141 @@
+/**
+ * Application-wide constants.
+ * Single source of truth for roles, statuses, modules, and provider categories.
+ */
+
+// ============================================
+// DEFAULT ROLES
+// ============================================
+
+export const DEFAULT_ROLES = [
+  { code: 'SUPER_ADMIN', name: 'Super Admin', description: 'Platform administrator with full access to all tenants and settings', isSystem: true },
+  { code: 'TENANT_OWNER', name: 'Tenant Owner', description: 'Tenant owner with full access within their organization', isSystem: true },
+  { code: 'ADMIN', name: 'Admin', description: 'Organization administrator with broad access', isSystem: true },
+  { code: 'MANAGER', name: 'Manager', description: 'Team manager with reporting and team management access', isSystem: true },
+  { code: 'SALES_MANAGER', name: 'Sales Manager', description: 'Manages sales team, deals pipeline, and reports', isSystem: true },
+  { code: 'SALES_EXECUTIVE', name: 'Sales Executive', description: 'Handles leads, contacts, and deal progression', isSystem: true },
+  { code: 'TELECALLER', name: 'Telecaller', description: 'Makes and manages outbound/inbound calls', isSystem: true },
+  { code: 'HR_MANAGER', name: 'HR Manager', description: 'Manages employees, attendance, and payroll', isSystem: true },
+  { code: 'HR_EXECUTIVE', name: 'HR Executive', description: 'Handles day-to-day HR operations', isSystem: true },
+  { code: 'FIELD_MANAGER', name: 'Field Manager', description: 'Manages field operations and field teams', isSystem: true },
+  { code: 'FIELD_EXECUTIVE', name: 'Field Executive', description: 'Performs field activities and visits', isSystem: true },
+  { code: 'ACCOUNTANT', name: 'Accountant', description: 'Manages financial records and payroll', isSystem: true },
+  { code: 'VIEWER', name: 'Viewer', description: 'Read-only access across modules', isSystem: true },
+] as const;
+
+// ============================================
+// PERMISSION MODULES
+// ============================================
+
+export const PERMISSION_MODULES = [
+  'users',
+  'roles',
+  'tenants',
+  'audit',
+  'leads',
+  'contacts',
+  'companies',
+  'deals',
+  'calls',
+  'recordings',
+  'employees',
+  'attendance',
+  'payroll',
+  'automation',
+  'ai',
+  'subscriptions',
+  'features',
+  'settings',
+] as const;
+
+export type PermissionModule = (typeof PERMISSION_MODULES)[number];
+
+// ============================================
+// PERMISSION ACTIONS
+// ============================================
+
+export const PERMISSION_ACTIONS = [
+  'view',
+  'create',
+  'edit',
+  'delete',
+  'manage',
+  'export',
+  'import',
+] as const;
+
+export type PermissionAction = (typeof PERMISSION_ACTIONS)[number];
+
+// ============================================
+// CALL STATUSES
+// ============================================
+
+export const CALL_STATUSES = {
+  RINGING: 'RINGING',
+  CONNECTED: 'CONNECTED',
+  ENDED: 'ENDED',
+  FAILED: 'FAILED',
+  MISSED: 'MISSED',
+  QUEUED: 'QUEUED',
+} as const;
+
+// ============================================
+// RECORDING STATUSES
+// ============================================
+
+export const RECORDING_STATUSES = {
+  RECORDING: 'RECORDING',
+  PROCESSING: 'PROCESSING',
+  READY: 'READY',
+  FAILED: 'FAILED',
+  NOT_AVAILABLE: 'NOT_AVAILABLE',
+} as const;
+
+// ============================================
+// TENANT STATUSES
+// ============================================
+
+export const TENANT_STATUSES = {
+  ACTIVE: 'ACTIVE',
+  SUSPENDED: 'SUSPENDED',
+  TRIAL: 'TRIAL',
+} as const;
+
+// ============================================
+// SUBSCRIPTION STATUSES
+// ============================================
+
+export const SUBSCRIPTION_STATUSES = {
+  ACTIVE: 'ACTIVE',
+  CANCELLED: 'CANCELLED',
+  PAST_DUE: 'PAST_DUE',
+  TRIALING: 'TRIALING',
+} as const;
+
+// ============================================
+// USER STATUSES
+// ============================================
+
+export const USER_STATUSES = {
+  ACTIVE: 'ACTIVE',
+  INACTIVE: 'INACTIVE',
+  SUSPENDED: 'SUSPENDED',
+} as const;
+
+// ============================================
+// PROVIDER CATEGORIES
+// ============================================
+
+export const PROVIDER_CATEGORIES = [
+  'AIProvider',
+  'SpeechToTextProvider',
+  'TextToSpeechProvider',
+  'TranslationProvider',
+  'TelephonyProvider',
+  'CallRecordingProvider',
+  'MessagingProvider',
+  'StorageProvider',
+  'NotificationProvider',
+] as const;
+
+export type ProviderCategory = (typeof PROVIDER_CATEGORIES)[number];
