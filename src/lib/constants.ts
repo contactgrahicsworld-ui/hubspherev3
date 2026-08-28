@@ -49,7 +49,13 @@ export const PERMISSION_MODULES = [
   'visits',
   'expenses',
   'payroll',
+  'conversations',
+  'messages',
+  'templates',
+  'communication_settings',
+  'notifications',
   'automation',
+  'webhooks',
   'ai',
   'subscriptions',
   'features',
@@ -367,3 +373,231 @@ export const DOCUMENT_TYPES = {
   CONTRACT: 'CONTRACT',
   OTHER: 'OTHER',
 } as const;
+
+// ============================================
+// COMMUNICATION CHANNELS
+// ============================================
+
+export const COMMUNICATION_CHANNELS = {
+  WHATSAPP: 'WHATSAPP',
+  EMAIL: 'EMAIL',
+  SMS: 'SMS',
+  IN_APP: 'IN_APP',
+  PUSH: 'PUSH',
+  SYSTEM: 'SYSTEM',
+} as const;
+
+export type CommunicationChannel = (typeof COMMUNICATION_CHANNELS)[keyof typeof COMMUNICATION_CHANNELS];
+
+// ============================================
+// MESSAGE DIRECTIONS
+// ============================================
+
+export const MESSAGE_DIRECTIONS = {
+  INBOUND: 'INBOUND',
+  OUTBOUND: 'OUTBOUND',
+  SYSTEM: 'SYSTEM',
+} as const;
+
+// ============================================
+// MESSAGE STATUSES
+// ============================================
+
+export const MESSAGE_STATUSES = {
+  QUEUED: 'QUEUED',
+  PROCESSING: 'PROCESSING',
+  SENT: 'SENT',
+  DELIVERED: 'DELIVERED',
+  READ: 'READ',
+  FAILED: 'FAILED',
+  CANCELLED: 'CANCELLED',
+} as const;
+
+// ============================================
+// MESSAGE CONTENT TYPES
+// ============================================
+
+export const MESSAGE_CONTENT_TYPES = {
+  TEXT: 'TEXT',
+  HTML: 'HTML',
+  MARKDOWN: 'MARKDOWN',
+  RICH_TEXT: 'RICH_TEXT',
+} as const;
+
+// ============================================
+// CONVERSATION STATUSES
+// ============================================
+
+export const CONVERSATION_STATUSES = {
+  ACTIVE: 'ACTIVE',
+  CLOSED: 'CLOSED',
+  ARCHIVED: 'ARCHIVED',
+} as const;
+
+// ============================================
+// TEMPLATE CATEGORIES
+// ============================================
+
+export const TEMPLATE_CATEGORIES = {
+  TRANSACTIONAL: 'TRANSACTIONAL',
+  MARKETING: 'MARKETING',
+  NOTIFICATION: 'NOTIFICATION',
+  ALERT: 'ALERT',
+} as const;
+
+// ============================================
+// TEMPLATE STATUSES
+// ============================================
+
+export const TEMPLATE_STATUSES = {
+  DRAFT: 'DRAFT',
+  ACTIVE: 'ACTIVE',
+  ARCHIVED: 'ARCHIVED',
+} as const;
+
+// ============================================
+// DELIVERY ATTEMPT STATUSES
+// ============================================
+
+export const DELIVERY_ATTEMPT_STATUSES = {
+  PENDING: 'PENDING',
+  PROCESSING: 'PROCESSING',
+  SUCCESS: 'SUCCESS',
+  FAILED: 'FAILED',
+} as const;
+
+// ============================================
+// MESSAGE EVENT TYPES
+// ============================================
+
+export const MESSAGE_EVENT_TYPES = {
+  SENT: 'SENT',
+  DELIVERED: 'DELIVERED',
+  READ: 'READ',
+  FAILED: 'FAILED',
+  REPLIED: 'REPLIED',
+  CLICKED: 'CLICKED',
+} as const;
+
+// ============================================
+// AUTOMATION WORKFLOW STATUSES
+// ============================================
+
+export const AUTOMATION_WORKFLOW_STATUSES = {
+  DRAFT: 'DRAFT',
+  ACTIVE: 'ACTIVE',
+  PAUSED: 'PAUSED',
+  ARCHIVED: 'ARCHIVED',
+} as const;
+
+// ============================================
+// AUTOMATION TRIGGER EVENT TYPES
+// ============================================
+
+export const AUTOMATION_TRIGGER_EVENTS = {
+  LEAD_CREATED: 'lead.created',
+  LEAD_UPDATED: 'lead.updated',
+  LEAD_ASSIGNED: 'lead.assigned',
+  LEAD_STATUS_CHANGED: 'lead.status_changed',
+  DEAL_CREATED: 'deal.created',
+  DEAL_STAGE_CHANGED: 'deal.stage_changed',
+  DEAL_WON: 'deal.won',
+  DEAL_LOST: 'deal.lost',
+  TASK_CREATED: 'task.created',
+  TASK_COMPLETED: 'task.completed',
+  FOLLOWUP_DUE: 'followup.due',
+  FOLLOWUP_OVERDUE: 'followup.overdue',
+  CALL_COMPLETED: 'call.completed',
+  EMPLOYEE_CREATED: 'employee.created',
+  LEAVE_REQUESTED: 'leave.requested',
+  LEAVE_APPROVED: 'leave.approved',
+  ATTENDANCE_CHECKIN: 'attendance.checkin',
+  ATTENDANCE_CHECKOUT: 'attendance.checkout',
+  EXPENSE_SUBMITTED: 'expense.submitted',
+  EXPENSE_APPROVED: 'expense.approved',
+} as const;
+
+export type AutomationTriggerEvent = (typeof AUTOMATION_TRIGGER_EVENTS)[keyof typeof AUTOMATION_TRIGGER_EVENTS];
+
+// ============================================
+// AUTOMATION CONDITION OPERATORS
+// ============================================
+
+export const AUTOMATION_CONDITION_OPERATORS = {
+  EQUALS: 'equals',
+  NOT_EQUALS: 'not_equals',
+  CONTAINS: 'contains',
+  NOT_CONTAINS: 'not_contains',
+  GREATER_THAN: 'greater_than',
+  LESS_THAN: 'less_than',
+  EMPTY: 'empty',
+  NOT_EMPTY: 'not_empty',
+  BEFORE: 'before',
+  AFTER: 'after',
+} as const;
+
+// ============================================
+// AUTOMATION ACTION TYPES
+// ============================================
+
+export const AUTOMATION_ACTION_TYPES = {
+  CREATE_TASK: 'create_task',
+  UPDATE_LEAD: 'update_lead',
+  UPDATE_DEAL: 'update_deal',
+  CHANGE_STATUS: 'change_status',
+  ASSIGN_USER: 'assign_user',
+  CREATE_FOLLOWUP: 'create_followup',
+  SEND_WHATSAPP: 'send_whatsapp',
+  SEND_EMAIL: 'send_email',
+  SEND_SMS: 'send_sms',
+  CREATE_NOTIFICATION: 'create_notification',
+  DELAY: 'delay',
+  WEBHOOK: 'webhook',
+  AI_ACTION: 'ai_action',
+} as const;
+
+// ============================================
+// AUTOMATION EXECUTION STATUSES
+// ============================================
+
+export const AUTOMATION_EXECUTION_STATUSES = {
+  RUNNING: 'RUNNING',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED',
+  CANCELLED: 'CANCELLED',
+} as const;
+
+// ============================================
+// AUTOMATION LOG LEVELS
+// ============================================
+
+export const AUTOMATION_LOG_LEVELS = {
+  DEBUG: 'DEBUG',
+  INFO: 'INFO',
+  WARN: 'WARN',
+  ERROR: 'ERROR',
+} as const;
+
+// ============================================
+// TEMPLATE VARIABLES
+// ============================================
+
+export const TEMPLATE_VARIABLES = [
+  'name',
+  'company',
+  'agent',
+  'deal_value',
+  'lead_name',
+  'contact_name',
+  'email',
+  'phone',
+  'date',
+  'time',
+  'task_title',
+  'deal_name',
+  'employee_name',
+  'department',
+  'leave_type',
+  'leave_dates',
+  'expense_amount',
+] as const;

@@ -1,0 +1,734 @@
+     1→'use client'
+     2→
+     3→import { useEffect, useState, useCallback, useRef } from 'react'
+     4→import { useRouter } from 'next/navigation'
+     5→import { apiFetch } from '@/lib/auth-client'
+     6→import { toast } from 'sonner'
+     7→import { Card, CardContent } from '@/components/ui/card'
+     8→import { Skeleton } from '@/components/ui/skeleton'
+     9→import { Input } from '@/components/ui/input'
+    10→import { Button } from '@/components/ui/button'
+    11→import { Badge } from '@/components/ui/badge'
+    12→import { Label } from '@/components/ui/label'
+    13→import { Textarea } from '@/components/ui/textarea'
+    14→import {
+    15→  Table,
+    16→  TableBody,
+    17→  TableCell,
+    18→  TableHead,
+    19→  TableHeader,
+    20→  TableRow,
+    21→} from '@/components/ui/table'
+    22→import {
+    23→  Pagination,
+    24→  PaginationContent,
+    25→  PaginationItem,
+    26→  PaginationLink,
+    27→  PaginationNext,
+    28→  PaginationPrevious,
+    29→} from '@/components/ui/pagination'
+    30→import {
+    31→  Select,
+    32→  SelectContent,
+    33→  SelectItem,
+    34→  SelectTrigger,
+    35→  SelectValue,
+    36→} from '@/components/ui/select'
+    37→import {
+    38→  Dialog,
+    39→  DialogContent,
+    40→  DialogHeader,
+    41→  DialogTitle,
+    42→  DialogFooter,
+    43→  DialogDescription,
+    44→} from '@/components/ui/dialog'
+    45→import {
+    46→  Plus,
+    47→  Search,
+    48→  Filter,
+    49→  AlertCircle,
+    50→  Zap,
+    51→  RotateCcw,
+    52→  Loader2,
+    53→  Play,
+    54→  Pause,
+    55→} from 'lucide-react'
+    56→import { cn } from '@/lib/utils'
+    57→
+    58→// ============================================
+    59→// Types
+    60→// ============================================
+    61→
+    62→interface Workflow {
+    63→  id: string
+    64→  name: string
+    65→  description: string | null
+    66→  status: string
+    67→  triggerType: string
+    68→  executionCount: number
+    69→  lastExecutedAt: string | null
+    70→  createdAt: string
+    71→  updatedAt: string
+    72→  creator: { id: string; name: string | null; email: string | null } | null
+    73→  _count: { triggers: number; conditions: number; actions: number; executions: number }
+    74→}
+    75→
+    76→interface PaginatedResponse {
+    77→  success: boolean
+    78→  data: Workflow[]
+    79→  pagination: {
+    80→    page: number
+    81→    limit: number
+    82→    total: number
+    83→    totalPages: number
+    84→  }
+    85→}
+    86→
+    87→// ============================================
+    88→// Constants
+    89→// ============================================
+    90→
+    91→const TRIGGER_EVENT_LABELS: Record<string, string> = {
+    92→  'lead.created': 'Lead Created',
+    93→  'lead.updated': 'Lead Updated',
+    94→  'lead.assigned': 'Lead Assigned',
+    95→  'lead.status_changed': 'Lead Status Changed',
+    96→  'deal.created': 'Deal Created',
+    97→  'deal.stage_changed': 'Deal Stage Changed',
+    98→  'deal.won': 'Deal Won',
+    99→  'deal.lost': 'Deal Lost',
+   100→  'task.created': 'Task Created',
+   101→  'task.completed': 'Task Completed',
+   102→  'followup.due': 'Follow-up Due',
+   103→  'followup.overdue': 'Follow-up Overdue',
+   104→  'call.completed': 'Call Completed',
+   105→  'employee.created': 'Employee Created',
+   106→  'leave.requested': 'Leave Requested',
+   107→  'leave.approved': 'Leave Approved',
+   108→  'attendance.checkin': 'Attendance Check-in',
+   109→  'attendance.checkout': 'Attendance Check-out',
+   110→  'expense.submitted': 'Expense Submitted',
+   111→  'expense.approved': 'Expense Approved',
+   112→}
+   113→
+   114→const TRIGGER_OPTIONS = Object.entries(TRIGGER_EVENT_LABELS).map(([value, label]) => ({ value, label }))
+   115→
+   116→const WORKFLOW_STATUS_STYLES: Record<string, string> = {
+   117→  DRAFT: 'bg-secondary text-secondary-foreground',
+   118→  ACTIVE: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+   119→  PAUSED: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+   120→  ARCHIVED: 'bg-muted text-muted-foreground',
+   121→}
+   122→
+   123→const STATUS_FILTER_OPTIONS = ['ALL', 'DRAFT', 'ACTIVE', 'PAUSED', 'ARCHIVED']
+   124→
+   125→// ============================================
+   126→// Helpers
+   127→// ============================================
+   128→
+   129→function formatDate(dateStr: string) {
+   130→  if (!dateStr) return '-'
+   131→  try {
+   132→    return new Date(dateStr).toLocaleDateString('en-US', {
+   133→      month: 'short',
+   134→      day: 'numeric',
+   135→      year: 'numeric',
+   136→    })
+   137→  } catch {
+   138→    return '-'
+   139→  }
+   140→}
+   141→
+   142→// ============================================
+   143→// Sub-Components
+   144→// ============================================
+   145→
+   146→function TableSkeleton() {
+   147→  return (
+   148→    <Card>
+   149→      <CardContent className='p-0'>
+   150→        <Table>
+   151→          <TableHeader>
+   152→            <TableRow>
+   153→              {Array.from({ length: 6 }).map((_, i) => (
+   154→                <TableHead key={i}><Skeleton className='h-4 w-20' /></TableHead>
+   155→              ))}
+   156→            </TableRow>
+   157→          </TableHeader>
+   158→          <TableBody>
+   159→            {Array.from({ length: 6 }).map((_, i) => (
+   160→              <TableRow key={i}>
+   161→                {Array.from({ length: 6 }).map((_, j) => (
+   162→                  <TableCell key={j}><Skeleton className='h-4 w-full' /></TableCell>
+   163→                ))}
+   164→              </TableRow>
+   165→            ))}
+   166→          </TableBody>
+   167→        </Table>
+   168→      </CardContent>
+   169→    </Card>
+   170→  )
+   171→}
+   172→
+   173→function MobileWorkflowCard({ wf, onClick, onToggle }: { wf: Workflow; onClick: () => void; onToggle: () => void }) {
+   174→  return (
+   175→    <Card className='transition-shadow hover:shadow-md'>
+   176→      <CardContent className='p-4'>
+   177→        <div className='flex items-start justify-between gap-2'>
+   178→          <div
+   179→            className='min-w-0 flex-1 cursor-pointer'
+   180→            onClick={onClick}
+   181→            role='button'
+   182→            tabIndex={0}
+   183→            onKeyDown={(e) => { if (e.key === 'Enter') onClick() }}
+   184→          >
+   185→            <p className='truncate font-medium'>{wf.name}</p>
+   186→            {wf.description && (
+   187→              <p className='mt-0.5 line-clamp-1 text-xs text-muted-foreground'>{wf.description}</p>
+   188→            )}
+   189→          </div>
+   190→          <Badge variant='outline' className={cn('shrink-0 text-[10px]', WORKFLOW_STATUS_STYLES[wf.status] ?? '')}>
+   191→            {wf.status}
+   192→          </Badge>
+   193→        </div>
+   194→
+   195→        <div className='mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground'>
+   196→          <Badge variant='outline' className='text-[10px]'>
+   197→            {TRIGGER_EVENT_LABELS[wf.triggerType] ?? wf.triggerType}
+   198→          </Badge>
+   199→          <span>{wf._count.executions} runs</span>
+   200→          <span>{formatDate(wf.createdAt)}</span>
+   201→        </div>
+   202→
+   203→        <div className='mt-3 flex items-center justify-end gap-2'>
+   204→          {(wf.status === 'DRAFT' || wf.status === 'PAUSED') && (
+   205→            <Button variant='outline' size='sm' className='h-8 text-xs' onClick={(e) => { e.stopPropagation(); onToggle() }}>
+   206→              <Play className='size-3' />
+   207→              Activate
+   208→            </Button>
+   209→          )}
+   210→          {wf.status === 'ACTIVE' && (
+   211→            <Button variant='outline' size='sm' className='h-8 text-xs' onClick={(e) => { e.stopPropagation(); onToggle() }}>
+   212→              <Pause className='size-3' />
+   213→              Pause
+   214→            </Button>
+   215→          )}
+   216→          <Button variant='ghost' size='sm' className='h-8 text-xs' onClick={onClick}>
+   217→            View
+   218→          </Button>
+   219→        </div>
+   220→      </CardContent>
+   221→    </Card>
+   222→  )
+   223→}
+   224→
+   225→// ============================================
+   226→// Create Workflow Dialog
+   227→// ============================================
+   228→
+   229→function CreateWorkflowDialog({
+   230→  open,
+   231→  onOpenChange,
+   232→  onSuccess,
+   233→}: {
+   234→  open: boolean
+   235→  onOpenChange: (open: boolean) => void
+   236→  onSuccess: (id: string) => void
+   237→}) {
+   238→  const [name, setName] = useState('')
+   239→  const [description, setDescription] = useState('')
+   240→  const [triggerType, setTriggerType] = useState('')
+   241→  const [submitting, setSubmitting] = useState(false)
+   242→
+   243→  const canSubmit = name.trim() && triggerType
+   244→
+   245→  const handleSubmit = async (e: React.FormEvent) => {
+   246→    e.preventDefault()
+   247→    if (!canSubmit || submitting) return
+   248→
+   249→    try {
+   250→      setSubmitting(true)
+   251→      const res = await apiFetch<{ success: boolean; data: { id: string }; message?: string }>(
+   252→        '/api/v1/automation/workflows',
+   253→        {
+   254→          method: 'POST',
+   255→          body: JSON.stringify({
+   256→            name: name.trim(),
+   257→            description: description.trim() || undefined,
+   258→            status: 'DRAFT',
+   259→            triggerType,
+   260→            triggers: [{ eventType: triggerType, config: {} }],
+   261→            actions: [{ type: 'create_notification', config: {}, sortOrder: 0, delayMs: 0 }],
+   262→          }),
+   263→        }
+   264→      )
+   265→      toast.success(res.message || 'Workflow created successfully')
+   266→      setName('')
+   267→      setDescription('')
+   268→      setTriggerType('')
+   269→      onOpenChange(false)
+   270→      onSuccess(res.data.id)
+   271→    } catch (err) {
+   272→      const msg = err instanceof Error ? err.message : 'Failed to create workflow'
+   273→      toast.error(msg)
+   274→    } finally {
+   275→      setSubmitting(false)
+   276→    }
+   277→  }
+   278→
+   279→  return (
+   280→    <Dialog open={open} onOpenChange={onOpenChange}>
+   281→      <DialogContent className='sm:max-w-md'>
+   282→        <DialogHeader>
+   283→          <DialogTitle>Create Workflow</DialogTitle>
+   284→          <DialogDescription>
+   285→            Set up a new automation workflow. You can add triggers, conditions, and actions after creation.
+   286→          </DialogDescription>
+   287→        </DialogHeader>
+   288→        <form onSubmit={handleSubmit} className='space-y-4'>
+   289→          <div className='space-y-2'>
+   290→            <Label htmlFor='wf-name'>Name</Label>
+   291→            <Input
+   292→              id='wf-name'
+   293→              placeholder='e.g., Auto-assign new leads'
+   294→              value={name}
+   295→              onChange={(e) => setName(e.target.value)}
+   296→              maxLength={200}
+   297→              autoFocus
+   298→            />
+   299→          </div>
+   300→          <div className='space-y-2'>
+   301→            <Label htmlFor='wf-desc'>Description</Label>
+   302→            <Textarea
+   303→              id='wf-desc'
+   304→              placeholder='What does this workflow do?'
+   305→              value={description}
+   306→              onChange={(e) => setDescription(e.target.value)}
+   307→              maxLength={5000}
+   308→              rows={3}
+   309→            />
+   310→          </div>
+   311→          <div className='space-y-2'>
+   312→            <Label htmlFor='wf-trigger'>Trigger Type</Label>
+   313→            <Select value={triggerType} onValueChange={setTriggerType}>
+   314→              <SelectTrigger id='wf-trigger'>
+   315→                <SelectValue placeholder='Select a trigger event' />
+   316→              </SelectTrigger>
+   317→              <SelectContent>
+   318→                {TRIGGER_OPTIONS.map((opt) => (
+   319→                  <SelectItem key={opt.value} value={opt.value}>
+   320→                    {opt.label}
+   321→                  </SelectItem>
+   322→                ))}
+   323→              </SelectContent>
+   324→            </Select>
+   325→          </div>
+   326→          <DialogFooter>
+   327→            <Button type='button' variant='outline' onClick={() => onOpenChange(false)}>
+   328→              Cancel
+   329→            </Button>
+   330→            <Button type='submit' disabled={!canSubmit || submitting}>
+   331→              {submitting && <Loader2 className='size-4 animate-spin' />}
+   332→              Create Workflow
+   333→            </Button>
+   334→          </DialogFooter>
+   335→        </form>
+   336→      </DialogContent>
+   337→    </Dialog>
+   338→  )
+   339→}
+   340→
+   341→// ============================================
+   342→// Main Page
+   343→// ============================================
+   344→
+   345→export default function WorkflowsListPage() {
+   346→  const router = useRouter()
+   347→
+   348→  // Data state
+   349→  const [workflows, setWorkflows] = useState<Workflow[]>([])
+   350→  const [page, setPage] = useState(1)
+   351→  const [totalPages, setTotalPages] = useState(1)
+   352→  const [total, setTotal] = useState(0)
+   353→  const [loading, setLoading] = useState(true)
+   354→  const [error, setError] = useState<string | null>(null)
+   355→
+   356→  // Filter state
+   357→  const [search, setSearch] = useState('')
+   358→  const [debouncedSearch, setDebouncedSearch] = useState('')
+   359→  const [statusFilter, setStatusFilter] = useState('ALL')
+   360→  const [triggerTypeFilter, setTriggerTypeFilter] = useState('')
+   361→
+   362→  // Dialog state
+   363→  const [createOpen, setCreateOpen] = useState(false)
+   364→  const [togglingId, setTogglingId] = useState<string | null>(null)
+   365→
+   366→  // Debounce search
+   367→  const debounceRef = useRef<ReturnType<typeof setTimeout>>()
+   368→  useEffect(() => {
+   369→    debounceRef.current = setTimeout(() => {
+   370→      setDebouncedSearch(search)
+   371→    }, 300)
+   372→    return () => {
+   373→      if (debounceRef.current) clearTimeout(debounceRef.current)
+   374→    }
+   375→  }, [search])
+   376→
+   377→  // Fetch workflows
+   378→  const fetchWorkflows = useCallback(async () => {
+   379→    try {
+   380→      setLoading(true)
+   381→      setError(null)
+   382→
+   383→      const params = new URLSearchParams({
+   384→        page: String(page),
+   385→        limit: '20',
+   386→      })
+   387→
+   388→      if (debouncedSearch) params.set('search', debouncedSearch)
+   389→      if (statusFilter !== 'ALL') params.set('status', statusFilter)
+   390→      if (triggerTypeFilter) params.set('triggerType', triggerTypeFilter)
+   391→
+   392→      const data = await apiFetch<PaginatedResponse>(`/api/v1/automation/workflows?${params}`)
+   393→      setWorkflows(data.data)
+   394→      setTotalPages(data.pagination.totalPages)
+   395→      setTotal(data.pagination.total)
+   396→    } catch (err) {
+   397→      const message = err instanceof Error ? err.message : 'Failed to load workflows'
+   398→      setError(message)
+   399→      toast.error(message)
+   400→    } finally {
+   401→      setLoading(false)
+   402→    }
+   403→  }, [page, debouncedSearch, statusFilter, triggerTypeFilter])
+   404→
+   405→  useEffect(() => {
+   406→    fetchWorkflows()
+   407→  }, [fetchWorkflows])
+   408→
+   409→  // Reset page on filter change
+   410→  useEffect(() => {
+   411→    setPage(1)
+   412→  }, [debouncedSearch, statusFilter, triggerTypeFilter])
+   413→
+   414→  // Toggle workflow status (activate/pause)
+   415→  const handleToggle = async (wf: Workflow) => {
+   416→    const action = wf.status === 'ACTIVE' ? 'pause' : 'activate'
+   417→    setTogglingId(wf.id)
+   418→    try {
+   419→      await apiFetch(`/api/v1/automation/workflows/${wf.id}/${action}`, { method: 'POST' })
+   420→      toast.success(`Workflow ${action}d successfully`)
+   421→      fetchWorkflows()
+   422→    } catch (err) {
+   423→      const msg = err instanceof Error ? err.message : `Failed to ${action} workflow`
+   424→      toast.error(msg)
+   425→    } finally {
+   426→      setTogglingId(null)
+   427→    }
+   428→  }
+   429→
+   430→  // Pagination helper
+   431→  const renderPageNumbers = () => {
+   432→    const pages: number[] = []
+   433→    const maxVisible = 5
+   434→    let start = Math.max(1, page - Math.floor(maxVisible / 2))
+   435→    const end = Math.min(totalPages, start + maxVisible - 1)
+   436→    if (end - start + 1 < maxVisible) {
+   437→      start = Math.max(1, end - maxVisible + 1)
+   438→    }
+   439→    for (let i = start; i <= end; i++) {
+   440→      pages.push(i)
+   441→    }
+   442→    return pages
+   443→  }
+   444→
+   445→  const hasActiveFilters = search || statusFilter !== 'ALL' || triggerTypeFilter
+   446→
+   447→  const clearFilters = () => {
+   448→    setSearch('')
+   449→    setStatusFilter('ALL')
+   450→    setTriggerTypeFilter('')
+   451→  }
+   452→
+   453→  return (
+   454→    <div className='space-y-6'>
+   455→      {/* Header */}
+   456→      <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
+   457→        <div>
+   458→          <h1 className='text-2xl font-bold tracking-tight'>Workflows</h1>
+   459→          <p className='text-muted-foreground mt-1'>
+   460→            Manage and configure automation workflows
+   461→          </p>
+   462→        </div>
+   463→        <Button className='min-w-[150px]' onClick={() => setCreateOpen(true)}>
+   464→          <Plus className='size-4' />
+   465→          Create Workflow
+   466→        </Button>
+   467→      </div>
+   468→
+   469→      {/* Search and Filters */}
+   470→      <div className='flex flex-col gap-3'>
+   471→        <div className='relative'>
+   472→          <Search className='absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground' />
+   473→          <Input
+   474→            placeholder='Search workflows...'
+   475→            value={search}
+   476→            onChange={(e) => setSearch(e.target.value)}
+   477→            className='pl-9'
+   478→            aria-label='Search workflows'
+   479→          />
+   480→        </div>
+   481→
+   482→        <div className='flex flex-wrap items-center gap-2'>
+   483→          <div className='flex items-center gap-1.5 text-sm text-muted-foreground'>
+   484→            <Filter className='size-4' />
+   485→            <span className='hidden sm:inline'>Filters:</span>
+   486→          </div>
+   487→
+   488→          <Select value={statusFilter} onValueChange={setStatusFilter}>
+   489→            <SelectTrigger className='w-[130px]' aria-label='Filter by status'>
+   490→              <SelectValue placeholder='All Statuses' />
+   491→            </SelectTrigger>
+   492→            <SelectContent>
+   493→              {STATUS_FILTER_OPTIONS.map((s) => (
+   494→                <SelectItem key={s} value={s}>{s === 'ALL' ? 'All Statuses' : s}</SelectItem>
+   495→              ))}
+   496→            </SelectContent>
+   497→          </Select>
+   498→
+   499→          <Select value={triggerTypeFilter} onValueChange={(v) => setTriggerTypeFilter(v === '_all' ? '' : v)}>
+   500→            <SelectTrigger className='w-[160px]' aria-label='Filter by trigger type'>
+   501→              <SelectValue placeholder='All Triggers' />
+   502→            </SelectTrigger>
+   503→            <SelectContent>
+   504→              <SelectItem value='_all'>All Triggers</SelectItem>
+   505→              {TRIGGER_OPTIONS.map((opt) => (
+   506→                <SelectItem key={opt.value} value={opt.value}>
+   507→                  {opt.label}
+   508→                </SelectItem>
+   509→              ))}
+   510→            </SelectContent>
+   511→          </Select>
+   512→
+   513→          {hasActiveFilters && (
+   514→            <Button variant='ghost' size='sm' onClick={clearFilters}>
+   515→              <RotateCcw className='size-3' />
+   516→              Clear
+   517→            </Button>
+   518→          )}
+   519→        </div>
+   520→      </div>
+   521→
+   522→      {/* Loading State */}
+   523→      {loading && <TableSkeleton />}
+   524→
+   525→      {/* Error State */}
+   526→      {error && !loading && (
+   527→        <Card className='border-destructive/50'>
+   528→          <CardContent className='flex items-center gap-3 py-6'>
+   529→            <AlertCircle className='size-5 shrink-0 text-destructive' />
+   530→            <p className='text-sm text-destructive'>{error}</p>
+   531→            <Button
+   532→              variant='outline'
+   533→              size='sm'
+   534→              className='ml-auto shrink-0'
+   535→              onClick={fetchWorkflows}
+   536→            >
+   537→              Retry
+   538→            </Button>
+   539→          </CardContent>
+   540→        </Card>
+   541→      )}
+   542→
+   543→      {/* Empty State */}
+   544→      {!loading && !error && workflows.length === 0 && (
+   545→        <Card>
+   546→          <CardContent className='flex flex-col items-center justify-center py-12 text-center'>
+   547→            <Zap className='mb-3 size-10 text-muted-foreground/50' />
+   548→            <p className='text-sm font-medium text-muted-foreground'>No workflows yet</p>
+   549→            <p className='mt-1 text-xs text-muted-foreground'>
+   550→              {hasActiveFilters
+   551→                ? 'Try adjusting your filters.'
+   552→                : 'Create your first automation.'}
+   553→            </p>
+   554→            {!hasActiveFilters && (
+   555→              <Button className='mt-4' size='sm' onClick={() => setCreateOpen(true)}>
+   556→                <Plus className='size-4' />
+   557→                Create Workflow
+   558→              </Button>
+   559→            )}
+   560→          </CardContent>
+   561→        </Card>
+   562→      )}
+   563→
+   564→      {/* Desktop Table */}
+   565→      {!loading && !error && workflows.length > 0 && (
+   566→        <>
+   567→          <Card className='hidden md:block'>
+   568→            <CardContent className='p-0'>
+   569→              <Table>
+   570→                <TableHeader>
+   571→                  <TableRow>
+   572→                    <TableHead className='min-w-[200px]'>Name</TableHead>
+   573→                    <TableHead>Trigger Type</TableHead>
+   574→                    <TableHead>Status</TableHead>
+   575→                    <TableHead className='text-right'>Executions</TableHead>
+   576→                    <TableHead>Created</TableHead>
+   577→                    <TableHead className='w-[120px]'>Actions</TableHead>
+   578→                  </TableRow>
+   579→                </TableHeader>
+   580→                <TableBody>
+   581→                  {workflows.map((wf) => (
+   582→                    <TableRow
+   583→                      key={wf.id}
+   584→                      className='cursor-pointer'
+   585→                      onClick={() => router.push(`/automation/workflows/${wf.id}`)}
+   586→                    >
+   587→                      <TableCell>
+   588→                        <div>
+   589→                          <p className='font-medium'>{wf.name}</p>
+   590→                          {wf.description && (
+   591→                            <p className='mt-0.5 max-w-[300px] truncate text-xs text-muted-foreground'>
+   592→                              {wf.description}
+   593→                            </p>
+   594→                          )}
+   595→                        </div>
+   596→                      </TableCell>
+   597→                      <TableCell className='text-muted-foreground'>
+   598→                        <Badge variant='outline' className='text-[10px]'>
+   599→                          {TRIGGER_EVENT_LABELS[wf.triggerType] ?? wf.triggerType}
+   600→                        </Badge>
+   601→                      </TableCell>
+   602→                      <TableCell>
+   603→                        <Badge variant='outline' className={cn('text-[10px]', WORKFLOW_STATUS_STYLES[wf.status] ?? '')}>
+   604→                          {wf.status}
+   605→                        </Badge>
+   606→                      </TableCell>
+   607→                      <TableCell className='text-right font-medium'>
+   608→                        {wf._count.executions}
+   609→                      </TableCell>
+   610→                      <TableCell className='whitespace-nowrap text-xs text-muted-foreground'>
+   611→                        {formatDate(wf.createdAt)}
+   612→                      </TableCell>
+   613→                      <TableCell>
+   614→                        <div className='flex items-center gap-1'>
+   615→                          {(wf.status === 'DRAFT' || wf.status === 'PAUSED') && (
+   616→                            <Button
+   617→                              variant='ghost'
+   618→                              size='sm'
+   619→                              className='h-7 px-2 text-xs'
+   620→                              disabled={togglingId === wf.id}
+   621→                              onClick={(e) => { e.stopPropagation(); handleToggle(wf) }}
+   622→                            >
+   623→                              {togglingId === wf.id ? (
+   624→                                <Loader2 className='size-3 animate-spin' />
+   625→                              ) : (
+   626→                                <Play className='size-3' />
+   627→                              )}
+   628→                            </Button>
+   629→                          )}
+   630→                          {wf.status === 'ACTIVE' && (
+   631→                            <Button
+   632→                              variant='ghost'
+   633→                              size='sm'
+   634→                              className='h-7 px-2 text-xs'
+   635→                              disabled={togglingId === wf.id}
+   636→                              onClick={(e) => { e.stopPropagation(); handleToggle(wf) }}
+   637→                            >
+   638→                              {togglingId === wf.id ? (
+   639→                                <Loader2 className='size-3 animate-spin' />
+   640→                              ) : (
+   641→                                <Pause className='size-3' />
+   642→                              )}
+   643→                            </Button>
+   644→                          )}
+   645→                          <Button
+   646→                            variant='ghost'
+   647→                            size='sm'
+   648→                            className='h-7 px-2 text-xs'
+   649→                            onClick={(e) => { e.stopPropagation(); router.push(`/automation/workflows/${wf.id}`) }}
+   650→                          >
+   651→                            Edit
+   652→                          </Button>
+   653→                        </div>
+   654→                      </TableCell>
+   655→                    </TableRow>
+   656→                  ))}
+   657→                </TableBody>
+   658→              </Table>
+   659→            </CardContent>
+   660→          </Card>
+   661→
+   662→          {/* Mobile Cards */}
+   663→          <div className='flex flex-col gap-3 md:hidden'>
+   664→            {workflows.map((wf) => (
+   665→              <MobileWorkflowCard
+   666→                key={wf.id}
+   667→                wf={wf}
+   668→                onClick={() => router.push(`/automation/workflows/${wf.id}`)}
+   669→                onToggle={() => handleToggle(wf)}
+   670→              />
+   671→            ))}
+   672→          </div>
+   673→
+   674→          {/* Pagination */}
+   675→          {totalPages > 1 && (
+   676→            <div className='flex flex-col items-center gap-2'>
+   677→              <p className='text-xs text-muted-foreground'>
+   678→                Showing {workflows.length} of {total} workflows
+   679→              </p>
+   680→              <Pagination>
+   681→                <PaginationContent>
+   682→                  <PaginationItem>
+   683→                    <PaginationPrevious
+   684→                      href='#'
+   685→                      onClick={(e) => {
+   686→                        e.preventDefault()
+   687→                        if (page > 1) setPage(page - 1)
+   688→                      }}
+   689→                      aria-disabled={page <= 1}
+   690→                      className={page <= 1 ? 'pointer-events-none opacity-50' : ''}
+   691→                    />
+   692→                  </PaginationItem>
+   693→                  {renderPageNumbers().map((p) => (
+   694→                    <PaginationItem key={p}>
+   695→                      <PaginationLink
+   696→                        href='#'
+   697→                        isActive={p === page}
+   698→                        onClick={(e) => {
+   699→                          e.preventDefault()
+   700→                          setPage(p)
+   701→                        }}
+   702→                      >
+   703→                        {p}
+   704→                      </PaginationLink>
+   705→                    </PaginationItem>
+   706→                  ))}
+   707→                  <PaginationItem>
+   708→                    <PaginationNext
+   709→                      href='#'
+   710→                      onClick={(e) => {
+   711→                        e.preventDefault()
+   712→                        if (page < totalPages) setPage(page + 1)
+   713→                      }}
+   714→                      aria-disabled={page >= totalPages}
+   715→                      className={page >= totalPages ? 'pointer-events-none opacity-50' : ''}
+   716→                    />
+   717→                  </PaginationItem>
+   718→                </PaginationContent>
+   719→              </Pagination>
+   720→            </div>
+   721→          )}
+   722→        </>
+   723→      )}
+   724→
+   725→      {/* Create Workflow Dialog */}
+   726→      <CreateWorkflowDialog
+   727→        open={createOpen}
+   728→        onOpenChange={setCreateOpen}
+   729→        onSuccess={(id) => router.push(`/automation/workflows/${id}`)}
+   730→      />
+   731→    </div>
+   732→  )
+   733→}
+   734→

@@ -23,6 +23,15 @@ import {
   Download,
   // HRMS icons
   Briefcase,
+  // Communication icons
+  MessageSquare,
+  Inbox,
+  Bell,
+  FileCode,
+  Wifi,
+  // Automation icons
+  Zap,
+  Workflow,
   UserCheck,
   CalendarCheck,
   CalendarOff,
@@ -63,6 +72,29 @@ export const superAdminNav: NavSection[] = [
       { title: 'Feature Flags', href: '/super-admin/features', icon: Flag },
       { title: 'System Health', href: '/super-admin/health', icon: Activity },
       { title: 'Settings', href: '/super-admin/settings', icon: Settings },
+    ],
+  },
+]
+
+export const communicationNav: NavSection[] = [
+  {
+    label: 'Communication',
+    items: [
+      { title: 'Inbox', href: '/communication/inbox', icon: Inbox },
+      { title: 'Notifications', href: '/communication/notifications', icon: Bell },
+      { title: 'Templates', href: '/communication/templates', icon: FileCode },
+      { title: 'Provider Settings', href: '/communication/settings', icon: Wifi },
+    ],
+  },
+]
+
+export const automationNav: NavSection[] = [
+  {
+    label: 'Automation',
+    items: [
+      { title: 'Dashboard', href: '/automation', icon: Zap },
+      { title: 'Workflows', href: '/automation/workflows', icon: Workflow },
+      { title: 'Executions', href: '/automation/executions', icon: Activity },
     ],
   },
 ]
@@ -185,18 +217,35 @@ export const tenantAdminNav: NavSection[] = [
       { title: 'Subscription', href: '/admin/subscription', icon: CreditCard },
     ],
   },
+  {
+    label: 'Communication',
+    items: [
+      { title: 'Inbox', href: '/communication/inbox', icon: Inbox },
+      { title: 'Notifications', href: '/communication/notifications', icon: Bell },
+      { title: 'Templates', href: '/communication/templates', icon: FileCode },
+      { title: 'Provider Settings', href: '/communication/settings', icon: Wifi },
+    ],
+  },
+  {
+    label: 'Automation',
+    items: [
+      { title: 'Dashboard', href: '/automation', icon: Zap },
+      { title: 'Workflows', href: '/automation/workflows', icon: Workflow },
+      { title: 'Executions', href: '/automation/executions', icon: Activity },
+    ],
+  },
 ]
 
 export function getNavForRole(role: string): NavSection[] {
   if (role === 'SUPER_ADMIN') return superAdminNav
   if (role === 'HR_MANAGER' || role === 'HR_EXECUTIVE' || role === 'ACCOUNTANT') {
-    return hrmsNav
+    return [...hrmsNav, ...communicationNav.slice(1, 3)]
   }
   if (role === 'FIELD_MANAGER' || role === 'FIELD_EXECUTIVE') {
-    return [...crmNav.slice(0, 1), hrmsNav.slice(2)] // CRM dashboard + Field Sales
+    return [...crmNav.slice(0, 1), ...hrmsNav.slice(2), ...communicationNav.slice(0, 1)]
   }
   if (['TENANT_OWNER', 'ADMIN', 'MANAGER', 'SALES_MANAGER', 'SALES_EXECUTIVE', 'TELECALLER'].includes(role)) {
-    return tenantAdminNav
+    return [...tenantAdminNav, ...communicationNav, ...automationNav]
   }
-  return [...crmNav, ...hrmsNav]
+  return [...crmNav, ...hrmsNav, ...communicationNav, ...automationNav]
 }

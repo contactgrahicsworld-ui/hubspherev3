@@ -50,8 +50,22 @@ model Tenant {
   payrollRecords  PayrollRecord[]
   attendanceSessions AttendanceSession[]
   employeeDocuments  EmployeeDocument[]
-  payrollItems  PayrollItem[]
-  bankTransfers  BankTransfer[]
+  payrollItems      PayrollItem[]
+  bankTransfers     BankTransfer[]
+  conversations     Conversation[]
+  messages          Message[]
+  messageAttachments MessageAttachment[]
+  commTemplates     CommunicationTemplate[]
+  commProviderConfigs CommunicationProviderConfig[]
+  deliveryAttempts  DeliveryAttempt[]
+  messageEvents     MessageEvent[]
+  notifications     Notification[]
+  automationWorkflows AutomationWorkflow[]
+  automationExecutions AutomationExecution[]
+  automationTriggers    AutomationTrigger[]
+  automationConditions  AutomationCondition[]
+  automationActions     AutomationAction[]
+  automationExecutionLogs AutomationExecutionLog[]
 
   @@map("tenants")
 }
@@ -95,6 +109,12 @@ model User {
   createdPayroll     PayrollRecord[] @relation("PayrollCreator")
   deptHeaded        Department[]   @relation("DeptHead")
   employeeProfile   Employee[]     @relation("EmployeeProfile")
+  assignedConversations Conversation[] @relation("ConversationAssignee")
+  sentMessages          Message[]      @relation("MessageSender")
+  receivedNotifications Notification[]  @relation("NotificationRecipient")
+  automationExecutions  AutomationExecution[] @relation("ExecutionTriggeredBy")
+  createdWorkflows      AutomationWorkflow[] @relation("WorkflowCreator")
+  updatedWorkflows      AutomationWorkflow[] @relation("WorkflowUpdater")
 
   @@map("users")
 }
@@ -1188,4 +1208,372 @@ model BankTransfer {
   @@index([employeeId])
   @@index([status])
   @@map("bank_transfers")
+}
+
+// ============================================
+// COMMUNICATION HUB
+// ============================================
+
+// --- PROVIDER CONFIG ---
+
+model CommunicationProviderConfig {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  channel     String   // WHATSAPP, EMAIL, SMS, PUSH
+  provider    String   // twilio, sendgrid, ses, fcm, etc.
+  config      Json     @default("{}")  // Encrypted provider-specific config
+  isEnabled   Boolean  @default(false) @map("is_enabled")
+  name        String?  // Human-readable label
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, channel, provider])
+  @@index([tenantId])
+  @@index([channel])
+  @@map("communication_provider_configs")
+}
+
+// --- CONVERSATION ---
+
+model Conversation {
+  id            String    @id @default(uuid()) @db.Uuid
+  tenantId      String    @map("tenant_id") @db.Uuid
+  channel       String    // WHATSAPP, EMAIL, SMS, IN_APP, PUSH, SYSTEM
+  externalId    String?   @map("external_id") // WhatsApp conversation ID, email thread ID, etc.
+  subject       String?   @db.Text
+  participantIds Json     @default("[]") @map("participant_ids") // Array of external contact identifiers
+  assignedToId  String?   @map("assigned_to_id") @db.Uuid
+  status        String    @default("ACTIVE") // ACTIVE, CLOSED, ARCHIVED
+  lastMessageAt DateTime? @map("last_message_at")
+  lastMessagePreview String? @map("last_message_preview") @db.Text
+  unreadCount   Int       @default(0) @map("unread_count")
+  metadata      Json      @default("{}")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  assignedTo  User?     @relation("ConversationAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  messages    Message[]
+
+  @@index([tenantId])
+  @@index([channel])
+  @@index([assignedToId])
+  @@index([status])
+  @@index([lastMessageAt])
+  @@map("conversations")
+}
+
+// --- MESSAGE ---
+
+model Message {
+  id              String    @id @default(uuid()) @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  conversationId  String    @map("conversation_id") @db.Uuid
+  direction       String    // INBOUND, OUTBOUND, SYSTEM
+  channel         String    // WHATSAPP, EMAIL, SMS, IN_APP, PUSH, SYSTEM
+  status          String    @default("QUEUED") // QUEUED, PROCESSING, SENT, DELIVERED, READ, FAILED, CANCELLED
+  content         String    @db.Text
+  contentType     String    @default("TEXT") @map("content_type") // TEXT, HTML, MARKDOWN, RICH_TEXT
+  senderId        String?   @map("sender_id") @db.Uuid // User who sent (null for inbound/system)
+  externalMessageId String?  @map("external_message_id")
+  externalSenderId  String?  @map("external_sender_id") // WhatsApp number, email address, etc.
+  senderName     String?   @map("sender_name")
+  isInternal     Boolean   @default(false) @map("is_internal") // Internal note visible only to team
+  templateId     String?   @map("template_id") @db.Uuid
+  scheduledAt    DateTime? @map("scheduled_at")
+  sentAt         DateTime? @map("sent_at")
+  deliveredAt    DateTime? @map("delivered_at")
+  readAt         DateTime? @map("read_at")
+  failedAt       DateTime? @map("failed_at")
+  failureReason  String?   @map("failure_reason") @db.Text
+  metadata       Json      @default("{}")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  tenant       Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  conversation Conversation         @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User?                @relation("MessageSender", fields: [senderId], references: [id], onDelete: SetNull)
+  template     CommunicationTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  attachments  MessageAttachment[]
+  deliveryAttempts DeliveryAttempt[]
+  events       MessageEvent[]
+
+  @@index([tenantId])
+  @@index([conversationId])
+  @@index([channel])
+  @@index([direction])
+  @@index([status])
+  @@index([senderId])
+  @@index([createdAt])
+  @@map("messages")
+}
+
+// --- MESSAGE ATTACHMENT ---
+
+model MessageAttachment {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  messageId   String   @map("message_id") @db.Uuid
+  fileName    String   @map("file_name")
+  fileSize    Int?     @map("file_size")
+  mimeType    String   @map("mime_type")
+  fileUrl     String?  @map("file_url")
+  storageKey  String?  @map("storage_key")
+  thumbnailUrl String? @map("thumbnail_url")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([messageId])
+  @@map("message_attachments")
+}
+
+// --- COMMUNICATION TEMPLATE ---
+
+model CommunicationTemplate {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  name        String
+  channel     String   // WHATSAPP, EMAIL, SMS, IN_APP, PUSH
+  subject     String?  @db.Text // For email templates
+  body        String   @db.Text // Template body with {{variable}} placeholders
+  variables   Json     @default("[]") // Array of variable names used in template
+  category    String?  // TRANSACTIONAL, MARKETING, NOTIFICATION, ALERT
+  status      String   @default("DRAFT") // DRAFT, ACTIVE, ARCHIVED
+  metadata    Json     @default("{}")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  tenant  Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  messages Message[]
+
+  @@index([tenantId])
+  @@index([channel])
+  @@index([status])
+  @@map("communication_templates")
+}
+
+// --- DELIVERY ATTEMPT ---
+
+model DeliveryAttempt {
+  id          String    @id @default(uuid()) @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  messageId   String    @map("message_id") @db.Uuid
+  provider    String    // twilio, sendgrid, etc.
+  status      String    // PENDING, PROCESSING, SUCCESS, FAILED
+  statusCode  String?   @map("status_code")
+  response    String?   @db.Text // Provider response body
+  cost        Float?    // Delivery cost if tracked
+  attemptedAt DateTime  @default(now()) @map("attempted_at")
+  completedAt DateTime? @map("completed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([messageId])
+  @@index([provider])
+  @@map("delivery_attempts")
+}
+
+// --- MESSAGE EVENT ---
+
+model MessageEvent {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  messageId   String   @map("message_id") @db.Uuid
+  eventType   String   @map("event_type") // SENT, DELIVERED, READ, FAILED, REPLIED, CLICKED
+  eventData   Json     @default("{}") @map("event_data")
+  source      String?  // webhook, polling, manual
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([messageId])
+  @@index([eventType])
+  @@index([createdAt])
+  @@map("message_events")
+}
+
+// ============================================
+// NOTIFICATION (In-App)
+// ============================================
+
+model Notification {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  recipientId String   @map("recipient_id") @db.Uuid
+  title       String
+  body        String   @db.Text
+  type        String?  // INFO, WARNING, ERROR, SUCCESS, MENTION, ASSIGNMENT
+  category    String?  // GENERAL, CRM, HRMS, COMMUNICATION, SYSTEM
+  link        String?  // Optional deep link
+  isRead      Boolean  @default(false) @map("is_read")
+  readAt      DateTime? @map("read_at")
+  metadata    Json     @default("{}")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  tenant    Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  recipient User    @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([recipientId])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+// ============================================
+// AUTOMATION ENGINE
+// ============================================
+
+// --- WORKFLOW ---
+
+model AutomationWorkflow {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  name        String
+  description String?  @db.Text
+  status      String   @default("DRAFT") // DRAFT, ACTIVE, PAUSED, ARCHIVED
+  triggerType String   @map("trigger_type") // lead.created, deal.stage_changed, etc.
+  triggerConfig Json   @default("{}") @map("trigger_config")
+  executionCount Int   @default(0) @map("execution_count")
+  lastExecutedAt DateTime? @map("last_executed_at")
+  createdBy   String   @map("created_by") @db.Uuid
+  updatedBy   String?  @map("updated_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  tenant      Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  creator     User                    @relation("WorkflowCreator", fields: [createdBy], references: [id], onDelete: Cascade)
+  updater     User?                   @relation("WorkflowUpdater", fields: [updatedBy], references: [id], onDelete: SetNull)
+  triggers    AutomationTrigger[]
+  conditions  AutomationCondition[]
+  actions     AutomationAction[]
+  executions  AutomationExecution[]
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([triggerType])
+  @@map("automation_workflows")
+}
+
+// --- TRIGGER ---
+
+model AutomationTrigger {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  workflowId  String   @map("workflow_id") @db.Uuid
+  eventType   String   @map("event_type") // lead.created, deal.won, task.completed, etc.
+  config      Json     @default("{}")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  tenant   Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  workflow AutomationWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([workflowId])
+  @@index([eventType])
+  @@map("automation_triggers")
+}
+
+// --- CONDITION ---
+
+model AutomationCondition {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  workflowId String  @map("workflow_id") @db.Uuid
+  field     String   // lead.status, deal.value, etc.
+  operator  String   // equals, not_equals, contains, greater_than, less_than, empty, not_empty
+  value     String?  @db.Text
+  logic     String   @default("AND") // AND, OR
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  tenant   Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  workflow AutomationWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([workflowId])
+  @@map("automation_conditions")
+}
+
+// --- ACTION ---
+
+model AutomationAction {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  workflowId  String   @map("workflow_id") @db.Uuid
+  type        String   // create_task, update_lead, send_whatsapp, send_email, etc.
+  config      Json     @default("{}")
+  sortOrder   Int      @default(0) @map("sort_order")
+  delayMs     Int      @default(0) @map("delay_ms") // Delay before executing this action
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  tenant   Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  workflow AutomationWorkflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([workflowId])
+  @@map("automation_actions")
+}
+
+// --- EXECUTION ---
+
+model AutomationExecution {
+  id             String    @id @default(uuid()) @db.Uuid
+  tenantId       String    @map("tenant_id") @db.Uuid
+  workflowId     String    @map("workflow_id") @db.Uuid
+  triggerEvent   String    @map("trigger_event")
+  status         String    @default("RUNNING") // RUNNING, COMPLETED, FAILED, CANCELLED
+  triggerData    Json      @default("{}") @map("trigger_data")
+  entityId       String?   @map("entity_id") // The entity that triggered this (lead ID, deal ID, etc.)
+  entityType     String?   @map("entity_type") // lead, deal, task, etc.
+  error          String?   @db.Text
+  startedAt      DateTime  @default(now()) @map("started_at")
+  completedAt    DateTime? @map("completed_at")
+  triggeredById  String?   @map("triggered_by_id") @db.Uuid
+  idempotencyKey String    @unique @map("idempotency_key")
+
+  tenant       Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  workflow     AutomationWorkflow    @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  triggeredBy  User?                @relation("ExecutionTriggeredBy", fields: [triggeredById], references: [id], onDelete: SetNull)
+  logs         AutomationExecutionLog[]
+
+  @@index([tenantId])
+  @@index([workflowId])
+  @@index([status])
+  @@index([triggerEvent])
+  @@index([entityId])
+  @@map("automation_executions")
+}
+
+// --- EXECUTION LOG ---
+
+model AutomationExecutionLog {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  executionId  String   @map("execution_id") @db.Uuid
+  actionId     String?  @map("action_id") @db.Uuid
+  level        String   @default("INFO") // INFO, WARN, ERROR, DEBUG
+  message      String   @db.Text
+  data         Json     @default("{}")
+  durationMs   Int?     @map("duration_ms")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  tenant    Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  execution AutomationExecution    @relation(fields: [executionId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([executionId])
+  @@index([level])
+  @@map("automation_execution_logs")
 }

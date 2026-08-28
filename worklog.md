@@ -1,56 +1,41 @@
 ---
-Task ID: 1
-Agent: Lead Architect (Main)
-Task: HubSphere Phase 1 - Production Foundation + Multi-Tenant + Zero Mandatory Paid API
+Task ID: 4-a
+Agent: Main
+Task: Phase 4 Part A — Fix Z.ai Preview and pre-existing issues
 
 Work Log:
-- Inspected existing project: basic Next.js 16 scaffold with shadcn/ui, Prisma (SQLite), minimal code
-- Designed and implemented complete Prisma schema with 13 models (Tenant, User, Membership, Role, Permission, RolePermission, Subscription, FeatureFlag, TenantFeatureFlag, AuditLog, RefreshToken, PasswordResetToken, EmailVerificationToken, Call, ProviderConfig, AiUsageLog)
-- Created core backend library: env.ts, auth.ts (PBKDF2+JWT), errors.ts, validators.ts, constants.ts, rbac.ts, audit.ts, tenant-context.ts, api-response.ts, storage.ts, seed.ts
-- Created provider abstraction: types.ts (8 provider interfaces), registry.ts, ai-gateway.ts
-- Created 28 API routes under /api/v1/ (auth, system, super-admin, admin)
-- Created api-auth.ts helper for route handlers
-- Created middleware.ts for security headers, CORS, and page route protection
-- Built app shell: providers.tsx, auth-client.ts, app-sidebar.tsx, app-header.tsx, mobile-nav.tsx, bottom-nav.tsx, theme-toggle.tsx, nav-config.ts
-- Created auth pages: login, signup, forgot-password, reset-password, setup (first-run super admin)
-- Created 8 Super Admin pages: dashboard, tenants, users, roles, audit, features, health, settings
-- Created 8 Tenant Admin pages: dashboard, settings, users, roles, memberships, security, audit, subscription
-- Created PWA foundation: manifest.json, sw.js, offline.html, sw-register.tsx
-- Fixed multiple issues: seed function (select id, skipDuplicates SQLite incompatibility, bulk operations), PBKDF2 iterations, middleware Edge compatibility
-- All API tests passing: setup, login, me, stats, tenant CRUD, audit, roles, providers, unauthorized blocking
-- Lint passes cleanly
+- Diagnosed .env had SQLite URL overriding PostgreSQL
+- Fixed .env with proper postgresql:// URL and all required vars (JWT_SECRET, etc.)
+- Fixed env.ts to warn in development instead of crashing on missing vars
+- Fixed dev script to `unset DATABASE_URL` before starting (shell env was overriding .env)
+- Created missing PWA icons (public/icons/icon-192.png, icon-512.png)
+- Verified login page renders 42KB HTML with proper form elements
+- Verified via agent-browser: HubSphere heading, email/password inputs, Sign In button, theme toggle all present
+- Screenshot saved to download/login-preview.png
 
 Stage Summary:
-- Complete multi-tenant foundation with RBAC
-- Real JWT authentication with refresh token rotation
-- First-run super admin setup with permanent blocking after creation
-- 28 working API endpoints
-- 21 frontend pages
-- PWA-ready with service worker
-- Zero mandatory paid API - all providers are optional
-- All provider abstractions defined (AI, STT, TTS, Translation, Telephony, CallRecording, Messaging, Storage, Notification)
-- Call recording data model prepared
-- Audit logging for all sensitive operations
-
+- Login page visually verified working
+- Dev server starts and renders pages correctly
+- All preview blockers resolved
 ---
-Task ID: 2
-Agent: Lead Architect (Main)
-Task: Migrate from SQLite to PostgreSQL - Critical Architecture Fix
+Task ID: 4-b
+Agent: Main
+Task: Phase 4 Part B — Communication Hub + Automation Engine
 
 Work Log:
-- Changed Prisma datasource provider from sqlite to postgresql
-- Converted all id fields from cuid() to uuid() @db.Uuid
-- Changed JSON fields (Tenant.settings, AuditLog.metadata, Call.recordingMeta, ProviderConfig.config) from String to native Json type
-- Added snake_case @map() for all columns, @@map() for all tables (PostgreSQL convention)
-- Updated audit.ts to pass objects directly instead of JSON.stringify
-- Updated admin/settings route to remove JSON.parse/stringify on Tenant.settings
-- Updated audit routes to remove JSON.parse on AuditLog.metadata
-- Added DATABASE_URL PostgreSQL protocol validation in env.ts
-- Removed SQLite database file (db/custom.db)
-- Created .env.example with PostgreSQL template
-- Prisma generate: PASS, Prisma validate: PASS, Next.js build: PASS
+- Added 14 new Prisma models (Communication: Conversation, Message, MessageAttachment, CommunicationTemplate, CommunicationProviderConfig, DeliveryAttempt, MessageEvent, Notification; Automation: AutomationWorkflow, AutomationTrigger, AutomationCondition, AutomationAction, AutomationExecution, AutomationExecutionLog)
+- Updated Tenant and User models with new relations
+- Added 6 new permission modules (conversations, messages, templates, communication_settings, notifications, webhooks)
+- Added comprehensive constants for all communication/automation enums
+- Built 11 Communication API routes (conversations, messages, notifications, templates, providers, dashboard)
+- Built 9 Automation API routes (workflows CRUD, activate/pause, executions, events engine, dashboard)
+- Built 5 Communication frontend pages (dashboard, inbox, notifications, templates, settings)
+- Built 4 Automation frontend pages (dashboard, workflows list, workflow detail/builder, executions)
+- Updated navigation config with Communication and Automation sections for all roles
+- Fixed all Phase 4 TypeScript errors (0 remaining)
+- Production build PASSES with 110 routes
 
 Stage Summary:
-- Fully PostgreSQL-native Prisma schema with UUID primary keys, Json columns, snake_case mapping
-- Zero SQLite artifacts remaining
-- Build compiles cleanly against PostgreSQL provider
+- 14 new Prisma models, 20 new API routes, 9 new frontend pages
+- Build: PASS (110 routes, 0 Phase 4 TS errors)
+- Pre-existing TS errors: 43 (all in Phase 1-3 code, not introduced by Phase 4)
