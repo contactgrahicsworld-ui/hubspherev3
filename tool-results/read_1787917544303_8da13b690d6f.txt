@@ -1,0 +1,789 @@
+     1→generator client {
+     2→  provider = "prisma-client-js"
+     3→}
+     4→
+     5→datasource db {
+     6→  provider = "postgresql"
+     7→  url      = env("DATABASE_URL")
+     8→}
+     9→
+    10→// ============================================
+    11→// TENANT
+    12→// ============================================
+    13→
+    14→model Tenant {
+    15→  id          String   @id @default(uuid()) @db.Uuid
+    16→  name        String
+    17→  slug        String   @unique
+    18→  domain      String?
+    19→  logoUrl     String?
+    20→  status      String   @default("ACTIVE") // ACTIVE, SUSPENDED, TRIAL
+    21→  plan        String   @default("FREE") // FREE, STARTER, PRO, ENTERPRISE
+    22→  maxUsers    Int      @default(5)
+    23→  settings    Json     @default("{}") // JSON settings
+    24→  createdAt   DateTime @default(now()) @map("created_at")
+    25→  updatedAt   DateTime @updatedAt @map("updated_at")
+    26→
+    27→  memberships    Membership[]
+    28→  subscriptions  Subscription[]
+    29→  featureFlags   TenantFeatureFlag[]
+    30→  auditLogs      AuditLog[]
+    31→  roles          Role[]
+    32→  calls          Call[]
+    33→  leads          Lead[]
+    34→  contacts       Contact[]
+    35→  companies      Company[]
+    36→  deals          Deal[]
+    37→  activities     Activity[]
+    38→  tags           Tag[]
+    39→  notes          Note[]
+    40→  tasks          Task[]
+    41→  followUps      FollowUp[]
+    42→  callRecordings CallRecording[]
+    43→
+    44→  @@map("tenants")
+    45→}
+    46→
+    47→// ============================================
+    48→// USER
+    49→// ============================================
+    50→
+    51→model User {
+    52→  id                String    @id @default(uuid()) @db.Uuid
+    53→  email             String    @unique
+    54→  passwordHash      String    @map("password_hash")
+    55→  name              String?
+    56→  avatarUrl         String?   @map("avatar_url")
+    57→  emailVerified     Boolean   @default(false) @map("email_verified")
+    58→  isSuperAdmin      Boolean   @default(false) @map("is_super_admin")
+    59→  status            String    @default("ACTIVE") // ACTIVE, INACTIVE, SUSPENDED
+    60→  lastLoginAt       DateTime? @map("last_login_at")
+    61→  passwordChangedAt DateTime  @default(now()) @map("password_changed_at")
+    62→  createdAt         DateTime  @default(now()) @map("created_at")
+    63→  updatedAt         DateTime  @updatedAt @map("updated_at")
+    64→
+    65→  memberships         Membership[]
+    66→  auditLogs           AuditLog[]
+    67→  refreshTokens       RefreshToken[]
+    68→  passwordResetTokens PasswordResetToken[]
+    69→  emailVerifyTokens   EmailVerificationToken[]
+    70→  ownedLeads          Lead[]     @relation("LeadOwner")
+    71→  ownedContacts       Contact[]  @relation("ContactOwner")
+    72→  ownedCompanies      Company[]  @relation("CompanyOwner")
+    73→  ownedDeals          Deal[]     @relation("DealOwner")
+    74→  ownedTasks          Task[]     @relation("TaskOwner")
+    75→  ownedFollowUps      FollowUp[] @relation("FollowUpOwner") // userId on FollowUp
+    76→  activities          Activity[] @relation("ActivityUser")
+    77→  userNotes           Note[]     @relation("NoteUser")
+    78→  stageMoves          StageHistory[] @relation("StageMover")
+    79→
+    80→  @@map("users")
+    81→}
+    82→
+    83→// ============================================
+    84→// MEMBERSHIP (User <-> Tenant)
+    85→// ============================================
+    86→
+    87→model Membership {
+    88→  id        String   @id @default(uuid()) @db.Uuid
+    89→  userId    String   @map("user_id") @db.Uuid
+    90→  tenantId  String   @map("tenant_id") @db.Uuid
+    91→  roleCode  String?  @default("VIEWER") @map("role_code")
+    92→  status    String   @default("ACTIVE") // ACTIVE, INACTIVE
+    93→  invitedBy String?  @map("invited_by")
+    94→  joinedAt  DateTime @default(now()) @map("joined_at")
+    95→  createdAt DateTime @default(now()) @map("created_at")
+    96→  updatedAt DateTime @updatedAt @map("updated_at")
+    97→
+    98→  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+    99→  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+   100→  role   Role?  @relation(fields: [roleCode], references: [code])
+   101→
+   102→  @@unique([userId, tenantId])
+   103→  @@index([tenantId])
+   104→  @@index([userId])
+   105→  @@map("memberships")
+   106→}
+   107→
+   108→// ============================================
+   109→// ROLE
+   110→// ============================================
+   111→
+   112→model Role {
+   113→  id          String   @id @default(uuid()) @db.Uuid
+   114→  code        String   @unique
+   115→  name        String
+   116→  description String?
+   117→  isSystem    Boolean  @default(false) @map("is_system")
+   118→  tenantId    String?  @map("tenant_id") @db.Uuid // null = platform-level role
+   119→  createdAt   DateTime @default(now()) @map("created_at")
+   120→  updatedAt   DateTime @updatedAt @map("updated_at")
+   121→
+   122→  tenant     Tenant?          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+   123→  permissions RolePermission[]
+   124→  memberships Membership[]
+   125→
+   126→  @@unique([code, tenantId])
+   127→  @@index([tenantId])
+   128→  @@map("roles")
+   129→}
+   130→
+   131→// ============================================
+   132→// PERMISSION
+   133→// ============================================
+   134→
+   135→model Permission {
+   136→  id          String   @id @default(uuid()) @db.Uuid
+   137→  code        String   @unique // module.action e.g. users.view
+   138→  name        String
+   139→  description String?
+   140→  module      String
+   141→  action      String
+   142→  createdAt   DateTime @default(now()) @map("created_at")
+   143→
+   144→  roles RolePermission[]
+   145→
+   146→  @@map("permissions")
+   147→}
+   148→
+   149→// ============================================
+   150→// ROLE <-> PERMISSION
+   151→// ============================================
+   152→
+   153→model RolePermission {
+   154→  id           String   @id @default(uuid()) @db.Uuid
+   155→  roleCode     String   @map("role_code")
+   156→  permissionId String   @map("permission_id") @db.Uuid
+   157→  createdAt    DateTime @default(now()) @map("created_at")
+   158→
+   159→  role       Role       @relation(fields: [roleCode], references: [code], onDelete: Cascade)
+   160→  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+   161→
+   162→  @@unique([roleCode, permissionId])
+   163→  @@index([roleCode])
+   164→  @@map("role_permissions")
+   165→}
+   166→
+   167→// ============================================
+   168→// SUBSCRIPTION
+   169→// ============================================
+   170→
+   171→model Subscription {
+   172→  id                String    @id @default(uuid()) @db.Uuid
+   173→  tenantId          String    @map("tenant_id") @db.Uuid
+   174→  plan              String    @default("FREE")
+   175→  status            String    @default("ACTIVE") // ACTIVE, CANCELLED, PAST_DUE, TRIALING
+   176→  currentPeriodStart DateTime? @map("current_period_start")
+   177→  currentPeriodEnd   DateTime? @map("current_period_end")
+   178→  createdAt         DateTime  @default(now()) @map("created_at")
+   179→  updatedAt         DateTime  @updatedAt @map("updated_at")
+   180→
+   181→  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+   182→
+   183→  @@index([tenantId])
+   184→  @@map("subscriptions")
+   185→}
+   186→
+   187→// ============================================
+   188→// FEATURE FLAG
+   189→// (Platform-level defaults)
+   190→// ============================================
+   191→
+   192→model FeatureFlag {
+   193→  id          String   @id @default(uuid()) @db.Uuid
+   194→  key         String   @unique
+   195→  name        String
+   196→  description String?
+   197→  enabled     Boolean  @default(false)
+   198→  createdAt   DateTime @default(now()) @map("created_at")
+   199→  updatedAt   DateTime @updatedAt @map("updated_at")
+   200→
+   201→  tenantOverrides TenantFeatureFlag[]
+   202→
+   203→  @@map("feature_flags")
+   204→}
+   205→
+   206→// ============================================
+   207→// TENANT FEATURE FLAG OVERRIDE
+   208→// ============================================
+   209→
+   210→model TenantFeatureFlag {
+   211→  id            String  @id @default(uuid()) @db.Uuid
+   212→  tenantId      String  @map("tenant_id") @db.Uuid
+   213→  featureFlagId String  @map("feature_flag_id") @db.Uuid
+   214→  enabled       Boolean
+   215→  createdAt     DateTime @default(now()) @map("created_at")
+   216→  updatedAt     DateTime @updatedAt @map("updated_at")
+   217→
+   218→  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+   219→  featureFlag FeatureFlag @relation(fields: [featureFlagId], references: [id], onDelete: Cascade)
+   220→
+   221→  @@unique([tenantId, featureFlagId])
+   222→  @@index([tenantId])
+   223→  @@map("tenant_feature_flags")
+   224→}
+   225→
+   226→// ============================================
+   227→// AUDIT LOG
+   228→// ============================================
+   229→
+   230→model AuditLog {
+   231→  id         String   @id @default(uuid()) @db.Uuid
+   232→  actorId    String?  @map("actor_id") @db.Uuid
+   233→  tenantId   String?  @map("tenant_id") @db.Uuid
+   234→  action     String   // e.g. user.login, tenant.create
+   235→  targetType String?  @map("target_type") // e.g. User, Tenant, Role
+   236→  targetId   String?  @map("target_id")
+   237→  metadata   Json?    // Safe JSON, NEVER passwords/tokens
+   238→  ipAddress  String?  @map("ip_address")
+   239→  userAgent  String?  @map("user_agent")
+   240→  createdAt  DateTime @default(now()) @map("created_at")
+   241→
+   242→  actor  User?   @relation(fields: [actorId], references: [id], onDelete: SetNull)
+   243→  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+   244→
+   245→  @@index([actorId])
+   246→  @@index([tenantId])
+   247→  @@index([action])
+   248→  @@index([createdAt])
+   249→  @@map("audit_logs")
+   250→}
+   251→
+   252→// ============================================
+   253→// REFRESH TOKEN
+   254→// ============================================
+   255→
+   256→model RefreshToken {
+   257→  id        String    @id @default(uuid()) @db.Uuid
+   258→  token     String    @unique
+   259→  userId    String    @map("user_id") @db.Uuid
+   260→  tenantId  String?   @map("tenant_id") @db.Uuid // Active tenant context when token was issued
+   261→  expiresAt DateTime  @map("expires_at")
+   262→  revokedAt DateTime? @map("revoked_at")
+   263→  createdAt DateTime  @default(now()) @map("created_at")
+   264→
+   265→  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+   266→
+   267→  @@index([token])
+   268→  @@index([userId])
+   269→  @@index([expiresAt])
+   270→  @@map("refresh_tokens")
+   271→}
+   272→
+   273→// ============================================
+   274→// PASSWORD RESET TOKEN
+   275→// ============================================
+   276→
+   277→model PasswordResetToken {
+   278→  id        String    @id @default(uuid()) @db.Uuid
+   279→  token     String    @unique
+   280→  userId    String    @map("user_id") @db.Uuid
+   281→  expiresAt DateTime  @map("expires_at")
+   282→  usedAt    DateTime? @map("used_at")
+   283→  createdAt DateTime  @default(now()) @map("created_at")
+   284→
+   285→  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+   286→
+   287→  @@index([token])
+   288→  @@index([userId])
+   289→  @@map("password_reset_tokens")
+   290→}
+   291→
+   292→// ============================================
+   293→// EMAIL VERIFICATION TOKEN
+   294→// ============================================
+   295→
+   296→model EmailVerificationToken {
+   297→  id        String    @id @default(uuid()) @db.Uuid
+   298→  token     String    @unique
+   299→  userId    String    @map("user_id") @db.Uuid
+   300→  expiresAt DateTime  @map("expires_at")
+   301→  usedAt    DateTime? @map("used_at")
+   302→  createdAt DateTime  @default(now()) @map("created_at")
+   303→
+   304→  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+   305→
+   306→  @@index([token])
+   307→  @@index([userId])
+   308→  @@map("email_verification_tokens")
+   309→}
+   310→
+   311→// ============================================
+   312→// CALL (Future-ready for call recording)
+   313→// ============================================
+   314→
+   315→model Call {
+   316→  id                String    @id @default(uuid()) @db.Uuid
+   317→  tenantId          String    @map("tenant_id") @db.Uuid
+   318→  leadId            String?   @map("lead_id")
+   319→  contactId         String?   @map("contact_id")
+   320→  dealId            String?   @map("deal_id")
+   321→  agentId           String?   @map("agent_id")
+   322→  direction         String?   // INBOUND, OUTBOUND
+   323→  callType          String?   @map("call_type") // WEBRTC, VOIP, PSTN
+   324→  callStartTime     DateTime? @map("call_start_time")
+   325→  callEndTime       DateTime? @map("call_end_time")
+   326→  duration          Int?
+   327→  callStatus        String?   @map("call_status") // RINGING, CONNECTED, ENDED, FAILED, MISSED
+   328→  recordingStatus   String?   @map("recording_status") // RECORDING, PROCESSING, READY, FAILED, NOT_AVAILABLE
+   329→  recordingUrl      String?   @map("recording_url")
+   330→  recordingProvider String?   @map("recording_provider")
+   331→  recordingSize     Int?      @map("recording_size")
+   332→  recordingMeta     Json?     @map("recording_meta")
+   333→  failureReason     String?   @map("failure_reason")
+   334→  retryCount        Int       @default(0) @map("retry_count")
+   335→  lastRetryAt       DateTime? @map("last_retry_at")
+   336→  createdAt         DateTime  @default(now()) @map("created_at")
+   337→  updatedAt         DateTime  @updatedAt @map("updated_at")
+   338→
+   339→  tenant     Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+   340→  recordings CallRecording[]
+   341→
+   342→  @@index([tenantId])
+   343→  @@index([agentId])
+   344→  @@index([callStatus])
+   345→  @@index([createdAt])
+   346→  @@map("calls")
+   347→}
+   348→
+   349→// ============================================
+   350→// PROVIDER CONFIG (Platform-level)
+   351→// ============================================
+   352→
+   353→model ProviderConfig {
+   354→  id          String    @id @default(uuid()) @db.Uuid
+   355→  providerId  String    @unique @map("provider_id")
+   356→  name        String
+   357→  category    String    // AIProvider, SpeechToTextProvider, TextToSpeechProvider, etc.
+   358→  enabled     Boolean   @default(false)
+   359→  configured  Boolean   @default(false)
+   360→  healthy     Boolean?  // null = not yet checked
+   361→  config      Json      @default("{}") // Encrypted provider config (API keys etc.)
+   362→  priority    Int       @default(0)
+   363→  lastCheckAt DateTime? @map("last_check_at")
+   364→  createdAt   DateTime  @default(now()) @map("created_at")
+   365→  updatedAt   DateTime  @updatedAt @map("updated_at")
+   366→
+   367→  @@index([category])
+   368→  @@index([enabled])
+   369→  @@map("provider_configs")
+   370→}
+   371→
+   372→// ============================================
+   373→// AI USAGE TRACKING (Future-ready)
+   374→// ============================================
+   375→
+   376→model AiUsageLog {
+   377→  id          String   @id @default(uuid()) @db.Uuid
+   378→  tenantId    String?  @map("tenant_id")
+   379→  userId      String?  @map("user_id")
+   380→  providerId  String?  @map("provider_id")
+   381→  model       String?
+   382→  agentName   String?  @map("agent_name") // Nova, Vox, etc.
+   383→  inputTokens Int?     @map("input_tokens")
+   384→  outputTokens Int?    @map("output_tokens")
+   385→  promptHash  String?  @map("prompt_hash")
+   386→  durationMs  Int?     @map("duration_ms")
+   387→  status      String   @default("SUCCESS") // SUCCESS, FAILED, RATE_LIMITED
+   388→  createdAt   DateTime @default(now()) @map("created_at")
+   389→
+   390→  @@index([tenantId])
+   391→  @@index([userId])
+   392→  @@index([providerId])
+   393→  @@index([createdAt])
+   394→  @@map("ai_usage_logs")
+   395→}
+   396→
+   397→// ============================================
+   398→// CRM: LEAD
+   399→// ============================================
+   400→
+   401→model Lead {
+   402→  id          String   @id @default(uuid()) @db.Uuid
+   403→  tenantId    String   @map("tenant_id") @db.Uuid
+   404→  firstName   String   @map("first_name")
+   405→  lastName    String?  @map("last_name")
+   406→  email       String?
+   407→  mobile      String?
+   408→  company     String?
+   409→  source      String   @default("OTHER") @map("lead_source")
+   410→  status      String   @default("NEW")
+   411→  priority    String   @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+   412→  ownerId     String?  @map("owner_id") @db.Uuid
+   413→  value       Float?   @default(0)
+   414→  description String?
+   415→  archived    Boolean  @default(false)
+   416→  convertedToContactId String? @map("converted_to_contact_id") @db.Uuid
+   417→  createdAt   DateTime @default(now()) @map("created_at")
+   418→  updatedAt   DateTime @updatedAt @map("updated_at")
+   419→
+   420→  tenant              Tenant?    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+   421→  owner               User?      @relation("LeadOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+   422→  tags                LeadTag[]
+   423→  activities          Activity[] @relation("LeadActivities")
+   424→  followUps           FollowUp[] @relation("LeadFollowUps")
+   425→  entityNotes         Note[]     @relation("LeadNotes")
+   426→  convertedToContact  Contact?   @relation("LeadConversion", fields: [convertedToContactId], references: [id])
+   427→
+   428→  @@unique([convertedToContactId])
+   429→
+   430→  @@index([tenantId])
+   431→  @@index([ownerId])
+   432→  @@index([status])
+   433→  @@index([source])
+   434→  @@index([email])
+   435→  @@index([mobile])
+   436→  @@index([createdAt])
+   437→  @@map("leads")
+   438→}
+   439→
+   440→// ============================================
+   441→// CRM: CONTACT
+   442→// ============================================
+   443→
+   444→model Contact {
+   445→  id         String   @id @default(uuid()) @db.Uuid
+   446→  tenantId   String   @map("tenant_id") @db.Uuid
+   447→  firstName  String   @map("first_name")
+   448→  lastName   String?  @map("last_name")
+   449→  email      String?
+   450→  mobile     String?
+   451→  phone      String?
+   452→  title      String?
+   453→  companyId  String?  @map("company_id") @db.Uuid
+   454→  ownerId    String?  @map("owner_id") @db.Uuid
+   455→  notes      String?
+   456→  archived   Boolean  @default(false)
+   457→  createdAt  DateTime @default(now()) @map("created_at")
+   458→  updatedAt  DateTime @updatedAt @map("updated_at")
+   459→
+   460→  tenant    Tenant?       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+   461→  company   Company?      @relation(fields: [companyId], references: [id], onDelete: SetNull)
+   462→  owner     User?         @relation("ContactOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+   463→  deals     Deal[]
+   464→  tags      ContactTag[]
+   465→  activities Activity[] @relation("ContactActivities")
+   466→  followUps FollowUp[] @relation("ContactFollowUps")
+   467→  entityNotes Note[]     @relation("ContactNotes")
+   468→  leadSource Lead?       @relation("LeadConversion")
+   469→
+   470→  @@unique([tenantId, email])
+   471→  @@index([tenantId])
+   472→  @@index([companyId])
+   473→  @@index([ownerId])
+   474→  @@index([createdAt])
+   475→  @@map("contacts")
+   476→}
+   477→
+   478→// ============================================
+   479→// CRM: COMPANY
+   480→// ============================================
+   481→
+   482→model Company {
+   483→  id        String   @id @default(uuid()) @db.Uuid
+   484→  tenantId  String   @map("tenant_id") @db.Uuid
+   485→  name      String
+   486→  industry  String?
+   487→  website   String?
+   488→  email     String?
+   489→  phone     String?
+   490→  address   String?   @db.Text
+   491→  city      String?
+   492→  state     String?
+   493→  country   String?
+   494→  ownerId   String?  @map("owner_id") @db.Uuid
+   495→  notes     String?
+   496→  archived  Boolean  @default(false)
+   497→  createdAt DateTime @default(now()) @map("created_at")
+   498→  updatedAt DateTime @updatedAt @map("updated_at")
+   499→
+   500→  tenant    Tenant?    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+   501→  owner     User?      @relation("CompanyOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+   502→  contacts  Contact[]
+   503→  deals     Deal[]
+   504→  activities Activity[] @relation("CompanyActivities")
+   505→  tags      CompanyTag[]
+   506→  entityNotes Note[] @relation("CompanyNotes")
+   507→
+   508→  @@index([tenantId])
+   509→  @@index([ownerId])
+   510→  @@index([createdAt])
+   511→  @@map("companies")
+   512→}
+   513→
+   514→// ============================================
+   515→// CRM: DEAL (Sales Pipeline)
+   516→// ============================================
+   517→
+   518→model Deal {
+   519→  id               String    @id @default(uuid()) @db.Uuid
+   520→  tenantId         String    @map("tenant_id") @db.Uuid
+   521→  title            String
+   522→  value            Float     @default(0)
+   523→  currency         String    @default("INR")
+   524→  stage            String    @default("NEW")
+   525→  probability      Int?      @default(0) // 0-100
+   526→  expectedCloseDate DateTime? @map("expected_close_date")
+   527→  contactId        String?   @map("contact_id") @db.Uuid
+   528→  companyId        String?   @map("company_id") @db.Uuid
+   529→  ownerId          String?   @map("owner_id") @db.Uuid
+   530→  notes            String?
+   531→  lostReason       String?   @map("lost_reason")
+   532→  archived         Boolean   @default(false)
+   533→  createdAt        DateTime  @default(now()) @map("created_at")
+   534→  updatedAt        DateTime  @updatedAt @map("updated_at")
+   535→
+   536→  tenant    Tenant?    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+   537→  contact   Contact?   @relation(fields: [contactId], references: [id], onDelete: SetNull)
+   538→  company   Company?   @relation(fields: [companyId], references: [id], onDelete: SetNull)
+   539→  owner     User?      @relation("DealOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+   540→  activities Activity[] @relation("DealActivities")
+   541→  entityNotes Note[] @relation("DealNotes")
+   542→  followUps FollowUp[] @relation("DealFollowUps")
+   543→  stageHistory StageHistory[]
+   544→
+   545→  @@index([tenantId])
+   546→  @@index([stage])
+   547→  @@index([ownerId])
+   548→  @@index([contactId])
+   549→  @@index([companyId])
+   550→  @@index([expectedCloseDate])
+   551→  @@index([createdAt])
+   552→  @@map("deals")
+   553→}
+   554→
+   555→// ============================================
+   556→// CRM: STAGE HISTORY (Deal pipeline movement)
+   557→// ============================================
+   558→
+   559→model StageHistory {
+   560→  id        String   @id @default(uuid()) @db.Uuid
+   561→  dealId    String   @map("deal_id") @db.Uuid
+   562→  fromStage String?  @map("from_stage")
+   563→  toStage   String   @map("to_stage")
+   564→  movedBy   String?  @map("moved_by") @db.Uuid
+   565→  createdAt DateTime @default(now()) @map("created_at")
+   566→
+   567→  deal  Deal @relation(fields: [dealId], references: [id], onDelete: Cascade)
+   568→  user  User? @relation("StageMover", fields: [movedBy], references: [id], onDelete: SetNull)
+   569→
+   570→  @@index([dealId])
+   571→  @@index([createdAt])
+   572→  @@map("stage_history")
+   573→}
+   574→
+   575→// ============================================
+   576→// CRM: TAG
+   577→// ============================================
+   578→
+   579→model Tag {
+   580→  id       String   @id @default(uuid()) @db.Uuid
+   581→  tenantId String   @map("tenant_id") @db.Uuid
+   582→  name     String
+   583→  color    String?  @default("#6366f1")
+   584→  createdAt DateTime @default(now()) @map("created_at")
+   585→
+   586→  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+   587→  leads    LeadTag[]
+   588→  contacts ContactTag[]
+   589→  companies CompanyTag[]
+   590→
+   591→  @@unique([tenantId, name])
+   592→  @@index([tenantId])
+   593→  @@map("tags")
+   594→}
+   595→
+   596→model LeadTag {
+   597→  leadId   String @map("lead_id") @db.Uuid
+   598→  tagId    String @map("tag_id") @db.Uuid
+   599→
+   600→  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+   601→  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+   602→
+   603→  @@id([leadId, tagId])
+   604→  @@map("lead_tags")
+   605→}
+   606→
+   607→model ContactTag {
+   608→  contactId String @map("contact_id") @db.Uuid
+   609→  tagId     String @map("tag_id") @db.Uuid
+   610→
+   611→  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+   612→  tag     Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+   613→
+   614→  @@id([contactId, tagId])
+   615→  @@map("contact_tags")
+   616→}
+   617→
+   618→model CompanyTag {
+   619→  companyId String @map("company_id") @db.Uuid
+   620→  tagId     String @map("tag_id") @db.Uuid
+   621→
+   622→  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+   623→  tag     Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+   624→
+   625→  @@id([companyId, tagId])
+   626→  @@map("company_tags")
+   627→}
+   628→
+   629→// ============================================
+   630→// CRM: ACTIVITY (Timeline events)
+   631→// Uses separate nullable FKs per entity type (Prisma-compatible)
+   632→// ============================================
+   633→
+   634→model Activity {
+   635→  id          String   @id @default(uuid()) @db.Uuid
+   636→  tenantId    String   @map("tenant_id") @db.Uuid
+   637→  type        String   // CALL, EMAIL, MEETING, NOTE, TASK, DEAL_STAGE, LEAD_STATUS, etc.
+   638→  title       String
+   639→  description String?   @db.Text
+   640→  userId      String?  @map("user_id") @db.Uuid
+   641→  leadId      String?  @map("lead_id") @db.Uuid
+   642→  contactId   String?  @map("contact_id") @db.Uuid
+   643→  companyId   String?  @map("company_id") @db.Uuid
+   644→  dealId      String?  @map("deal_id") @db.Uuid
+   645→  metadata    Json?    // Additional structured data
+   646→  createdAt   DateTime @default(now()) @map("created_at")
+   647→
+   648→  tenant  Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+   649→  user    User?    @relation("ActivityUser", fields: [userId], references: [id], onDelete: SetNull)
+   650→  lead    Lead?    @relation("LeadActivities", fields: [leadId], references: [id], onDelete: Cascade)
+   651→  contact Contact? @relation("ContactActivities", fields: [contactId], references: [id], onDelete: Cascade)
+   652→  company Company? @relation("CompanyActivities", fields: [companyId], references: [id], onDelete: Cascade)
+   653→  deal    Deal?    @relation("DealActivities", fields: [dealId], references: [id], onDelete: Cascade)
+   654→
+   655→  @@index([tenantId])
+   656→  @@index([userId])
+   657→  @@index([type])
+   658→  @@index([leadId])
+   659→  @@index([contactId])
+   660→  @@index([companyId])
+   661→  @@index([dealId])
+   662→  @@index([createdAt])
+   663→  @@map("activities")
+   664→}
+   665→
+   666→// ============================================
+   667→// CRM: NOTE
+   668→// ============================================
+   669→
+   670→model Note {
+   671→  id         String   @id @default(uuid()) @db.Uuid
+   672→  tenantId   String   @map("tenant_id") @db.Uuid
+   673→  content    String   @db.Text
+   674→  userId     String   @map("user_id") @db.Uuid
+   675→  leadId     String?  @map("lead_id") @db.Uuid
+   676→  contactId  String?  @map("contact_id") @db.Uuid
+   677→  companyId  String?  @map("company_id") @db.Uuid
+   678→  dealId     String?  @map("deal_id") @db.Uuid
+   679→  createdAt  DateTime @default(now()) @map("created_at")
+   680→  updatedAt  DateTime @updatedAt @map("updated_at")
+   681→
+   682→  tenant  Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+   683→  user    User?    @relation("NoteUser", fields: [userId], references: [id], onDelete: SetNull)
+   684→  lead    Lead?    @relation("LeadNotes", fields: [leadId], references: [id], onDelete: Cascade)
+   685→  contact Contact? @relation("ContactNotes", fields: [contactId], references: [id], onDelete: Cascade)
+   686→  company Company? @relation("CompanyNotes", fields: [companyId], references: [id], onDelete: Cascade)
+   687→  deal    Deal?    @relation("DealNotes", fields: [dealId], references: [id], onDelete: Cascade)
+   688→
+   689→  @@index([tenantId])
+   690→  @@index([userId])
+   691→  @@index([leadId])
+   692→  @@index([contactId])
+   693→  @@index([companyId])
+   694→  @@index([dealId])
+   695→  @@index([createdAt])
+   696→  @@map("notes")
+   697→}
+   698→
+   699→// ============================================
+   700→// CRM: TASK
+   701→// ============================================
+   702→
+   703→model Task {
+   704→  id          String    @id @default(uuid()) @db.Uuid
+   705→  tenantId    String    @map("tenant_id") @db.Uuid
+   706→  title       String
+   707→  description String?   @db.Text
+   708→  status      String    @default("TODO") // TODO, IN_PROGRESS, COMPLETED, CANCELLED
+   709→  priority    String    @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+   710→  dueDate     DateTime? @map("due_date")
+   711→  entityType  String?   @map("entity_type") // LEAD, CONTACT, COMPANY, DEAL
+   712→  entityId    String?   @map("entity_id") @db.Uuid
+   713→  ownerId     String    @map("owner_id") @db.Uuid
+   714→  createdAt   DateTime  @default(now()) @map("created_at")
+   715→  updatedAt   DateTime  @updatedAt @map("updated_at")
+   716→
+   717→  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+   718→  owner  User?  @relation("TaskOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+   719→
+   720→  @@index([tenantId])
+   721→  @@index([ownerId])
+   722→  @@index([status])
+   723→  @@index([dueDate])
+   724→  @@index([entityType, entityId])
+   725→  @@map("tasks")
+   726→}
+   727→
+   728→// ============================================
+   729→// CRM: FOLLOW-UP
+   730→// ============================================
+   731→
+   732→model FollowUp {
+   733→  id          String    @id @default(uuid()) @db.Uuid
+   734→  tenantId    String    @map("tenant_id") @db.Uuid
+   735→  title       String
+   736→  description String?   @db.Text
+   737→  status      String    @default("PENDING") // PENDING, COMPLETED, MISSED, CANCELLED
+   738→  followUpAt  DateTime  @map("follow_up_at")
+   739→  userId      String    @map("user_id") @db.Uuid
+   740→  leadId      String?   @map("lead_id") @db.Uuid
+   741→  contactId   String?   @map("contact_id") @db.Uuid
+   742→  dealId      String?   @map("deal_id") @db.Uuid
+   743→  completedAt DateTime? @map("completed_at")
+   744→  createdAt   DateTime  @default(now()) @map("created_at")
+   745→  updatedAt   DateTime  @updatedAt @map("updated_at")
+   746→
+   747→  tenant  Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+   748→  owner   User?    @relation("FollowUpOwner", fields: [userId], references: [id], onDelete: SetNull)
+   749→  lead    Lead?    @relation("LeadFollowUps", fields: [leadId], references: [id], onDelete: Cascade)
+   750→  contact Contact? @relation("ContactFollowUps", fields: [contactId], references: [id], onDelete: Cascade)
+   751→  deal    Deal?    @relation("DealFollowUps", fields: [dealId], references: [id], onDelete: Cascade)
+   752→
+   753→  @@index([tenantId])
+   754→  @@index([userId])
+   755→  @@index([status])
+   756→  @@index([followUpAt])
+   757→  @@index([leadId])
+   758→  @@index([contactId])
+   759→  @@index([dealId])
+   760→  @@map("follow_ups")
+   761→}
+   762→
+   763→// ============================================
+   764→// CRM: CALL RECORDING
+   765→// ============================================
+   766→
+   767→model CallRecording {
+   768→  id              String    @id @default(uuid()) @db.Uuid
+   769→  callId          String    @map("call_id") @db.Uuid
+   770→  tenantId        String    @map("tenant_id") @db.Uuid
+   771→  status          String    @default("NOT_AVAILABLE") // RECORDING, PROCESSING, READY, FAILED, NOT_AVAILABLE
+   772→  recordingUrl    String?   @map("recording_url")
+   773→  recordingSize   Int?      @map("recording_size")
+   774→  durationSeconds Int?      @map("duration_seconds")
+   775→  provider        String?   @map("provider")
+   776→  providerMeta    Json?     @map("provider_meta")
+   777→  transcript      String?   @db.Text
+   778→  createdAt       DateTime  @default(now()) @map("created_at")
+   779→  updatedAt       DateTime  @updatedAt @map("updated_at")
+   780→
+   781→  call   Call   @relation(fields: [callId], references: [id], onDelete: Cascade)
+   782→  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+   783→
+   784→  @@index([callId])
+   785→  @@index([tenantId])
+   786→  @@index([status])
+   787→  @@map("call_recordings")
+   788→}
+   789→

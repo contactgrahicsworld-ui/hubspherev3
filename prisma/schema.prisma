@@ -30,6 +30,16 @@ model Tenant {
   auditLogs      AuditLog[]
   roles          Role[]
   calls          Call[]
+  leads          Lead[]
+  contacts       Contact[]
+  companies      Company[]
+  deals          Deal[]
+  activities     Activity[]
+  tags           Tag[]
+  notes          Note[]
+  tasks          Task[]
+  followUps      FollowUp[]
+  callRecordings CallRecording[]
 
   @@map("tenants")
 }
@@ -57,6 +67,15 @@ model User {
   refreshTokens       RefreshToken[]
   passwordResetTokens PasswordResetToken[]
   emailVerifyTokens   EmailVerificationToken[]
+  ownedLeads          Lead[]     @relation("LeadOwner")
+  ownedContacts       Contact[]  @relation("ContactOwner")
+  ownedCompanies      Company[]  @relation("CompanyOwner")
+  ownedDeals          Deal[]     @relation("DealOwner")
+  ownedTasks          Task[]     @relation("TaskOwner")
+  ownedFollowUps      FollowUp[] @relation("FollowUpOwner") // userId on FollowUp
+  activities          Activity[] @relation("ActivityUser")
+  userNotes           Note[]     @relation("NoteUser")
+  stageMoves          StageHistory[] @relation("StageMover")
 
   @@map("users")
 }
@@ -317,7 +336,8 @@ model Call {
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant     Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  recordings CallRecording[]
 
   @@index([tenantId])
   @@index([agentId])
@@ -372,4 +392,397 @@ model AiUsageLog {
   @@index([providerId])
   @@index([createdAt])
   @@map("ai_usage_logs")
+}
+
+// ============================================
+// CRM: LEAD
+// ============================================
+
+model Lead {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  firstName   String   @map("first_name")
+  lastName    String?  @map("last_name")
+  email       String?
+  mobile      String?
+  company     String?
+  source      String   @default("OTHER") @map("lead_source")
+  status      String   @default("NEW")
+  priority    String   @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  ownerId     String?  @map("owner_id") @db.Uuid
+  value       Float?   @default(0)
+  description String?
+  archived    Boolean  @default(false)
+  convertedToContactId String? @map("converted_to_contact_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  tenant              Tenant?    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  owner               User?      @relation("LeadOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  tags                LeadTag[]
+  activities          Activity[] @relation("LeadActivities")
+  followUps           FollowUp[] @relation("LeadFollowUps")
+  entityNotes         Note[]     @relation("LeadNotes")
+  convertedToContact  Contact?   @relation("LeadConversion", fields: [convertedToContactId], references: [id])
+
+  @@unique([convertedToContactId])
+
+  @@index([tenantId])
+  @@index([ownerId])
+  @@index([status])
+  @@index([source])
+  @@index([email])
+  @@index([mobile])
+  @@index([createdAt])
+  @@map("leads")
+}
+
+// ============================================
+// CRM: CONTACT
+// ============================================
+
+model Contact {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  firstName  String   @map("first_name")
+  lastName   String?  @map("last_name")
+  email      String?
+  mobile     String?
+  phone      String?
+  title      String?
+  companyId  String?  @map("company_id") @db.Uuid
+  ownerId    String?  @map("owner_id") @db.Uuid
+  notes      String?
+  archived   Boolean  @default(false)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  tenant    Tenant?       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  company   Company?      @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  owner     User?         @relation("ContactOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  deals     Deal[]
+  tags      ContactTag[]
+  activities Activity[] @relation("ContactActivities")
+  followUps FollowUp[] @relation("ContactFollowUps")
+  entityNotes Note[]     @relation("ContactNotes")
+  leadSource Lead?       @relation("LeadConversion")
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+  @@index([companyId])
+  @@index([ownerId])
+  @@index([createdAt])
+  @@map("contacts")
+}
+
+// ============================================
+// CRM: COMPANY
+// ============================================
+
+model Company {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  name      String
+  industry  String?
+  website   String?
+  email     String?
+  phone     String?
+  address   String?   @db.Text
+  city      String?
+  state     String?
+  country   String?
+  ownerId   String?  @map("owner_id") @db.Uuid
+  notes     String?
+  archived  Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tenant    Tenant?    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  owner     User?      @relation("CompanyOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  contacts  Contact[]
+  deals     Deal[]
+  activities Activity[] @relation("CompanyActivities")
+  tags      CompanyTag[]
+  entityNotes Note[] @relation("CompanyNotes")
+
+  @@index([tenantId])
+  @@index([ownerId])
+  @@index([createdAt])
+  @@map("companies")
+}
+
+// ============================================
+// CRM: DEAL (Sales Pipeline)
+// ============================================
+
+model Deal {
+  id               String    @id @default(uuid()) @db.Uuid
+  tenantId         String    @map("tenant_id") @db.Uuid
+  title            String
+  value            Float     @default(0)
+  currency         String    @default("INR")
+  stage            String    @default("NEW")
+  probability      Int?      @default(0) // 0-100
+  expectedCloseDate DateTime? @map("expected_close_date")
+  contactId        String?   @map("contact_id") @db.Uuid
+  companyId        String?   @map("company_id") @db.Uuid
+  ownerId          String?   @map("owner_id") @db.Uuid
+  notes            String?
+  lostReason       String?   @map("lost_reason")
+  archived         Boolean   @default(false)
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  tenant    Tenant?    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  contact   Contact?   @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  company   Company?   @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  owner     User?      @relation("DealOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  activities Activity[] @relation("DealActivities")
+  entityNotes Note[] @relation("DealNotes")
+  followUps FollowUp[] @relation("DealFollowUps")
+  stageHistory StageHistory[]
+
+  @@index([tenantId])
+  @@index([stage])
+  @@index([ownerId])
+  @@index([contactId])
+  @@index([companyId])
+  @@index([expectedCloseDate])
+  @@index([createdAt])
+  @@map("deals")
+}
+
+// ============================================
+// CRM: STAGE HISTORY (Deal pipeline movement)
+// ============================================
+
+model StageHistory {
+  id        String   @id @default(uuid()) @db.Uuid
+  dealId    String   @map("deal_id") @db.Uuid
+  fromStage String?  @map("from_stage")
+  toStage   String   @map("to_stage")
+  movedBy   String?  @map("moved_by") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  deal  Deal @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  user  User? @relation("StageMover", fields: [movedBy], references: [id], onDelete: SetNull)
+
+  @@index([dealId])
+  @@index([createdAt])
+  @@map("stage_history")
+}
+
+// ============================================
+// CRM: TAG
+// ============================================
+
+model Tag {
+  id       String   @id @default(uuid()) @db.Uuid
+  tenantId String   @map("tenant_id") @db.Uuid
+  name     String
+  color    String?  @default("#6366f1")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  leads    LeadTag[]
+  contacts ContactTag[]
+  companies CompanyTag[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@map("tags")
+}
+
+model LeadTag {
+  leadId   String @map("lead_id") @db.Uuid
+  tagId    String @map("tag_id") @db.Uuid
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([leadId, tagId])
+  @@map("lead_tags")
+}
+
+model ContactTag {
+  contactId String @map("contact_id") @db.Uuid
+  tagId     String @map("tag_id") @db.Uuid
+
+  contact Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([contactId, tagId])
+  @@map("contact_tags")
+}
+
+model CompanyTag {
+  companyId String @map("company_id") @db.Uuid
+  tagId     String @map("tag_id") @db.Uuid
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([companyId, tagId])
+  @@map("company_tags")
+}
+
+// ============================================
+// CRM: ACTIVITY (Timeline events)
+// Uses separate nullable FKs per entity type (Prisma-compatible)
+// ============================================
+
+model Activity {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  type        String   // CALL, EMAIL, MEETING, NOTE, TASK, DEAL_STAGE, LEAD_STATUS, etc.
+  title       String
+  description String?   @db.Text
+  userId      String?  @map("user_id") @db.Uuid
+  leadId      String?  @map("lead_id") @db.Uuid
+  contactId   String?  @map("contact_id") @db.Uuid
+  companyId   String?  @map("company_id") @db.Uuid
+  dealId      String?  @map("deal_id") @db.Uuid
+  metadata    Json?    // Additional structured data
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  tenant  Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user    User?    @relation("ActivityUser", fields: [userId], references: [id], onDelete: SetNull)
+  lead    Lead?    @relation("LeadActivities", fields: [leadId], references: [id], onDelete: Cascade)
+  contact Contact? @relation("ContactActivities", fields: [contactId], references: [id], onDelete: Cascade)
+  company Company? @relation("CompanyActivities", fields: [companyId], references: [id], onDelete: Cascade)
+  deal    Deal?    @relation("DealActivities", fields: [dealId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([type])
+  @@index([leadId])
+  @@index([contactId])
+  @@index([companyId])
+  @@index([dealId])
+  @@index([createdAt])
+  @@map("activities")
+}
+
+// ============================================
+// CRM: NOTE
+// ============================================
+
+model Note {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  content    String   @db.Text
+  userId     String   @map("user_id") @db.Uuid
+  leadId     String?  @map("lead_id") @db.Uuid
+  contactId  String?  @map("contact_id") @db.Uuid
+  companyId  String?  @map("company_id") @db.Uuid
+  dealId     String?  @map("deal_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  tenant  Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user    User?    @relation("NoteUser", fields: [userId], references: [id], onDelete: SetNull)
+  lead    Lead?    @relation("LeadNotes", fields: [leadId], references: [id], onDelete: Cascade)
+  contact Contact? @relation("ContactNotes", fields: [contactId], references: [id], onDelete: Cascade)
+  company Company? @relation("CompanyNotes", fields: [companyId], references: [id], onDelete: Cascade)
+  deal    Deal?    @relation("DealNotes", fields: [dealId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([leadId])
+  @@index([contactId])
+  @@index([companyId])
+  @@index([dealId])
+  @@index([createdAt])
+  @@map("notes")
+}
+
+// ============================================
+// CRM: TASK
+// ============================================
+
+model Task {
+  id          String    @id @default(uuid()) @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  title       String
+  description String?   @db.Text
+  status      String    @default("TODO") // TODO, IN_PROGRESS, COMPLETED, CANCELLED
+  priority    String    @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  dueDate     DateTime? @map("due_date")
+  entityType  String?   @map("entity_type") // LEAD, CONTACT, COMPANY, DEAL
+  entityId    String?   @map("entity_id") @db.Uuid
+  ownerId     String    @map("owner_id") @db.Uuid
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  owner  User?  @relation("TaskOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([ownerId])
+  @@index([status])
+  @@index([dueDate])
+  @@index([entityType, entityId])
+  @@map("tasks")
+}
+
+// ============================================
+// CRM: FOLLOW-UP
+// ============================================
+
+model FollowUp {
+  id          String    @id @default(uuid()) @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  title       String
+  description String?   @db.Text
+  status      String    @default("PENDING") // PENDING, COMPLETED, MISSED, CANCELLED
+  followUpAt  DateTime  @map("follow_up_at")
+  userId      String    @map("user_id") @db.Uuid
+  leadId      String?   @map("lead_id") @db.Uuid
+  contactId   String?   @map("contact_id") @db.Uuid
+  dealId      String?   @map("deal_id") @db.Uuid
+  completedAt DateTime? @map("completed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  tenant  Tenant?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  owner   User?    @relation("FollowUpOwner", fields: [userId], references: [id], onDelete: SetNull)
+  lead    Lead?    @relation("LeadFollowUps", fields: [leadId], references: [id], onDelete: Cascade)
+  contact Contact? @relation("ContactFollowUps", fields: [contactId], references: [id], onDelete: Cascade)
+  deal    Deal?    @relation("DealFollowUps", fields: [dealId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([status])
+  @@index([followUpAt])
+  @@index([leadId])
+  @@index([contactId])
+  @@index([dealId])
+  @@map("follow_ups")
+}
+
+// ============================================
+// CRM: CALL RECORDING
+// ============================================
+
+model CallRecording {
+  id              String    @id @default(uuid()) @db.Uuid
+  callId          String    @map("call_id") @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  status          String    @default("NOT_AVAILABLE") // RECORDING, PROCESSING, READY, FAILED, NOT_AVAILABLE
+  recordingUrl    String?   @map("recording_url")
+  recordingSize   Int?      @map("recording_size")
+  durationSeconds Int?      @map("duration_seconds")
+  provider        String?   @map("provider")
+  providerMeta    Json?     @map("provider_meta")
+  transcript      String?   @db.Text
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  call   Call   @relation(fields: [callId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([callId])
+  @@index([tenantId])
+  @@index([status])
+  @@map("call_recordings")
 }

@@ -38,6 +38,8 @@ export const PERMISSION_MODULES = [
   'deals',
   'calls',
   'recordings',
+  'tasks',
+  'followups',
   'employees',
   'attendance',
   'payroll',
@@ -139,3 +141,99 @@ export const PROVIDER_CATEGORIES = [
 ] as const;
 
 export type ProviderCategory = (typeof PROVIDER_CATEGORIES)[number];
+
+// ============================================
+// LEAD STATUSES
+// ============================================
+
+export const LEAD_STATUSES = {
+  NEW: 'NEW',
+  CONTACTED: 'CONTACTED',
+  QUALIFIED: 'QUALIFIED',
+  PROPOSAL: 'PROPOSAL',
+  NEGOTIATION: 'NEGOTIATION',
+  WON: 'WON',
+  LOST: 'LOST',
+} as const;
+
+export type LeadStatus = (typeof LEAD_STATUSES)[keyof typeof LEAD_STATUSES];
+
+// ============================================
+// LEAD SOURCES
+// ============================================
+
+export const LEAD_SOURCES = {
+  WEBSITE: 'WEBSITE',
+  REFERRAL: 'REFERRAL',
+  LINKEDIN: 'LINKEDIN',
+  COLD_CALL: 'COLD_CALL',
+  EMAIL_CAMPAIGN: 'EMAIL_CAMPAIGN',
+  ADVERTISEMENT: 'ADVERTISEMENT',
+  TRADE_SHOW: 'TRADE_SHOW',
+  SOCIAL_MEDIA: 'SOCIAL_MEDIA',
+  OTHER: 'OTHER',
+} as const;
+
+// ============================================
+// PRIORITY LEVELS
+// ============================================
+
+export const PRIORITIES = {
+  LOW: 'LOW',
+  MEDIUM: 'MEDIUM',
+  HIGH: 'HIGH',
+  URGENT: 'URGENT',
+} as const;
+
+// ============================================
+// DEAL STAGES (Sales Pipeline)
+// ============================================
+
+export const DEAL_STAGES = [
+  { key: 'NEW', label: 'New', color: '#6366f1' },
+  { key: 'QUALIFIED', label: 'Qualified', color: '#3b82f6' },
+  { key: 'PROPOSAL', label: 'Proposal', color: '#f59e0b' },
+  { key: 'NEGOTIATION', label: 'Negotiation', color: '#f97316' },
+  { key: 'WON', label: 'Won', color: '#22c55e' },
+  { key: 'LOST', label: 'Lost', color: '#ef4444' },
+] as const;
+
+// ============================================
+// TASK STATUSES
+// ============================================
+
+export const TASK_STATUSES = {
+  TODO: 'TODO',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
+  CANCELLED: 'CANCELLED',
+} as const;
+
+// ============================================
+// FOLLOW-UP STATUSES
+// ============================================
+
+export const FOLLOWUP_STATUSES = {
+  PENDING: 'PENDING',
+  COMPLETED: 'COMPLETED',
+  MISSED: 'MISSED',
+  CANCELLED: 'CANCELLED',
+} as const;
+
+// ============================================
+// ACTIVITY TYPES
+// ============================================
+
+export const ACTIVITY_TYPES = {
+  CALL: 'CALL',
+  EMAIL: 'EMAIL',
+  MEETING: 'MEETING',
+  NOTE: 'NOTE',
+  TASK: 'TASK',
+  DEAL_STAGE: 'DEAL_STAGE',
+  LEAD_STATUS: 'LEAD_STATUS',
+  LEAD_CREATED: 'LEAD_CREATED',
+  CONTACT_CREATED: 'CONTACT_CREATED',
+  DEAL_CREATED: 'DEAL_CREATED',
+  FOLLOWUP: 'FOLLOWUP',
+} as const;
