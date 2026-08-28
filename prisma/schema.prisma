@@ -40,6 +40,18 @@ model Tenant {
   tasks          Task[]
   followUps      FollowUp[]
   callRecordings CallRecording[]
+  departments      Department[]
+  designations    Designation[]
+  employees       Employee[]
+  leaveTypes      LeaveType[]
+  leaveRequests   LeaveRequest[]
+  fieldVisits     FieldVisit[]
+  expenses        Expense[]
+  payrollRecords  PayrollRecord[]
+  attendanceSessions AttendanceSession[]
+  employeeDocuments  EmployeeDocument[]
+  payrollItems  PayrollItem[]
+  bankTransfers  BankTransfer[]
 
   @@map("tenants")
 }
@@ -76,6 +88,13 @@ model User {
   activities          Activity[] @relation("ActivityUser")
   userNotes           Note[]     @relation("NoteUser")
   stageMoves          StageHistory[] @relation("StageMover")
+  managedEmployees    Employee[]    @relation("EmployeeManager")
+  leaveApprovals     LeaveRequest[] @relation("LeaveApprover")
+  expenseApprovals   Expense[]     @relation("ExpenseApprover")
+  fieldVisits        FieldVisit[]  @relation("VisitEmployee")
+  createdPayroll     PayrollRecord[] @relation("PayrollCreator")
+  deptHeaded        Department[]   @relation("DeptHead")
+  employeeProfile   Employee[]     @relation("EmployeeProfile")
 
   @@map("users")
 }
@@ -424,6 +443,7 @@ model Lead {
   followUps           FollowUp[] @relation("LeadFollowUps")
   entityNotes         Note[]     @relation("LeadNotes")
   convertedToContact  Contact?   @relation("LeadConversion", fields: [convertedToContactId], references: [id])
+  fieldVisits         FieldVisit[] @relation("VisitLead")
 
   @@unique([convertedToContactId])
 
@@ -466,6 +486,7 @@ model Contact {
   followUps FollowUp[] @relation("ContactFollowUps")
   entityNotes Note[]     @relation("ContactNotes")
   leadSource Lead?       @relation("LeadConversion")
+  fieldVisits FieldVisit[] @relation("VisitContact")
 
   @@unique([tenantId, email])
   @@index([tenantId])
@@ -785,4 +806,386 @@ model CallRecording {
   @@index([tenantId])
   @@index([status])
   @@map("call_recordings")
+}
+
+// ============================================
+// HRMS: DEPARTMENT
+// ============================================
+
+model Department {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  name        String
+  code        String?  @unique
+  description String?  @db.Text
+  headId      String?  @map("head_id") @db.Uuid
+  status      String   @default("ACTIVE") // ACTIVE, INACTIVE
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  head     User?     @relation("DeptHead", fields: [headId], references: [id], onDelete: SetNull)
+  employees Employee[]
+  designations Designation[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@index([headId])
+  @@map("departments")
+}
+
+// ============================================
+// HRMS: DESIGNATION
+// ============================================
+
+model Designation {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  title       String
+  description String?  @db.Text
+  departmentId String? @map("department_id") @db.Uuid
+  status      String   @default("ACTIVE")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  department Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  employees  Employee[]
+
+  @@unique([tenantId, title])
+  @@index([tenantId])
+  @@index([departmentId])
+  @@map("designations")
+}
+
+// ============================================
+// HRMS: EMPLOYEE
+// ============================================
+
+model Employee {
+  id              String    @id @default(uuid()) @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  userId          String    @unique @map("user_id") @db.Uuid
+  employeeId      String    @unique @map("employee_code") // e.g. EMP-001
+  firstName       String    @map("first_name")
+  lastName        String?   @map("last_name")
+  email           String?
+  mobile          String?
+  departmentId    String?   @map("department_id") @db.Uuid
+  designationId   String?   @map("designation_id") @db.Uuid
+  managerId       String?   @map("manager_id") @db.Uuid
+  joiningDate     DateTime? @map("joining_date")
+  employmentStatus String   @default("ACTIVE") @map("employment_status") // ACTIVE, INACTIVE, ON_LEAVE, RESIGNED, TERMINATED
+  workLocation    String?   @map("work_location")
+  basicSalary     Float?    @map("basic_salary")
+  salaryCurrency  String    @default("INR") @map("salary_currency")
+  emergencyName   String?   @map("emergency_name")
+  emergencyPhone  String?   @map("emergency_phone")
+  emergencyRelation String?  @map("emergency_relation")
+  archived        Boolean   @default(false)
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user        User        @relation("EmployeeProfile", fields: [userId], references: [id], onDelete: Cascade)
+  department  Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  designation Designation? @relation(fields: [designationId], references: [id], onDelete: SetNull)
+  manager     User?       @relation("EmployeeManager", fields: [managerId], references: [id], onDelete: SetNull)
+  leaveRequests     LeaveRequest[]
+  expenses          Expense[]
+  payrollRecords    PayrollRecord[]
+  attendanceSessions AttendanceSession[]
+  documents         EmployeeDocument[]
+  bankTransfers     BankTransfer[]
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([departmentId])
+  @@index([designationId])
+  @@index([managerId])
+  @@index([employmentStatus])
+  @@index([employeeId])
+  @@map("employees")
+}
+
+// ============================================
+// HRMS: EMPLOYEE DOCUMENT
+// ============================================
+
+model EmployeeDocument {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  employeeId  String   @map("employee_id") @db.Uuid
+  name        String
+  type        String   // RESUME, ID_PROOF, ADDRESS_PROOF, OFFER_LETTER, CONTRACT, OTHER
+  fileUrl     String?  @map("file_url")
+  fileSize    Int?     @map("file_size")
+  status      String   @default("PENDING") // PENDING, VERIFIED, REJECTED
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  tenant   Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([employeeId])
+  @@map("employee_documents")
+}
+
+// ============================================
+// HRMS: LEAVE TYPE
+// ============================================
+
+model LeaveType {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @map("tenant_id") @db.Uuid
+  name            String
+  code            String   // CASUAL, SICK, EARNED, MATERNITY, PATERNITY, etc.
+  description     String?  @db.Text
+  defaultDays     Int      @map("default_days") @default(0)
+  paid            Boolean  @default(true)
+  carryForward    Boolean  @default(false) @map("carry_forward")
+  status          String   @default("ACTIVE") // ACTIVE, INACTIVE
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  tenant  Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  leaveRequests   LeaveRequest[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@map("leave_types")
+}
+
+// ============================================
+// HRMS: LEAVE REQUEST
+// ============================================
+
+model LeaveRequest {
+  id            String    @id @default(uuid()) @db.Uuid
+  tenantId      String    @map("tenant_id") @db.Uuid
+  employeeId    String    @map("employee_id") @db.Uuid
+  leaveTypeId   String    @map("leave_type_id") @db.Uuid
+  startDate     DateTime  @map("start_date")
+  endDate       DateTime  @map("end_date")
+  totalDays     Float     @map("total_days")
+  reason        String?   @db.Text
+  status        String    @default("PENDING") // PENDING, APPROVED, REJECTED, CANCELLED
+  approvedBy    String?   @map("approved_by") @db.Uuid
+  approvedAt    DateTime? @map("approved_at")
+  rejectionReason String?  @map("rejection_reason") @db.Text
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employee   Employee   @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  leaveType  LeaveType  @relation(fields: [leaveTypeId], references: [id], onDelete: Cascade)
+  approver   User?      @relation("LeaveApprover", fields: [approvedBy], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([employeeId])
+  @@index([leaveTypeId])
+  @@index([status])
+  @@index([startDate])
+  @@map("leave_requests")
+}
+
+// ============================================
+// HRMS: ATTENDANCE SESSION
+// ============================================
+
+model AttendanceSession {
+  id              String    @id @default(uuid()) @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  employeeId      String    @map("employee_id") @db.Uuid
+  date            DateTime  @map("date") // The work date
+  checkInTime     DateTime? @map("check_in_time")
+  checkOutTime    DateTime? @map("check_out_time")
+  status          String    @default("PRESENT") // PRESENT, ABSENT, HALF_DAY, LATE, ON_LEAVE, HOLIDAY, WEEK_OFF
+  workingMinutes  Int?      @map("working_minutes")
+  breakMinutes    Int?      @map("break_minutes")
+  overtimeMinutes Int?      @map("overtime_minutes")
+  lateMinutes     Int?      @map("late_minutes")
+  earlyExitMinutes Int?     @map("early_exit_minutes")
+  checkInLocation  Json?    @map("check_in_location") // {lat, lng, accuracy, provider}
+  checkOutLocation Json?    @map("check_out_location")
+  checkInDevice   String?   @map("check_in_device")
+  checkOutDevice  String?   @map("check_out_device")
+  notes           String?   @db.Text
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, date])
+  @@index([tenantId])
+  @@index([employeeId])
+  @@index([date])
+  @@index([status])
+  @@map("attendance_sessions")
+}
+
+// ============================================
+// FIELD SALES: VISIT
+// ============================================
+
+model FieldVisit {
+  id              String    @id @default(uuid()) @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  employeeId      String    @map("employee_id") @db.Uuid
+  leadId          String?   @map("lead_id")
+  contactId       String?   @map("contact_id")
+  date            DateTime  @map("date")
+  startTime       DateTime? @map("start_time")
+  endTime         DateTime? @map("end_time")
+  purpose         String?   @db.Text
+  outcome         String?   @db.Text
+  notes           String?   @db.Text
+  status          String    @default("PLANNED") // PLANNED, STARTED, COMPLETED, MISSED, CANCELLED
+  location        Json?     // {lat, lng, accuracy, address, provider}
+  nextFollowUp    DateTime? @map("next_follow_up")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employee User     @relation("VisitEmployee", fields: [employeeId], references: [id], onDelete: Cascade)
+  lead    Lead?    @relation("VisitLead", fields: [leadId], references: [id], onDelete: SetNull)
+  contact Contact? @relation("VisitContact", fields: [contactId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([employeeId])
+  @@index([date])
+  @@index([status])
+  @@map("field_visits")
+}
+
+// ============================================
+// EXPENSE
+// ============================================
+
+model Expense {
+  id            String    @id @default(uuid()) @db.Uuid
+  tenantId      String    @map("tenant_id") @db.Uuid
+  employeeId    String    @map("employee_id") @db.Uuid
+  amount        Float
+  date          DateTime
+  category      String    // TRAVEL, FOOD, ACCOMMODATION, TRANSPORT, COMMUNICATION, EQUIPMENT, OTHER
+  description   String?   @db.Text
+  receiptUrl    String?   @map("receipt_url")
+  receiptSize   Int?      @map("receipt_size")
+  status        String    @default("PENDING") // PENDING, APPROVED, REJECTED, PAID
+  approvedBy    String?   @map("approved_by") @db.Uuid
+  approvedAt    DateTime? @map("approved_at")
+  rejectionReason String?  @map("rejection_reason") @db.Text
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  approver User?    @relation("ExpenseApprover", fields: [approvedBy], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([employeeId])
+  @@index([status])
+  @@index([category])
+  @@index([date])
+  @@map("expenses")
+}
+
+// ============================================
+// PAYROLL RECORD
+// ============================================
+
+model PayrollRecord {
+  id              String    @id @default(uuid()) @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  employeeId      String    @map("employee_id") @db.Uuid
+  periodStart     DateTime  @map("period_start")
+  periodEnd       DateTime  @map("period_end")
+  basicSalary     Float     @map("basic_salary")
+  totalAllowances Float     @default(0) @map("total_allowances")
+  totalDeductions Float     @default(0) @map("total_deductions")
+  overtimePay     Float     @default(0) @map("overtime_pay")
+  bonus           Float     @default(0)
+  netSalary       Float     @map("net_salary")
+  currency        String    @default("INR")
+  status          String    @default("DRAFT") // DRAFT, PROCESSING, FINALIZED, PAID, CANCELLED
+  paymentMethod   String?   @map("payment_method") // BANK_TRANSFER, CASH, CHEQUE
+  paymentRef      String?   @map("payment_ref")
+  paidAt          DateTime? @map("paid_at")
+  notes           String?   @db.Text
+  createdBy       String?   @map("created_by") @db.Uuid
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  employee  Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  creator   User?     @relation("PayrollCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+  items     PayrollItem[]
+  bankTransfers BankTransfer[]
+
+  @@unique([employeeId, periodStart, periodEnd])
+  @@index([tenantId])
+  @@index([employeeId])
+  @@index([status])
+  @@index([periodStart])
+  @@map("payroll_records")
+}
+
+// ============================================
+// PAYROLL ITEM (line items for allowances/deductions)
+// ============================================
+
+model PayrollItem {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @map("tenant_id") @db.Uuid
+  payrollId       String   @map("payroll_id") @db.Uuid
+  type            String   // ALLOWANCE, DEDUCTION
+  name            String   // e.g. HRA, DA, PF, ESI, TAX
+  amount          Float
+  description     String?  @db.Text
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  tenant  Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  payroll PayrollRecord @relation(fields: [payrollId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([payrollId])
+  @@map("payroll_items")
+}
+
+// ============================================
+// BANK TRANSFER
+// ============================================
+
+model BankTransfer {
+  id                String    @id @default(uuid()) @db.Uuid
+  tenantId          String    @map("tenant_id") @db.Uuid
+  payrollId         String    @map("payroll_id") @db.Uuid
+  employeeId        String    @map("employee_id") @db.Uuid
+  amount            Float
+  bankName          String?   @map("bank_name")
+  accountNumber     String?   @map("account_number")
+  ifscCode          String?   @map("ifsc_code")
+  accountHolder     String?   @map("account_holder")
+  status            String    @default("PENDING") // PENDING, PROCESSING, SUCCESS, FAILED
+  provider          String?   // Provider abstraction for future integration
+  transactionRef    String?   @map("transaction_ref")
+  providerMeta      Json?     @map("provider_meta")
+  initiatedAt       DateTime  @map("initiated_at")
+  completedAt       DateTime? @map("completed_at")
+  failureReason     String?   @map("failure_reason") @db.Text
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  tenant   Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  payroll PayrollRecord @relation(fields: [payrollId], references: [id], onDelete: Cascade)
+  employee Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([payrollId])
+  @@index([employeeId])
+  @@index([status])
+  @@map("bank_transfers")
 }

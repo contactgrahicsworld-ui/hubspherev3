@@ -41,7 +41,13 @@ export const PERMISSION_MODULES = [
   'tasks',
   'followups',
   'employees',
+  'departments',
+  'designations',
   'attendance',
+  'leave',
+  'field',
+  'visits',
+  'expenses',
   'payroll',
   'automation',
   'ai',
@@ -236,4 +242,128 @@ export const ACTIVITY_TYPES = {
   CONTACT_CREATED: 'CONTACT_CREATED',
   DEAL_CREATED: 'DEAL_CREATED',
   FOLLOWUP: 'FOLLOWUP',
+} as const;
+
+// ============================================
+// EMPLOYMENT STATUSES
+// ============================================
+
+export const EMPLOYMENT_STATUSES = {
+  ACTIVE: 'ACTIVE',
+  INACTIVE: 'INACTIVE',
+  ON_LEAVE: 'ON_LEAVE',
+  RESIGNED: 'RESIGNED',
+  TERMINATED: 'TERMINATED',
+} as const;
+
+// ============================================
+// ATTENDANCE STATUSES
+// ============================================
+
+export const ATTENDANCE_STATUSES = {
+  PRESENT: 'PRESENT',
+  ABSENT: 'ABSENT',
+  HALF_DAY: 'HALF_DAY',
+  LATE: 'LATE',
+  ON_LEAVE: 'ON_LEAVE',
+  HOLIDAY: 'HOLIDAY',
+  WEEK_OFF: 'WEEK_OFF',
+} as const;
+
+// ============================================
+// LEAVE REQUEST STATUSES
+// ============================================
+
+export const LEAVE_REQUEST_STATUSES = {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
+  CANCELLED: 'CANCELLED',
+} as const;
+
+// ============================================
+// LEAVE TYPE CODES
+// ============================================
+
+export const LEAVE_TYPE_CODES = {
+  CASUAL: 'CASUAL',
+  SICK: 'SICK',
+  EARNED: 'EARNED',
+  MATERNITY: 'MATERNITY',
+  PATERNITY: 'PATERNITY',
+  COMPENSATORY: 'COMPENSATORY',
+  LOSS_OF_PAY: 'LOSS_OF_PAY',
+} as const;
+
+// ============================================
+// FIELD VISIT STATUSES
+// ============================================
+
+export const FIELD_VISIT_STATUSES = {
+  PLANNED: 'PLANNED',
+  STARTED: 'STARTED',
+  COMPLETED: 'COMPLETED',
+  MISSED: 'MISSED',
+  CANCELLED: 'CANCELLED',
+} as const;
+
+// ============================================
+// EXPENSE STATUSES
+// ============================================
+
+export const EXPENSE_STATUSES = {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
+  PAID: 'PAID',
+} as const;
+
+// ============================================
+// EXPENSE CATEGORIES
+// ============================================
+
+export const EXPENSE_CATEGORIES = {
+  TRAVEL: 'TRAVEL',
+  FOOD: 'FOOD',
+  ACCOMMODATION: 'ACCOMMODATION',
+  TRANSPORT: 'TRANSPORT',
+  COMMUNICATION: 'COMMUNICATION',
+  EQUIPMENT: 'EQUIPMENT',
+  OTHER: 'OTHER',
+} as const;
+
+// ============================================
+// PAYROLL STATUSES
+// ============================================
+
+export const PAYROLL_STATUSES = {
+  DRAFT: 'DRAFT',
+  PROCESSING: 'PROCESSING',
+  FINALIZED: 'FINALIZED',
+  PAID: 'PAID',
+  CANCELLED: 'CANCELLED',
+} as const;
+
+// ============================================
+// BANK TRANSFER STATUSES
+// ============================================
+
+export const BANK_TRANSFER_STATUSES = {
+  PENDING: 'PENDING',
+  PROCESSING: 'PROCESSING',
+  SUCCESS: 'SUCCESS',
+  FAILED: 'FAILED',
+} as const;
+
+// ============================================
+// DOCUMENT TYPES
+// ============================================
+
+export const DOCUMENT_TYPES = {
+  RESUME: 'RESUME',
+  ID_PROOF: 'ID_PROOF',
+  ADDRESS_PROOF: 'ADDRESS_PROOF',
+  OFFER_LETTER: 'OFFER_LETTER',
+  CONTRACT: 'CONTRACT',
+  OTHER: 'OTHER',
 } as const;

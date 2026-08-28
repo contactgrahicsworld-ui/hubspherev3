@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Users, Shield, Settings } from 'lucide-react'
+import { LayoutDashboard, Users, Shield, Settings, UsersRound, CalendarCheck } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { LucideIcon } from 'lucide-react'
 
@@ -21,10 +21,26 @@ function getBottomNavItems(userRole: string): BottomNavItem[] {
       { title: 'Settings', href: '/super-admin/settings', icon: Settings },
     ]
   }
+  if (['HR_MANAGER', 'HR_EXECUTIVE'].includes(userRole)) {
+    return [
+      { title: 'HR', href: '/hrms', icon: UsersRound },
+      { title: 'Attendance', href: '/hrms/attendance', icon: CalendarCheck },
+      { title: 'Leave', href: '/hrms/leave', icon: Shield },
+      { title: 'Payroll', href: '/hrms/payroll', icon: Settings },
+    ]
+  }
+  if (['FIELD_MANAGER', 'FIELD_EXECUTIVE'].includes(userRole)) {
+    return [
+      { title: 'Dashboard', href: '/crm', icon: LayoutDashboard },
+      { title: 'Field', href: '/hrms/field-sales', icon: UsersRound },
+      { title: 'Attendance', href: '/hrms/attendance', icon: CalendarCheck },
+      { title: 'Expenses', href: '/hrms/expenses', icon: Settings },
+    ]
+  }
   return [
-    { title: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-    { title: 'Users', href: '/admin/users', icon: Users },
-    { title: 'Roles', href: '/admin/roles', icon: Shield },
+    { title: 'Dashboard', href: '/crm', icon: LayoutDashboard },
+    { title: 'HR', href: '/hrms', icon: UsersRound },
+    { title: 'Attendance', href: '/hrms/attendance', icon: CalendarCheck },
     { title: 'Settings', href: '/admin/settings', icon: Settings },
   ]
 }

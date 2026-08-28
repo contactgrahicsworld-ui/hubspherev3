@@ -73,19 +73,19 @@ function getRolePermissions(roleCode: string, allPermissionCodes: string[]): str
       );
     case 'HR_MANAGER':
       return allPermissionCodes.filter(
-        (p) => p.startsWith('employees.') || p.startsWith('attendance.') || p.startsWith('payroll.') || p === 'users.view'
+        (p) => p.startsWith('employees.') || p.startsWith('departments.') || p.startsWith('designations.') || p.startsWith('attendance.') || p.startsWith('leave.') || p.startsWith('payroll.') || p.startsWith('expenses.') || p === 'users.view'
       );
     case 'HR_EXECUTIVE':
       return allPermissionCodes.filter(
-        (p) => (p.startsWith('employees.') || p.startsWith('attendance.')) && !p.endsWith('.delete')
+        (p) => (p.startsWith('employees.') || p.startsWith('departments.') || p.startsWith('designations.') || p.startsWith('attendance.') || p.startsWith('leave.')) && !p.endsWith('.delete')
       );
     case 'FIELD_MANAGER':
       return allPermissionCodes.filter(
-        (p) => (p.startsWith('leads.') || p.startsWith('contacts.') || p.startsWith('attendance.')) && !p.endsWith('.delete')
+        (p) => (p.startsWith('leads.') || p.startsWith('contacts.') || p.startsWith('field.') || p.startsWith('visits.') || p.startsWith('expenses.') || p.startsWith('attendance.')) && !p.endsWith('.delete')
       );
     case 'FIELD_EXECUTIVE':
       return allPermissionCodes.filter(
-        (p) => (p.startsWith('leads.') || p.startsWith('contacts.') || p.startsWith('attendance.')) && !p.endsWith('.delete')
+        (p) => (p.startsWith('leads.') || p.startsWith('contacts.') || p.startsWith('visits.') || p.startsWith('expenses.') || p.startsWith('attendance.')) && !p.endsWith('.delete') && p !== 'expenses.approve' && p !== 'expenses.reject'
       );
     case 'ACCOUNTANT':
       return allPermissionCodes.filter(
