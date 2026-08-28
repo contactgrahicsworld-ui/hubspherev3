@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -12,7 +12,7 @@ datasource db {
 // ============================================
 
 model Tenant {
-  id          String   @id @default(cuid())
+  id          String   @id @default(uuid()) @db.Uuid
   name        String
   slug        String   @unique
   domain      String?
@@ -20,9 +20,9 @@ model Tenant {
   status      String   @default("ACTIVE") // ACTIVE, SUSPENDED, TRIAL
   plan        String   @default("FREE") // FREE, STARTER, PRO, ENTERPRISE
   maxUsers    Int      @default(5)
-  settings    String   @default("{}") // JSON settings
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  settings    Json     @default("{}") // JSON settings
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   memberships    Membership[]
   subscriptions  Subscription[]
@@ -30,6 +30,8 @@ model Tenant {
   auditLogs      AuditLog[]
   roles          Role[]
   calls          Call[]
+
+  @@map("tenants")
 }
 
 // ============================================
@@ -37,24 +39,26 @@ model Tenant {
 // ============================================
 
 model User {
-  id                String    @id @default(cuid())
+  id                String    @id @default(uuid()) @db.Uuid
   email             String    @unique
-  passwordHash      String
+  passwordHash      String    @map("password_hash")
   name              String?
-  avatarUrl         String?
-  emailVerified     Boolean   @default(false)
-  isSuperAdmin      Boolean   @default(false)
+  avatarUrl         String?   @map("avatar_url")
+  emailVerified     Boolean   @default(false) @map("email_verified")
+  isSuperAdmin      Boolean   @default(false) @map("is_super_admin")
   status            String    @default("ACTIVE") // ACTIVE, INACTIVE, SUSPENDED
-  lastLoginAt       DateTime?
-  passwordChangedAt DateTime  @default(now())
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  lastLoginAt       DateTime? @map("last_login_at")
+  passwordChangedAt DateTime  @default(now()) @map("password_changed_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
 
   memberships         Membership[]
   auditLogs           AuditLog[]
   refreshTokens       RefreshToken[]
   passwordResetTokens PasswordResetToken[]
   emailVerifyTokens   EmailVerificationToken[]
+
+  @@map("users")
 }
 
 // ============================================
@@ -62,15 +66,15 @@ model User {
 // ============================================
 
 model Membership {
-  id         String   @id @default(cuid())
-  userId     String
-  tenantId   String
-  roleCode   String?  @default("VIEWER")
-  status     String   @default("ACTIVE") // ACTIVE, INACTIVE
-  invitedBy  String?
-  joinedAt   DateTime @default(now())
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  roleCode  String?  @default("VIEWER") @map("role_code")
+  status    String   @default("ACTIVE") // ACTIVE, INACTIVE
+  invitedBy String?  @map("invited_by")
+  joinedAt  DateTime @default(now()) @map("joined_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -79,6 +83,7 @@ model Membership {
   @@unique([userId, tenantId])
   @@index([tenantId])
   @@index([userId])
+  @@map("memberships")
 }
 
 // ============================================
@@ -86,14 +91,14 @@ model Membership {
 // ============================================
 
 model Role {
-  id          String   @id @default(cuid())
+  id          String   @id @default(uuid()) @db.Uuid
   code        String   @unique
   name        String
   description String?
-  isSystem    Boolean  @default(false)
-  tenantId    String?  // null = platform-level role
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  isSystem    Boolean  @default(false) @map("is_system")
+  tenantId    String?  @map("tenant_id") @db.Uuid // null = platform-level role
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   tenant     Tenant?          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   permissions RolePermission[]
@@ -101,6 +106,7 @@ model Role {
 
   @@unique([code, tenantId])
   @@index([tenantId])
+  @@map("roles")
 }
 
 // ============================================
@@ -108,15 +114,17 @@ model Role {
 // ============================================
 
 model Permission {
-  id          String   @id @default(cuid())
+  id          String   @id @default(uuid()) @db.Uuid
   code        String   @unique // module.action e.g. users.view
   name        String
   description String?
   module      String
   action      String
-  createdAt   DateTime @default(now())
+  createdAt   DateTime @default(now()) @map("created_at")
 
   roles RolePermission[]
+
+  @@map("permissions")
 }
 
 // ============================================
@@ -124,16 +132,17 @@ model Permission {
 // ============================================
 
 model RolePermission {
-  id           String @id @default(cuid())
-  roleCode     String
-  permissionId String
-  createdAt    DateTime @default(now())
+  id           String   @id @default(uuid()) @db.Uuid
+  roleCode     String   @map("role_code")
+  permissionId String   @map("permission_id") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at")
 
   role       Role       @relation(fields: [roleCode], references: [code], onDelete: Cascade)
   permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
   @@unique([roleCode, permissionId])
   @@index([roleCode])
+  @@map("role_permissions")
 }
 
 // ============================================
@@ -141,18 +150,19 @@ model RolePermission {
 // ============================================
 
 model Subscription {
-  id           String   @id @default(cuid())
-  tenantId     String
-  plan         String   @default("FREE")
-  status       String   @default("ACTIVE") // ACTIVE, CANCELLED, PAST_DUE, TRIALING
-  currentPeriodStart DateTime?
-  currentPeriodEnd   DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                String    @id @default(uuid()) @db.Uuid
+  tenantId          String    @map("tenant_id") @db.Uuid
+  plan              String    @default("FREE")
+  status            String    @default("ACTIVE") // ACTIVE, CANCELLED, PAST_DUE, TRIALING
+  currentPeriodStart DateTime? @map("current_period_start")
+  currentPeriodEnd   DateTime? @map("current_period_end")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
+  @@map("subscriptions")
 }
 
 // ============================================
@@ -161,15 +171,17 @@ model Subscription {
 // ============================================
 
 model FeatureFlag {
-  id          String   @id @default(cuid())
+  id          String   @id @default(uuid()) @db.Uuid
   key         String   @unique
   name        String
   description String?
   enabled     Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   tenantOverrides TenantFeatureFlag[]
+
+  @@map("feature_flags")
 }
 
 // ============================================
@@ -177,18 +189,19 @@ model FeatureFlag {
 // ============================================
 
 model TenantFeatureFlag {
-  id           String  @id @default(cuid())
-  tenantId     String
-  featureFlagId String
-  enabled      Boolean
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id            String  @id @default(uuid()) @db.Uuid
+  tenantId      String  @map("tenant_id") @db.Uuid
+  featureFlagId String  @map("feature_flag_id") @db.Uuid
+  enabled       Boolean
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
   tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   featureFlag FeatureFlag @relation(fields: [featureFlagId], references: [id], onDelete: Cascade)
 
   @@unique([tenantId, featureFlagId])
   @@index([tenantId])
+  @@map("tenant_feature_flags")
 }
 
 // ============================================
@@ -196,16 +209,16 @@ model TenantFeatureFlag {
 // ============================================
 
 model AuditLog {
-  id         String   @id @default(cuid())
-  actorId    String?
-  tenantId   String?
+  id         String   @id @default(uuid()) @db.Uuid
+  actorId    String?  @map("actor_id") @db.Uuid
+  tenantId   String?  @map("tenant_id") @db.Uuid
   action     String   // e.g. user.login, tenant.create
-  targetType String?  // e.g. User, Tenant, Role
-  targetId   String?
-  metadata   String?  @default("{}") // Safe JSON, NEVER passwords/tokens
-  ipAddress  String?
-  userAgent  String?
-  createdAt  DateTime @default(now())
+  targetType String?  @map("target_type") // e.g. User, Tenant, Role
+  targetId   String?  @map("target_id")
+  metadata   Json?    // Safe JSON, NEVER passwords/tokens
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent")
+  createdAt  DateTime @default(now()) @map("created_at")
 
   actor  User?   @relation(fields: [actorId], references: [id], onDelete: SetNull)
   tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: SetNull)
@@ -214,6 +227,7 @@ model AuditLog {
   @@index([tenantId])
   @@index([action])
   @@index([createdAt])
+  @@map("audit_logs")
 }
 
 // ============================================
@@ -221,19 +235,20 @@ model AuditLog {
 // ============================================
 
 model RefreshToken {
-  id         String   @id @default(cuid())
-  token      String   @unique
-  userId     String
-  tenantId   String?  // Active tenant context when token was issued
-  expiresAt  DateTime
-  revokedAt  DateTime?
-  createdAt  DateTime @default(now())
+  id        String    @id @default(uuid()) @db.Uuid
+  token     String    @unique
+  userId    String    @map("user_id") @db.Uuid
+  tenantId  String?   @map("tenant_id") @db.Uuid // Active tenant context when token was issued
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  createdAt DateTime  @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([token])
   @@index([userId])
   @@index([expiresAt])
+  @@map("refresh_tokens")
 }
 
 // ============================================
@@ -241,17 +256,18 @@ model RefreshToken {
 // ============================================
 
 model PasswordResetToken {
-  id         String   @id @default(cuid())
-  token      String   @unique
-  userId     String
-  expiresAt  DateTime
-  usedAt     DateTime?
-  createdAt  DateTime @default(now())
+  id        String    @id @default(uuid()) @db.Uuid
+  token     String    @unique
+  userId    String    @map("user_id") @db.Uuid
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([token])
   @@index([userId])
+  @@map("password_reset_tokens")
 }
 
 // ============================================
@@ -259,17 +275,18 @@ model PasswordResetToken {
 // ============================================
 
 model EmailVerificationToken {
-  id         String   @id @default(cuid())
-  token      String   @unique
-  userId     String
-  expiresAt  DateTime
-  usedAt     DateTime?
-  createdAt  DateTime @default(now())
+  id        String    @id @default(uuid()) @db.Uuid
+  token     String    @unique
+  userId    String    @map("user_id") @db.Uuid
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([token])
   @@index([userId])
+  @@map("email_verification_tokens")
 }
 
 // ============================================
@@ -277,28 +294,28 @@ model EmailVerificationToken {
 // ============================================
 
 model Call {
-  id                String   @id @default(cuid())
-  tenantId          String
-  leadId            String?
-  contactId         String?
-  dealId            String?
-  agentId           String?
-  direction         String?  // INBOUND, OUTBOUND
-  callType          String?  // WEBRTC, VOIP, PSTN
-  callStartTime     DateTime?
-  callEndTime       DateTime?
+  id                String    @id @default(uuid()) @db.Uuid
+  tenantId          String    @map("tenant_id") @db.Uuid
+  leadId            String?   @map("lead_id")
+  contactId         String?   @map("contact_id")
+  dealId            String?   @map("deal_id")
+  agentId           String?   @map("agent_id")
+  direction         String?   // INBOUND, OUTBOUND
+  callType          String?   @map("call_type") // WEBRTC, VOIP, PSTN
+  callStartTime     DateTime? @map("call_start_time")
+  callEndTime       DateTime? @map("call_end_time")
   duration          Int?
-  callStatus        String?  // RINGING, CONNECTED, ENDED, FAILED, MISSED
-  recordingStatus   String?  // RECORDING, PROCESSING, READY, FAILED, NOT_AVAILABLE
-  recordingUrl      String?
-  recordingProvider String?
-  recordingSize     Int?
-  recordingMeta     String?  @default("{}")
-  failureReason     String?
-  retryCount        Int      @default(0)
-  lastRetryAt       DateTime?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  callStatus        String?   @map("call_status") // RINGING, CONNECTED, ENDED, FAILED, MISSED
+  recordingStatus   String?   @map("recording_status") // RECORDING, PROCESSING, READY, FAILED, NOT_AVAILABLE
+  recordingUrl      String?   @map("recording_url")
+  recordingProvider String?   @map("recording_provider")
+  recordingSize     Int?      @map("recording_size")
+  recordingMeta     Json?     @map("recording_meta")
+  failureReason     String?   @map("failure_reason")
+  retryCount        Int       @default(0) @map("retry_count")
+  lastRetryAt       DateTime? @map("last_retry_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
@@ -306,6 +323,7 @@ model Call {
   @@index([agentId])
   @@index([callStatus])
   @@index([createdAt])
+  @@map("calls")
 }
 
 // ============================================
@@ -313,21 +331,22 @@ model Call {
 // ============================================
 
 model ProviderConfig {
-  id          String   @id @default(cuid())
-  providerId  String   @unique // e.g. openai, google-stt, twilio
+  id          String    @id @default(uuid()) @db.Uuid
+  providerId  String    @unique @map("provider_id")
   name        String
-  category    String   // AIProvider, SpeechToTextProvider, TextToSpeechProvider, etc.
-  enabled     Boolean  @default(false)
-  configured  Boolean  @default(false)
-  healthy     Boolean? // null = not yet checked
-  config      String   @default("{}") // Encrypted provider config (API keys etc.)
-  priority    Int      @default(0)
-  lastCheckAt DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  category    String    // AIProvider, SpeechToTextProvider, TextToSpeechProvider, etc.
+  enabled     Boolean   @default(false)
+  configured  Boolean   @default(false)
+  healthy     Boolean?  // null = not yet checked
+  config      Json      @default("{}") // Encrypted provider config (API keys etc.)
+  priority    Int       @default(0)
+  lastCheckAt DateTime? @map("last_check_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
 
   @@index([category])
   @@index([enabled])
+  @@map("provider_configs")
 }
 
 // ============================================
@@ -335,21 +354,22 @@ model ProviderConfig {
 // ============================================
 
 model AiUsageLog {
-  id          String   @id @default(cuid())
-  tenantId    String?
-  userId      String?
-  providerId  String?
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String?  @map("tenant_id")
+  userId      String?  @map("user_id")
+  providerId  String?  @map("provider_id")
   model       String?
-  agentName   String?  // Nova, Vox, etc.
-  inputTokens Int?
-  outputTokens Int?
-  promptHash  String?
-  durationMs  Int?
+  agentName   String?  @map("agent_name") // Nova, Vox, etc.
+  inputTokens Int?     @map("input_tokens")
+  outputTokens Int?    @map("output_tokens")
+  promptHash  String?  @map("prompt_hash")
+  durationMs  Int?     @map("duration_ms")
   status      String   @default("SUCCESS") // SUCCESS, FAILED, RATE_LIMITED
-  createdAt   DateTime @default(now())
+  createdAt   DateTime @default(now()) @map("created_at")
 
   @@index([tenantId])
   @@index([userId])
   @@index([providerId])
   @@index([createdAt])
+  @@map("ai_usage_logs")
 }

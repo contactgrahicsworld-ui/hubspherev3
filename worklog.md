@@ -31,3 +31,26 @@ Stage Summary:
 - All provider abstractions defined (AI, STT, TTS, Translation, Telephony, CallRecording, Messaging, Storage, Notification)
 - Call recording data model prepared
 - Audit logging for all sensitive operations
+
+---
+Task ID: 2
+Agent: Lead Architect (Main)
+Task: Migrate from SQLite to PostgreSQL - Critical Architecture Fix
+
+Work Log:
+- Changed Prisma datasource provider from sqlite to postgresql
+- Converted all id fields from cuid() to uuid() @db.Uuid
+- Changed JSON fields (Tenant.settings, AuditLog.metadata, Call.recordingMeta, ProviderConfig.config) from String to native Json type
+- Added snake_case @map() for all columns, @@map() for all tables (PostgreSQL convention)
+- Updated audit.ts to pass objects directly instead of JSON.stringify
+- Updated admin/settings route to remove JSON.parse/stringify on Tenant.settings
+- Updated audit routes to remove JSON.parse on AuditLog.metadata
+- Added DATABASE_URL PostgreSQL protocol validation in env.ts
+- Removed SQLite database file (db/custom.db)
+- Created .env.example with PostgreSQL template
+- Prisma generate: PASS, Prisma validate: PASS, Next.js build: PASS
+
+Stage Summary:
+- Fully PostgreSQL-native Prisma schema with UUID primary keys, Json columns, snake_case mapping
+- Zero SQLite artifacts remaining
+- Build compiles cleanly against PostgreSQL provider

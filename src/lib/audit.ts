@@ -98,7 +98,7 @@ export async function createAuditLog(
       action: params.action,
       targetType: params.targetType,
       targetId: params.targetId,
-      metadata: safeMetadata ? JSON.stringify(safeMetadata) : undefined,
+      metadata: safeMetadata ?? undefined,
       ipAddress: params.ipAddress,
       userAgent: params.userAgent,
     },

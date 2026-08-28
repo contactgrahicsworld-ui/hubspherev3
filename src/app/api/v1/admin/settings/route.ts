@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       success({
         ...tenant,
-        settings: tenant.settings ? JSON.parse(tenant.settings) : {},
+        settings: (tenant.settings as Record<string, unknown>) ?? {},
       })
     );
   } catch (error) {
@@ -74,7 +74,7 @@ export async function PUT(request: NextRequest) {
     if (body.domain !== undefined) updateData.domain = body.domain;
     if (body.logoUrl !== undefined) updateData.logoUrl = body.logoUrl;
     if (body.settings !== undefined) {
-      updateData.settings = JSON.stringify(body.settings);
+      updateData.settings = body.settings;
     }
 
     const updated = await db.tenant.update({
@@ -103,7 +103,7 @@ export async function PUT(request: NextRequest) {
         status: updated.status,
         plan: updated.plan,
         maxUsers: updated.maxUsers,
-        settings: updated.settings ? JSON.parse(updated.settings) : {},
+        settings: (updated.settings as Record<string, unknown>) ?? {},
       }, 'Settings updated successfully')
     );
   } catch (error) {

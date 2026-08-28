@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
       action: log.action,
       targetType: log.targetType,
       targetId: log.targetId,
-      metadata: log.metadata ? JSON.parse(log.metadata) : null,
+      metadata: log.metadata ?? null,
       ipAddress: log.ipAddress,
       userAgent: log.userAgent,
       createdAt: log.createdAt,

@@ -55,7 +55,16 @@ function loadEnv(): EnvironmentConfig {
   if (missing.length > 0) {
     throw new Error(
       `Missing required environment variables: ${missing.join(', ')}. ` +
-        `Please check your .env file.`
+        `Please check your .env file. Required: DATABASE_URL (postgresql://...), JWT_SECRET, REFRESH_TOKEN_SECRET, APP_URL.`
+    );
+  }
+
+  // Validate DATABASE_URL is PostgreSQL
+  const dbUrl = process.env.DATABASE_URL!;
+  if (!dbUrl.startsWith('postgresql://') && !dbUrl.startsWith('postgres://')) {
+    throw new Error(
+      'DATABASE_URL must be a PostgreSQL connection string (postgresql://user:pass@host:port/db). ' +
+        `Got: ${dbUrl.substring(0, 20)}...`
     );
   }
 
