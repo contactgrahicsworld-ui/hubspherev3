@@ -1054,8 +1054,8 @@ model FieldVisit {
   id              String    @id @default(uuid()) @db.Uuid
   tenantId        String    @map("tenant_id") @db.Uuid
   employeeId      String    @map("employee_id") @db.Uuid
-  leadId          String?   @map("lead_id")
-  contactId       String?   @map("contact_id")
+  leadId          String?   @map("lead_id") @db.Uuid
+  contactId       String?   @map("contact_id") @db.Uuid
   date            DateTime  @map("date")
   startTime       DateTime? @map("start_time")
   endTime         DateTime? @map("end_time")
