@@ -1,0 +1,4 @@
+const http = require('http');const http = require('https');const TOKEN='';
+(async()=>{
+  try{
+    console.log('Creating admin user...');const r=await http.request('https://hubspherev3.vercel.app/api/v1/auth/login',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json','X-Real-Ip':process.env.REMOTE_ADDR||'127.0.0.1',json:{email:'admin@hubsphere.com',password:'Admin@12345'}});if(!r.ok){const d=await r.json();console.log('Login failed:',d.error);process.exit(1)}nconsole.log('Login OK, status:',r.status);const t=d.data?.accessToken||'';if(!t){console.log('No token!');process.exit(1)}nawait p.$queryRawUnsafe(
