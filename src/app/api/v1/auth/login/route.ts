@@ -2,13 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db, isDatabaseConnected } from '@/lib/db';
 import { verifyPassword, generateAccessToken, generateRefreshToken, getRefreshTokenExpiry } from '@/lib/auth';
 import { loginSchema, validate } from '@/lib/validators';
-import { handleApiError, AuthenticationError } from '@/lib/errors';
+import { handleApiError, AuthenticationError, RateLimitError } from '@/lib/errors';
 import { success } from '@/lib/api-response';
 import { createAuditLog } from '@/lib/audit';
 import { setAuthCookies } from '@/lib/api-auth';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit: 10 login attempts per 15 minutes per IP
+    const { limited, retryAfterMs } = rateLimit(getClientIp(request) + ':login', 10, 15 * 60 * 1000);
+    if (limited) {
+      throw new RateLimitError('Too many login attempts. Please try again later.', Math.ceil(retryAfterMs / 1000));
+    }
+
     // Check database availability first
     const dbConnected = await isDatabaseConnected();
     if (!dbConnected) {

@@ -2,13 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { hashPassword, generateAccessToken, generateRefreshToken, getRefreshTokenExpiry } from '@/lib/auth';
 import { signupSchema, validate } from '@/lib/validators';
-import { handleApiError } from '@/lib/errors';
+import { handleApiError, RateLimitError } from '@/lib/errors';
 import { success } from '@/lib/api-response';
 import { createAuditLog } from '@/lib/audit';
 import { setAuthCookies } from '@/lib/api-auth';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit: 5 signups per hour per IP
+    const { limited, retryAfterMs } = rateLimit(getClientIp(request) + ':signup', 5, 60 * 60 * 1000);
+    if (limited) {
+      throw new RateLimitError('Too many signup attempts. Please try again later.', Math.ceil(retryAfterMs / 1000));
+    }
+
     const body = await request.json();
     const { name, email, password } = validate(signupSchema, body);
 

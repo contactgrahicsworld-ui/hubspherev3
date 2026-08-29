@@ -80,8 +80,14 @@ export async function apiFetch<T = unknown>(
   }
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Request failed' }))
-    throw new Error(error.message || `Request failed with status ${response.status}`)
+    const body = await response.json().catch(() => ({ message: 'Request failed' }))
+    // Handle both { error: { message } } and { error: 'string' } formats
+    const msg =
+      (body.error && typeof body.error === 'object' ? body.error.message : null) ||
+      (typeof body.error === 'string' ? body.error : null) ||
+      body.message ||
+      `Request failed with status ${response.status}`
+    throw new Error(msg)
   }
 
   return response.json() as Promise<T>

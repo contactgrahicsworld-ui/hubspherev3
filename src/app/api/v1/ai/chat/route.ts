@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthUser } from '@/lib/api-auth';
-import { handleApiError, AuthenticationError, ValidationError } from '@/lib/errors';
+import { handleApiError, AuthenticationError, AuthorizationError, ValidationError } from '@/lib/errors';
 import { success } from '@/lib/api-response';
 import { requirePermission, getUserPermissions } from '@/lib/rbac';
 import { createAuditLog } from '@/lib/audit';
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
 
     // Check if user has required permissions
     if (!agent.canExecute(userPermissions)) {
-      throw new AuthenticationError(
+      throw new AuthorizationError(
         `Insufficient permissions to use agent ${agentName}. Required: ${agent.requiredPermissions.join(', ')}`
       );
     }

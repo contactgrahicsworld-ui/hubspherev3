@@ -51,13 +51,21 @@ const SECURITY_HEADERS: Record<string, string> = {
   'Referrer-Policy': 'strict-origin-when-cross-origin',
 };
 
-function applyHeaders(response: NextResponse, isApi: boolean): void {
+function applyHeaders(response: NextResponse, isApi: boolean, req: NextRequest): void {
   response.headers.set('X-Request-ID', crypto.randomUUID());
   for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
     response.headers.set(key, value);
   }
   if (isApi) {
-    response.headers.set('Access-Control-Allow-Origin', '*');
+    // In production, restrict CORS to the configured APP_URL
+    const origin = req.headers.get('origin');
+    const allowedOrigin = process.env.NODE_ENV === 'production'
+      ? (process.env.APP_URL || '').replace(/\/$/, '')
+      : '*';
+    const effectiveOrigin = allowedOrigin === '*' || !origin
+      ? allowedOrigin
+      : (origin.startsWith(allowedOrigin) ? origin : allowedOrigin);
+    response.headers.set('Access-Control-Allow-Origin', effectiveOrigin);
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     response.headers.set('Access-Control-Max-Age', '86400');
@@ -75,14 +83,14 @@ export function middleware(request: NextRequest): NextResponse {
   // CORS preflight
   if (request.method === 'OPTIONS' && isApi) {
     const res = new NextResponse(null, { status: 204 });
-    applyHeaders(res, true);
+    applyHeaders(res, true, request);
     return res;
   }
 
   // Public paths - pass through with headers
   if (isPublicPath(pathname)) {
     const res = NextResponse.next();
-    applyHeaders(res, isApi);
+    applyHeaders(res, isApi, request);
     return res;
   }
 
@@ -93,7 +101,7 @@ export function middleware(request: NextRequest): NextResponse {
       const url = new URL('/login', request.url);
       url.searchParams.set('callbackUrl', pathname);
       const res = NextResponse.redirect(url);
-      applyHeaders(res, false);
+      applyHeaders(res, false, request);
       return res;
     }
   }
@@ -101,7 +109,7 @@ export function middleware(request: NextRequest): NextResponse {
   // All other routes: pass through with security headers
   // Actual auth verification happens in each route handler
   const res = NextResponse.next();
-  applyHeaders(res, isApi);
+  applyHeaders(res, isApi, request);
   return res;
 }
 

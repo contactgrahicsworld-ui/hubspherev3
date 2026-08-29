@@ -285,9 +285,38 @@ export function handleApiError(error: unknown): {
     }
   }
 
-  // Handle standard JS errors
+  // Handle Prisma connection / database-unavailable errors → 503
+  if (
+    error !== null &&
+    typeof error === 'object' &&
+    'code' in error &&
+    (error as { code: string }).code === 'P1001'
+  ) {
+    return {
+      statusCode: 503,
+      body: {
+        error: 'Database is not available. Please ensure PostgreSQL is running and configured.',
+        code: 'DATABASE_UNAVAILABLE',
+      },
+    };
+  }
+
+  // Handle standard JS errors (including generic connection failures)
   if (error instanceof Error) {
-    const message = sanitizeMessage(error.message);
+    const msg = error.message ?? '';
+    const isConnectionError =
+      /ECONNREFUSED|ENOTFOUND|ECONNRESET|ETIMEDOUT|connect/i.test(msg) &&
+      !msg.includes('CORS');
+    if (isConnectionError && msg.length < 300) {
+      return {
+        statusCode: 503,
+        body: {
+          error: 'Database is not available. Please ensure PostgreSQL is running and configured.',
+          code: 'DATABASE_UNAVAILABLE',
+        },
+      };
+    }
+    const message = sanitizeMessage(msg);
     return {
       statusCode: 500,
       body: {
