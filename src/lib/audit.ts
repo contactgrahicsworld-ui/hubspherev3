@@ -5,6 +5,7 @@
  */
 
 import { db } from '@/lib/db';
+import { Prisma } from '@prisma/client';
 
 /**
  * Fields that must be stripped from any metadata before storage.
@@ -98,7 +99,7 @@ export async function createAuditLog(
       action: params.action,
       targetType: params.targetType,
       targetId: params.targetId,
-      metadata: safeMetadata ?? undefined,
+      metadata: safeMetadata as unknown as Prisma.InputJsonValue | undefined,
       ipAddress: params.ipAddress,
       userAgent: params.userAgent,
     },

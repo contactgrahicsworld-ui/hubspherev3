@@ -10,6 +10,7 @@ import { success } from '@/lib/api-response';
 import { getAuthUser } from '@/lib/api-auth';
 import { requirePermission } from '@/lib/rbac';
 import { createAuditLog } from '@/lib/audit';
+import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 
 // ============================================
@@ -32,7 +33,7 @@ function dbUnavailableResponse() {
 // ============================================
 
 const checkOutSchema = z.object({
-  checkOutLocation: z.record(z.unknown()).optional(),
+  checkOutLocation: z.record(z.string(), z.unknown()).optional(),
   checkOutDevice: z.string().max(100).optional(),
   notes: z.string().max(5000).optional(),
 });
@@ -133,7 +134,7 @@ export async function PUT(
         workingMinutes,
         earlyExitMinutes,
         status: finalStatus,
-        checkOutLocation: parsed.checkOutLocation ?? undefined,
+        checkOutLocation: parsed.checkOutLocation as unknown as Prisma.InputJsonValue | undefined,
         checkOutDevice: parsed.checkOutDevice ?? undefined,
         notes: parsed.notes ?? undefined,
       },

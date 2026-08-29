@@ -200,7 +200,7 @@ export default function TelecallerConsole() {
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
-  const searchRef = useRef<ReturnType<typeof setTimeout>>()
+  const searchRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Calls state
   const [leadCalls, setLeadCalls] = useState<CallRecord[]>([])

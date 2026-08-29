@@ -238,7 +238,7 @@ export default function ContactsListPage() {
   const [companies, setCompanies] = useState<CompanyOption[]>([])
   const [users, setUsers] = useState<UserOption[]>([])
 
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>()
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => {
     debounceRef.current = setTimeout(() => {
       setDebouncedSearch(search)

@@ -212,7 +212,7 @@ export async function PUT(
       action: 'deal.update',
       targetType: 'Deal',
       targetId: id,
-      metadata: Object.keys(updateData),
+      metadata: updateData,
       ipAddress: request.headers.get('x-forwarded-for') ?? undefined,
       userAgent: request.headers.get('user-agent') ?? undefined,
     });

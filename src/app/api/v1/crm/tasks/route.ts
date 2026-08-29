@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { paginationSchema, validate } from '@/lib/validators';
-import { handleApiError, AuthenticationError } from '@/lib/errors';
+import { handleApiError, AuthenticationError, ValidationError } from '@/lib/errors';
 import { success, paginated } from '@/lib/api-response';
 import { getAuthUser } from '@/lib/api-auth';
 import { requirePermission } from '@/lib/rbac';

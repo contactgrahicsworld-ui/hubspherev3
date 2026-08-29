@@ -84,6 +84,7 @@ interface TimelineItem {
   description: string | null
   user: { id: string; name: string | null; email: string | null } | null
   createdAt: string
+  metadata?: Record<string, unknown> | null
 }
 
 interface Note {

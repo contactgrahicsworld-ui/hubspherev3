@@ -143,7 +143,6 @@ export async function GET(request: NextRequest) {
           value: true,
           currency: true,
           stage: true,
-          status: true,
           contactId: true,
           companyId: true,
         },

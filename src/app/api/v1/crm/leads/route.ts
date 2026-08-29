@@ -62,7 +62,26 @@ const leadSelect = {
   },
 } as const;
 
-function formatLead(lead: typeof leadSelect & { tags: Array<{ tag: { id: string; name: string; color: string | null } }> }) {
+function formatLead(lead: {
+  id: string;
+  firstName: string;
+  lastName: string | null;
+  email: string | null;
+  mobile: string | null;
+  company: string | null;
+  source: string;
+  status: string;
+  priority: string | null;
+  ownerId: string | null;
+  value: number | null;
+  description: string | null;
+  convertedToContactId: string | null;
+  archived: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  owner: { id: string; name: string | null; email: string; avatarUrl: string | null } | null;
+  tags: Array<{ tag: { id: string; name: string; color: string | null } }>;
+}) {
   return {
     id: lead.id,
     firstName: lead.firstName,

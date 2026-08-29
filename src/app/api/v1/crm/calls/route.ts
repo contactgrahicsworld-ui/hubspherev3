@@ -6,6 +6,7 @@ import { success, paginated } from '@/lib/api-response';
 import { getAuthUser } from '@/lib/api-auth';
 import { requirePermission } from '@/lib/rbac';
 import { createAuditLog } from '@/lib/audit';
+import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 
 // ============================================
@@ -27,7 +28,7 @@ const createCallSchema = z.object({
   recordingUrl: z.string().max(2000).optional(),
   recordingProvider: z.string().max(100).optional(),
   recordingSize: z.number().int().min(0).optional(),
-  recordingMeta: z.record(z.unknown()).optional(),
+  recordingMeta: z.record(z.string(), z.unknown()).optional(),
   failureReason: z.string().max(500).optional(),
 });
 
@@ -181,7 +182,7 @@ export async function POST(request: NextRequest) {
         recordingUrl: data.recordingUrl ?? null,
         recordingProvider: data.recordingProvider ?? null,
         recordingSize: data.recordingSize ?? null,
-        recordingMeta: data.recordingMeta ?? undefined,
+        recordingMeta: data.recordingMeta as unknown as Prisma.InputJsonValue | undefined,
         failureReason: data.failureReason ?? null,
       },
       select: callSelect,

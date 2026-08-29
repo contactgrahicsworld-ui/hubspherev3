@@ -42,6 +42,10 @@ import {
   IdCard,
   ClipboardList,
   UsersRound,
+  // Analytics icons
+  BarChart3,
+  // AI icons
+  Brain,
 } from 'lucide-react'
 
 export interface NavItem {
@@ -95,6 +99,32 @@ export const automationNav: NavSection[] = [
       { title: 'Dashboard', href: '/automation', icon: Zap },
       { title: 'Workflows', href: '/automation/workflows', icon: Workflow },
       { title: 'Executions', href: '/automation/executions', icon: Activity },
+    ],
+  },
+]
+
+export const analyticsNav: NavSection[] = [
+  {
+    label: 'Analytics',
+    items: [
+      { title: 'Analytics Hub', href: '/analytics', icon: BarChart3 },
+      { title: 'Executive', href: '/analytics/executive', icon: LayoutDashboard },
+      { title: 'CRM', href: '/analytics/crm', icon: Target },
+      { title: 'Telecaller', href: '/analytics/telecaller', icon: Phone },
+      { title: 'HR', href: '/analytics/hr', icon: Briefcase },
+      { title: 'Communication', href: '/analytics/communication', icon: MessageSquare },
+      { title: 'Automation', href: '/analytics/automation', icon: Zap },
+      { title: 'AI Usage', href: '/analytics/ai', icon: Brain },
+    ],
+  },
+]
+
+export const aiNav: NavSection[] = [
+  {
+    label: 'AI Hub',
+    items: [
+      { title: 'AI Agents', href: '/ai', icon: Brain },
+      { title: 'Chat', href: '/ai/chat', icon: MessageSquare },
     ],
   },
 ]
@@ -234,6 +264,23 @@ export const tenantAdminNav: NavSection[] = [
       { title: 'Executions', href: '/automation/executions', icon: Activity },
     ],
   },
+  {
+    label: 'Analytics',
+    items: [
+      { title: 'Analytics Hub', href: '/analytics', icon: BarChart3 },
+      { title: 'Executive', href: '/analytics/executive', icon: LayoutDashboard },
+      { title: 'CRM', href: '/analytics/crm', icon: Target },
+      { title: 'HR', href: '/analytics/hr', icon: Briefcase },
+      { title: 'Communication', href: '/analytics/communication', icon: MessageSquare },
+    ],
+  },
+  {
+    label: 'AI',
+    items: [
+      { title: 'AI Agents', href: '/ai', icon: Brain },
+      { title: 'Chat', href: '/ai/chat', icon: MessageSquare },
+    ],
+  },
 ]
 
 export function getNavForRole(role: string): NavSection[] {
@@ -245,7 +292,7 @@ export function getNavForRole(role: string): NavSection[] {
     return [...crmNav.slice(0, 1), ...hrmsNav.slice(2), ...communicationNav.slice(0, 1)]
   }
   if (['TENANT_OWNER', 'ADMIN', 'MANAGER', 'SALES_MANAGER', 'SALES_EXECUTIVE', 'TELECALLER'].includes(role)) {
-    return [...tenantAdminNav, ...communicationNav, ...automationNav]
+    return [...tenantAdminNav, ...communicationNav, ...automationNav, ...analyticsNav, ...aiNav]
   }
-  return [...crmNav, ...hrmsNav, ...communicationNav, ...automationNav]
+  return [...crmNav, ...hrmsNav, ...communicationNav, ...automationNav, ...analyticsNav, ...aiNav]
 }

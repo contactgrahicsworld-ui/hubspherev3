@@ -6,7 +6,7 @@
 
 import { providerRegistry } from './registry';
 import { ProviderNotConfiguredError, ProviderUnhealthyError } from '@/lib/errors';
-import type { AIResponse } from './types';
+import type { AIProvider, AIResponse } from './types';
 
 class AIGateway {
   /**
@@ -36,7 +36,8 @@ class AIGateway {
         ...(tenantId ? { tenantId } : {}),
       };
 
-      return await provider.chatCompletion(prompt, context);
+      const aiProvider = provider as AIProvider;
+      return await aiProvider.chatCompletion(prompt, context);
     } catch (err) {
       if (err instanceof ProviderNotConfiguredError) {
         throw err;

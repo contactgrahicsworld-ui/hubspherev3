@@ -233,7 +233,7 @@ export default function CompaniesListPage() {
   const [industries, setIndustries] = useState<string[]>([])
   const [cities, setCities] = useState<string[]>([])
 
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>()
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => {
     debounceRef.current = setTimeout(() => {
       setDebouncedSearch(search)

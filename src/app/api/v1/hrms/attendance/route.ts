@@ -11,6 +11,7 @@ import { success, paginated } from '@/lib/api-response';
 import { getAuthUser } from '@/lib/api-auth';
 import { requirePermission } from '@/lib/rbac';
 import { createAuditLog } from '@/lib/audit';
+import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 
 // ============================================
@@ -34,7 +35,7 @@ function dbUnavailableResponse() {
 
 const checkInSchema = z.object({
   employeeId: z.string().uuid('Invalid employee ID format'),
-  checkInLocation: z.record(z.unknown()).optional(),
+  checkInLocation: z.record(z.string(), z.unknown()).optional(),
   checkInDevice: z.string().max(100).optional(),
   notes: z.string().max(5000).optional(),
 });
@@ -203,7 +204,7 @@ export async function POST(request: NextRequest) {
         checkInTime: now,
         status: sessionStatus,
         lateMinutes,
-        checkInLocation: data.checkInLocation ?? undefined,
+        checkInLocation: data.checkInLocation as unknown as Prisma.InputJsonValue | undefined,
         checkInDevice: data.checkInDevice ?? undefined,
         notes: data.notes ?? undefined,
       },

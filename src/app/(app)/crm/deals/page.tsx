@@ -327,7 +327,7 @@ export default function DealsListPage() {
   const [contacts, setContacts] = useState<ContactOption[]>([])
   const [companies, setCompanies] = useState<CompanyOption[]>([])
 
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>()
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => {
     debounceRef.current = setTimeout(() => { setDebouncedSearch(search) }, 300)
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }

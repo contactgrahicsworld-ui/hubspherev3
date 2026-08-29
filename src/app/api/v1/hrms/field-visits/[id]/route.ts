@@ -38,7 +38,7 @@ const updateFieldVisitSchema = z.object({
   outcome: z.string().max(5000).optional(),
   notes: z.string().max(5000).optional(),
   status: z.string().trim().max(50).optional(),
-  location: z.record(z.unknown()).nullable().optional(),
+  location: z.record(z.string(), z.unknown()).nullable().optional(),
   nextFollowUp: z.string().nullable().optional(),
 });
 
@@ -168,7 +168,7 @@ export async function PUT(
       action: 'field_visit.update',
       targetType: 'FieldVisit',
       targetId: id,
-      metadata: Object.keys(updateData),
+      metadata: updateData,
       ipAddress: request.headers.get('x-forwarded-for') ?? undefined,
       userAgent: request.headers.get('user-agent') ?? undefined,
     });

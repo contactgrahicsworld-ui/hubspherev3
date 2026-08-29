@@ -56,7 +56,7 @@ async function importHmacKey(secret: string): Promise<CryptoKey> {
   const keyData = textToBytes(secret);
   return crypto.subtle.importKey(
     'raw',
-    keyData,
+    keyData.buffer as ArrayBuffer,
     { name: 'HMAC', hash: 'SHA-256' },
     false,
     ['sign', 'verify']
@@ -69,7 +69,7 @@ async function hmacSign(secret: string, data: string): Promise<string> {
   const signature = await crypto.subtle.sign(
     'HMAC',
     key,
-    textToBytes(data)
+    (textToBytes(data)).buffer as ArrayBuffer
   );
   return base64UrlEncode(new Uint8Array(signature));
 }
@@ -86,8 +86,8 @@ async function hmacVerify(
     return crypto.subtle.verify(
       'HMAC',
       key,
-      signatureBytes,
-      textToBytes(data)
+      (signatureBytes).buffer as ArrayBuffer,
+      (textToBytes(data)).buffer as ArrayBuffer
     );
   } catch {
     return false;

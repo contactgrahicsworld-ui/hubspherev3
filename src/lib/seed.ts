@@ -15,7 +15,7 @@ async function seedPermissions() {
     (await db.permission.findMany({ select: { code: true } })).map(p => p.code)
   );
 
-  const toCreate = [];
+  const toCreate: Array<{ code: string; name: string; module: string; action: string }> = [];
   for (const mod of PERMISSION_MODULES) {
     for (const action of PERMISSION_ACTIONS) {
       const code = `${mod}.${action}`;

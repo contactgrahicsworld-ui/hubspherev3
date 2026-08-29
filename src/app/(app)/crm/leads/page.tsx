@@ -294,7 +294,7 @@ export default function LeadsListPage() {
   const [formOpen, setFormOpen] = useState(false)
 
   // Debounce search
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>()
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => {
     debounceRef.current = setTimeout(() => {
       setDebouncedSearch(search)

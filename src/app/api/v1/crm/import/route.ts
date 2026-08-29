@@ -107,6 +107,8 @@ export async function POST(request: NextRequest) {
 
     const headers = rows[0].map((h) => h.toLowerCase());
     const dataRows = rows.slice(1);
+    const tenantId = payload.tenantId;
+    const userId = payload.userId;
 
     let created = 0;
     let skipped = 0;
@@ -125,7 +127,7 @@ export async function POST(request: NextRequest) {
         }
 
         return {
-          tenantId: payload.tenantId,
+          tenantId,
           firstName: (record['first name'] ?? record['firstname'] ?? record['first_name'])!,
           lastName: record['last name'] ?? record['lastname'] ?? record['last_name'] ?? null,
           email: record['email'] || null,
@@ -157,14 +159,14 @@ export async function POST(request: NextRequest) {
         }
 
         return {
-          tenantId: payload.tenantId,
+          tenantId,
           firstName: (record['first name'] ?? record['firstname'] ?? record['first_name'])!,
           lastName: record['last name'] ?? record['lastname'] ?? record['last_name'] ?? null,
           email: record['email'] || null,
           mobile: record['mobile'] ?? null,
           phone: record['phone'] ?? null,
           title: record['title'] ?? null,
-          ownerId: payload.userId,
+          ownerId: userId,
         };
       });
 
@@ -188,7 +190,7 @@ export async function POST(request: NextRequest) {
         }
 
         return {
-          tenantId: payload.tenantId,
+          tenantId,
           name: record['name']!,
           industry: record['industry'] ?? null,
           website: record['website'] ?? null,
@@ -198,7 +200,7 @@ export async function POST(request: NextRequest) {
           city: record['city'] ?? null,
           state: record['state'] ?? null,
           country: record['country'] ?? null,
-          ownerId: payload.userId,
+          ownerId: userId,
         };
       });
 

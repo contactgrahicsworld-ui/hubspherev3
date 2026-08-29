@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
       // Deal value metrics
       db.deal.findMany({
         where: { tenantId, archived: false },
-        select: { status: true, value: true },
+        select: { stage: true, value: true },
       }),
 
       // Follow-up metrics
@@ -120,9 +120,9 @@ export async function GET(request: NextRequest) {
     const wonLeads = leadMap['CONVERTED'] ?? 0;
 
     for (const deal of dealMetrics) {
-      if (deal.status === 'WON') {
+      if (deal.stage === 'WON') {
         wonDealsValue += deal.value;
-      } else if (deal.status === 'LOST') {
+      } else if (deal.stage === 'LOST') {
         lostDealsValue += deal.value;
       } else {
         openDeals++;
