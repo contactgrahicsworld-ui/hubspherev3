@@ -62,9 +62,45 @@ export async function apiFetch<T = unknown>(
   const response = await fetch(url, {
     ...options,
     headers,
+    credentials: 'include',
   })
 
   if (response.status === 401) {
+    // Try silent token refresh before redirecting
+    try {
+      const refreshRes = await fetch('/api/v1/auth/refresh', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      if (refreshRes.ok) {
+        const refreshData = await refreshRes.json()
+        const newToken = refreshData?.data?.accessToken
+        if (newToken) {
+          localStorage.setItem(TOKEN_KEY, newToken)
+          // Retry original request with new token
+          const retryHeaders = { ...headers } as Record<string, string>
+          retryHeaders['Authorization'] = `Bearer ${newToken}`
+          const retryRes = await fetch(url, { ...options, headers: retryHeaders, credentials: 'include' })
+          if (retryRes.status === 401) {
+            clearTokens(); clearUserInfo()
+            if (typeof window !== 'undefined') window.location.href = '/login'
+            throw new Error('Unauthorized')
+          }
+          if (!retryRes.ok) {
+            const body = await retryRes.json().catch(() => ({ message: 'Request failed' }))
+            const msg =
+              (body.error && typeof body.error === 'object' ? body.error.message : null) ||
+              (typeof body.error === 'string' ? body.error : null) ||
+              body.message || `Request failed with status ${retryRes.status}`
+            throw new Error(msg)
+          }
+          return retryRes.json() as Promise<T>
+        }
+      }
+    } catch (refreshError) {
+      // Refresh failed, proceed with logout
+    }
     clearTokens()
     clearUserInfo()
     if (typeof window !== 'undefined') {

@@ -39,7 +39,7 @@ const updateFieldVisitSchema = z.object({
   outcome: z.string().max(5000).optional(),
   notes: z.string().max(5000).optional(),
   status: z.enum(['PLANNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']).optional(),
-  location: z.record(z.string(), z.unknown()).max(10, 'Location object too large').nullable().optional(),
+  location: z.record(z.string().max(100), z.unknown()).nullable().optional(),
   nextFollowUp: z.string().refine((v) => v === null || v === '' || !isNaN(Date.parse(v)), 'Invalid nextFollowUp date').nullable().optional(),
 });
 
