@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { paginationSchema, validate } from '@/lib/validators';
+import { paginationSchema, validate, VALID_ASSIGNABLE_ROLES } from '@/lib/validators';
 import { handleApiError, AuthenticationError, NotFoundError, ValidationError } from '@/lib/errors';
 import { success, paginated } from '@/lib/api-response';
 import { getAuthUser } from '@/lib/api-auth';
 import { requirePermission } from '@/lib/rbac';
 import { createAuditLog } from '@/lib/audit';
+import { z } from 'zod';
 
 export async function GET(request: NextRequest) {
   try {
@@ -83,6 +84,10 @@ export async function PUT(request: NextRequest) {
       throw new ValidationError('Membership id is required');
     }
 
+    if (!z.string().uuid().safeParse(id).success) {
+      throw new ValidationError('Invalid membership ID format');
+    }
+
     const membership = await db.membership.findFirst({
       where: {
         id,
@@ -95,8 +100,19 @@ export async function PUT(request: NextRequest) {
     }
 
     const updateData: Record<string, unknown> = {};
-    if (roleCode) updateData.roleCode = roleCode;
-    if (status) updateData.status = status;
+    if (roleCode !== undefined && roleCode !== null && roleCode !== '') {
+      if (!(VALID_ASSIGNABLE_ROLES as readonly string[]).includes(roleCode)) {
+        throw new ValidationError(`Invalid role code. Must be one of: ${VALID_ASSIGNABLE_ROLES.join(', ')}`);
+      }
+      updateData.roleCode = roleCode;
+    }
+    const validStatuses = ['ACTIVE', 'INACTIVE', 'SUSPENDED'];
+    if (status !== undefined && status !== null && status !== '') {
+      if (!validStatuses.includes(status)) {
+        throw new ValidationError(`Invalid status. Must be one of: ${validStatuses.join(', ')}`);
+      }
+      updateData.status = status;
+    }
 
     const updated = await db.membership.update({
       where: { id: membership.id },

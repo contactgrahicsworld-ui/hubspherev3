@@ -199,31 +199,49 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const deal = await db.deal.create({
-      data: {
-        tenantId: payload.tenantId,
-        title: data.title,
-        value: data.value ?? 0,
-        currency: data.currency ?? 'INR',
-        stage: data.stage ?? 'NEW',
-        probability: data.probability ?? 0,
-        expectedCloseDate: data.expectedCloseDate ? new Date(data.expectedCloseDate) : null,
-        contactId: data.contactId ?? null,
-        companyId: data.companyId ?? null,
-        ownerId: data.ownerId ?? null,
-        notes: data.notes ?? null,
-      },
-      select: dealSelect,
-    });
+    // Validate owner belongs to the same tenant if provided
+    if (data.ownerId) {
+      const ownerExists = await db.membership.findFirst({
+        where: { userId: data.ownerId, tenantId: payload.tenantId, status: 'ACTIVE' },
+        select: { id: true },
+      });
+      if (!ownerExists) {
+        throw new ValidationError('Owner not found');
+      }
+    }
 
-    // Create initial stage history
-    await db.stageHistory.create({
-      data: {
-        dealId: deal.id,
-        fromStage: null,
-        toStage: data.stage ?? 'NEW',
-        movedBy: payload.userId,
-      },
+    // Narrow tenantId for use inside transaction callback
+    const tenantId = payload.tenantId!;
+
+    const deal = await db.$transaction(async (tx) => {
+      const created = await tx.deal.create({
+        data: {
+          tenantId,
+          title: data.title,
+          value: data.value ?? 0,
+          currency: data.currency ?? 'INR',
+          stage: data.stage ?? 'NEW',
+          probability: data.probability ?? 0,
+          expectedCloseDate: data.expectedCloseDate ? new Date(data.expectedCloseDate) : null,
+          contactId: data.contactId ?? null,
+          companyId: data.companyId ?? null,
+          ownerId: data.ownerId ?? null,
+          notes: data.notes ?? null,
+        },
+        select: dealSelect,
+      });
+
+      // Create initial stage history in the same transaction
+      await tx.stageHistory.create({
+        data: {
+          dealId: created.id,
+          fromStage: null,
+          toStage: data.stage ?? 'NEW',
+          movedBy: payload.userId,
+        },
+      });
+
+      return created;
     });
 
     await createAuditLog({

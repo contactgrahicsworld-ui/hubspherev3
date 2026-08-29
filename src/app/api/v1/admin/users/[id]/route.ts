@@ -6,6 +6,7 @@ import { success } from '@/lib/api-response';
 import { getAuthUser } from '@/lib/api-auth';
 import { requirePermission } from '@/lib/rbac';
 import { createAuditLog } from '@/lib/audit';
+import { z } from 'zod';
 
 export async function GET(
   request: NextRequest,
@@ -22,6 +23,10 @@ export async function GET(
 
     const { id } = await params;
 
+    if (!z.string().uuid().safeParse(id).success) {
+      throw new ValidationError('Invalid user ID format');
+    }
+
     const membership = await db.membership.findFirst({
       where: {
         userId: id,
@@ -34,7 +39,6 @@ export async function GET(
             email: true,
             name: true,
             avatarUrl: true,
-            isSuperAdmin: true,
             status: true,
             emailVerified: true,
             lastLoginAt: true,
@@ -54,7 +58,6 @@ export async function GET(
         email: membership.user.email,
         name: membership.user.name,
         avatarUrl: membership.user.avatarUrl,
-        isSuperAdmin: membership.user.isSuperAdmin,
         status: membership.user.status,
         emailVerified: membership.user.emailVerified,
         lastLoginAt: membership.user.lastLoginAt,
@@ -84,6 +87,10 @@ export async function PUT(
     await requirePermission(payload.roleCode ?? null, 'users.edit', payload.tenantId);
 
     const { id } = await params;
+
+    if (!z.string().uuid().safeParse(id).success) {
+      throw new ValidationError('Invalid user ID format');
+    }
 
     const membership = await db.membership.findFirst({
       where: {
@@ -157,6 +164,10 @@ export async function DELETE(
     await requirePermission(payload.roleCode ?? null, 'users.delete', payload.tenantId);
 
     const { id } = await params;
+
+    if (!z.string().uuid().safeParse(id).success) {
+      throw new ValidationError('Invalid user ID format');
+    }
 
     // Prevent removing yourself
     if (id === payload.userId) {

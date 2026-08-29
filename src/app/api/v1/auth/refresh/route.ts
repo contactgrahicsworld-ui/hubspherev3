@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { db } from '@/lib/db';
 import { generateAccessToken, generateRefreshToken, getRefreshTokenExpiry } from '@/lib/auth';
 import { handleApiError, AuthenticationError } from '@/lib/errors';
@@ -8,7 +9,11 @@ import { setAuthCookies } from '@/lib/api-auth';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { refreshToken: incomingToken } = body as { refreshToken?: string };
+    const parsed = z.object({ refreshToken: z.string().optional() }).safeParse(body);
+    if (!parsed.success) {
+      throw new AuthenticationError('Invalid request body');
+    }
+    const incomingToken = parsed.data.refreshToken;
 
     // Accept token from body or cookie
     const tokenValue = incomingToken || request.cookies.get('hs-refresh-token')?.value;
@@ -56,12 +61,6 @@ export async function POST(request: NextRequest) {
       roleCode = 'SUPER_ADMIN';
     }
 
-    // Revoke old refresh token
-    await db.refreshToken.update({
-      where: { id: storedToken.id },
-      data: { revokedAt: new Date() },
-    });
-
     // Generate new tokens
     const accessToken = await generateAccessToken({
       userId: storedToken.user.id,
@@ -72,17 +71,25 @@ export async function POST(request: NextRequest) {
     });
 
     const newRefreshToken = await generateRefreshToken();
-    await db.refreshToken.create({
-      data: {
-        token: newRefreshToken,
-        userId: storedToken.user.id,
-        tenantId,
-        expiresAt: getRefreshTokenExpiry(),
-      },
-    });
+
+    // Atomic: revoke old + create new in a transaction to prevent token replay
+    await db.$transaction([
+      db.refreshToken.update({
+        where: { id: storedToken.id },
+        data: { revokedAt: new Date() },
+      }),
+      db.refreshToken.create({
+        data: {
+          token: newRefreshToken,
+          userId: storedToken.user.id,
+          tenantId,
+          expiresAt: getRefreshTokenExpiry(),
+        },
+      }),
+    ]);
 
     const response = NextResponse.json(
-      success({ accessToken, refreshToken: newRefreshToken }, 'Token refreshed successfully')
+      success({ accessToken }, 'Token refreshed successfully')
     );
 
     setAuthCookies(response, accessToken, newRefreshToken);

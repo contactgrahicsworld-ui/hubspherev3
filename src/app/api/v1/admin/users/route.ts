@@ -6,7 +6,7 @@ import { success, paginated } from '@/lib/api-response';
 import { getAuthUser } from '@/lib/api-auth';
 import { requirePermission } from '@/lib/rbac';
 import { createAuditLog } from '@/lib/audit';
-import { hashPassword, generateAccessToken, generateRefreshToken, getRefreshTokenExpiry } from '@/lib/auth';
+import { hashPassword } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
@@ -94,26 +94,26 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const data = validate(createUserSchema, body);
 
-    // Check email uniqueness
+    // Check if email is already used in THIS tenant
+    const tenantMembership = await db.membership.findFirst({
+      where: {
+        user: { email: data.email },
+        tenantId: payload.tenantId,
+      },
+      include: { user: true },
+    });
+
+    if (tenantMembership) {
+      return NextResponse.json(
+        { success: false, error: 'User is already a member of this tenant', code: 'CONFLICT' },
+        { status: 409 }
+      );
+    }
+
+    // Check if user exists globally (in another tenant) — no info leaked to client
     const existingUser = await db.user.findUnique({ where: { email: data.email } });
     if (existingUser) {
-      // User exists - just add membership
-      const existingMembership = await db.membership.findUnique({
-        where: {
-          userId_tenantId: {
-            userId: existingUser.id,
-            tenantId: payload.tenantId,
-          },
-        },
-      });
-
-      if (existingMembership) {
-        return NextResponse.json(
-          { success: false, error: 'User is already a member of this tenant', code: 'CONFLICT' },
-          { status: 409 }
-        );
-      }
-
+      // User exists in another tenant — add membership to this tenant
       const roleCode = data.roleCode;
       const membership = await db.membership.create({
         data: {
@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
     // Create new user
     const passwordHash = data.password
       ? await hashPassword(data.password)
-      : await hashPassword(`ChangeMe${Date.now()}!1`);
+      : await hashPassword(`TempPass_${crypto.randomUUID().slice(0, 8)}!k9`);
 
     const user = await db.user.create({
       data: {

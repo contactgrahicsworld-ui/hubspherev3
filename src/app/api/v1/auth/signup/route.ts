@@ -113,7 +113,6 @@ export async function POST(request: NextRequest) {
             status: user.status,
           },
           accessToken,
-          refreshToken,
         },
         'Account created successfully'
       ),

@@ -187,6 +187,17 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Validate owner belongs to the same tenant if provided
+    if (data.ownerId) {
+      const ownerExists = await db.membership.findFirst({
+        where: { userId: data.ownerId, tenantId: payload.tenantId, status: 'ACTIVE' },
+        select: { id: true },
+      });
+      if (!ownerExists) {
+        throw new ValidationError('Owner not found');
+      }
+    }
+
     const contact = await db.contact.create({
       data: {
         tenantId: payload.tenantId,

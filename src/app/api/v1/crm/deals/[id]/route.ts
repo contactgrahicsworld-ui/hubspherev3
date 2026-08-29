@@ -13,6 +13,14 @@ import { requirePermission } from '@/lib/rbac';
 import { createAuditLog } from '@/lib/audit';
 import { z } from 'zod';
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function validateUuid(id: string): void {
+  if (!UUID_RE.test(id)) {
+    throw new NotFoundError('Resource not found');
+  }
+}
+
 // ============================================
 // SCHEMAS
 // ============================================
@@ -103,6 +111,7 @@ export async function GET(
     await requirePermission(payload.roleCode ?? null, 'deals.view', payload.tenantId);
 
     const { id } = await params;
+    validateUuid(id);
 
     const deal = await db.deal.findFirst({
       where: {
@@ -151,6 +160,7 @@ export async function PUT(
     await requirePermission(payload.roleCode ?? null, 'deals.edit', payload.tenantId);
 
     const { id } = await params;
+    validateUuid(id);
 
     const existing = await db.deal.findFirst({
       where: { id, tenantId: payload.tenantId, archived: false },
@@ -185,6 +195,17 @@ export async function PUT(
       }
     }
 
+    // Validate owner belongs to the same tenant if provided
+    if (data.ownerId) {
+      const ownerExists = await db.membership.findFirst({
+        where: { userId: data.ownerId, tenantId: payload.tenantId, status: 'ACTIVE' },
+        select: { id: true },
+      });
+      if (!ownerExists) {
+        throw new ValidationError('Owner not found');
+      }
+    }
+
     const updateData: Record<string, unknown> = {};
     if (data.title !== undefined) updateData.title = data.title;
     if (data.value !== undefined) updateData.value = data.value;
@@ -200,10 +221,27 @@ export async function PUT(
     if (data.notes !== undefined) updateData.notes = data.notes;
     if (data.lostReason !== undefined) updateData.lostReason = data.lostReason;
 
-    const deal = await db.deal.update({
-      where: { id },
-      data: updateData,
-      select: dealSelect,
+    // Track stage change in history within a transaction
+    const deal = await db.$transaction(async (tx) => {
+      const updated = await tx.deal.update({
+        where: { id },
+        data: updateData,
+        select: dealSelect,
+      });
+
+      // If stage changed, record it in stage history
+      if (data.stage !== undefined && data.stage !== existing.stage) {
+        await tx.stageHistory.create({
+          data: {
+            dealId: id,
+            fromStage: existing.stage,
+            toStage: data.stage,
+            movedBy: payload.userId,
+          },
+        });
+      }
+
+      return updated;
     });
 
     await createAuditLog({
@@ -253,6 +291,7 @@ export async function DELETE(
     await requirePermission(payload.roleCode ?? null, 'deals.delete', payload.tenantId);
 
     const { id } = await params;
+    validateUuid(id);
 
     const existing = await db.deal.findFirst({
       where: { id, tenantId: payload.tenantId, archived: false },

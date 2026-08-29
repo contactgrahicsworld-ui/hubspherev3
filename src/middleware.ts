@@ -47,8 +47,10 @@ function isPublicPath(pathname: string): boolean {
 const SECURITY_HEADERS: Record<string, string> = {
   'X-Content-Type-Options': 'nosniff',
   'X-Frame-Options': 'DENY',
-  'X-XSS-Protection': '1; mode=block',
   'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+  'X-Permitted-Cross-Domain-Policies': 'none',
 };
 
 function applyHeaders(response: NextResponse, isApi: boolean, req: NextRequest): void {
@@ -62,12 +64,14 @@ function applyHeaders(response: NextResponse, isApi: boolean, req: NextRequest):
     const allowedOrigin = process.env.NODE_ENV === 'production'
       ? (process.env.APP_URL || '').replace(/\/$/, '')
       : '*';
+    // FIX: Exact origin match to prevent CORS bypass (e.g. evil.com matching app.com)
     const effectiveOrigin = allowedOrigin === '*' || !origin
       ? allowedOrigin
-      : (origin.startsWith(allowedOrigin) ? origin : allowedOrigin);
+      : (origin === allowedOrigin ? origin : allowedOrigin);
     response.headers.set('Access-Control-Allow-Origin', effectiveOrigin);
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    response.headers.set('Access-Control-Allow-Credentials', 'true');
     response.headers.set('Access-Control-Max-Age', '86400');
   }
 }

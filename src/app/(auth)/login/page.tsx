@@ -78,8 +78,10 @@ export default function LoginPage() {
 
       if (data.user.role === 'SUPER_ADMIN') {
         router.push('/super-admin')
-      } else {
+      } else if (['ADMIN', 'MANAGER'].includes(data.user.role)) {
         router.push('/admin')
+      } else {
+        router.push('/crm/leads')
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Login failed. Please try again.'

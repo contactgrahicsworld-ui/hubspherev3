@@ -4,6 +4,7 @@ import { paginationSchema, validate } from '@/lib/validators';
 import {
   handleApiError,
   AuthenticationError,
+  ValidationError,
 } from '@/lib/errors';
 import { success, paginated } from '@/lib/api-response';
 import { getAuthUser } from '@/lib/api-auth';
@@ -199,6 +200,17 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const data = validate(createLeadSchema, body);
+
+    // Validate owner belongs to the same tenant if provided
+    if (data.ownerId) {
+      const ownerExists = await db.membership.findFirst({
+        where: { userId: data.ownerId, tenantId: payload.tenantId, status: 'ACTIVE' },
+        select: { id: true },
+      });
+      if (!ownerExists) {
+        throw new ValidationError('Owner not found');
+      }
+    }
 
     const lead = await db.lead.create({
       data: {

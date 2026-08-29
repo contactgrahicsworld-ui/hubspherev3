@@ -5,12 +5,21 @@ import {
   handleApiError,
   AuthenticationError,
   NotFoundError,
+  ValidationError,
 } from '@/lib/errors';
 import { success } from '@/lib/api-response';
 import { getAuthUser } from '@/lib/api-auth';
 import { requirePermission } from '@/lib/rbac';
 import { createAuditLog } from '@/lib/audit';
 import { z } from 'zod';
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function validateUuid(id: string): void {
+  if (!UUID_RE.test(id)) {
+    throw new NotFoundError('Resource not found');
+  }
+}
 
 // ============================================
 // SCHEMAS
@@ -102,6 +111,7 @@ export async function GET(
     await requirePermission(payload.roleCode ?? null, 'contacts.view', payload.tenantId);
 
     const { id } = await params;
+    validateUuid(id);
 
     const contact = await db.contact.findFirst({
       where: {
@@ -150,6 +160,7 @@ export async function PUT(
     await requirePermission(payload.roleCode ?? null, 'contacts.edit', payload.tenantId);
 
     const { id } = await params;
+    validateUuid(id);
 
     const existing = await db.contact.findFirst({
       where: { id, tenantId: payload.tenantId, archived: false },
@@ -170,6 +181,17 @@ export async function PUT(
       });
       if (!company) {
         throw new NotFoundError('Company not found');
+      }
+    }
+
+    // Validate owner belongs to the same tenant if provided
+    if (data.ownerId) {
+      const ownerExists = await db.membership.findFirst({
+        where: { userId: data.ownerId, tenantId: payload.tenantId, status: 'ACTIVE' },
+        select: { id: true },
+      });
+      if (!ownerExists) {
+        throw new ValidationError('Owner not found');
       }
     }
 
@@ -237,6 +259,7 @@ export async function DELETE(
     await requirePermission(payload.roleCode ?? null, 'contacts.delete', payload.tenantId);
 
     const { id } = await params;
+    validateUuid(id);
 
     const existing = await db.contact.findFirst({
       where: { id, tenantId: payload.tenantId, archived: false },

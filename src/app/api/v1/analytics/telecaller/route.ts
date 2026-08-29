@@ -53,7 +53,6 @@ export async function GET(request: NextRequest) {
       callStatusGroups,
       durationAgg,
       callsPerAgent,
-      callOutcomes,
       recordingAvailable,
     ] = await Promise.all([
       // Call status distribution
@@ -78,13 +77,6 @@ export async function GET(request: NextRequest) {
         _sum: { duration: true },
         orderBy: { _count: { id: 'desc' } },
         take: 10,
-      }),
-
-      // Call outcome distribution (already covered by callStatusGroups, but explicit)
-      db.call.groupBy({
-        by: ['callStatus'],
-        where: { tenantId, ...dateFilter },
-        _count: true,
       }),
 
       // Recording availability (calls with recording status READY)
@@ -129,8 +121,8 @@ export async function GET(request: NextRequest) {
       totalDuration: g._sum.duration ?? 0,
     }));
 
-    // --- Call outcome distribution ---
-    const callOutcomeDistribution = callOutcomes
+    // --- Call outcome distribution (reuse callStatusGroups)
+    const callOutcomeDistribution = callStatusGroups
       .filter((c) => c.callStatus !== null)
       .map((c) => ({
         callStatus: c.callStatus!,

@@ -73,7 +73,7 @@ function loadEnv(): EnvironmentConfig {
   if (dbUrl && !dbUrl.startsWith('postgresql://') && !dbUrl.startsWith('postgres://')) {
     if (isDev) {
       console.warn(
-        `[HubSphere] DATABASE_URL should be PostgreSQL (postgresql://...). Got: ${dbUrl.substring(0, 30)}...`
+        `[HubSphere] DATABASE_URL should be PostgreSQL (postgresql://...). Got: ${dbUrl.substring(0, 15)}...`
       );
     } else {
       throw new Error(
@@ -84,9 +84,9 @@ function loadEnv(): EnvironmentConfig {
   }
 
   return {
-    DATABASE_URL: process.env.DATABASE_URL || 'postgresql://hubsphere:placeholder@localhost:5432/hubsphere',
-    JWT_SECRET: process.env.JWT_SECRET || 'dev_jwt_secret_not_for_production',
-    REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET || 'dev_refresh_secret_not_for_production',
+    DATABASE_URL: process.env.DATABASE_URL || '',
+    JWT_SECRET: process.env.JWT_SECRET || '',
+    REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET || '',
     APP_URL: process.env.APP_URL || 'http://localhost:3000',
     NODE_ENV: (process.env.NODE_ENV as EnvironmentConfig['NODE_ENV']) || 'development',
 

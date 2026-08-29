@@ -126,10 +126,16 @@ export async function GET(request: NextRequest) {
     // RBAC check — module-specific export permission
     await requirePermission(payload.roleCode ?? null, `${reportModule}.export`, payload.tenantId);
 
-    // Resolve fields
+    // Resolve fields — whitelist against allowed module fields only
+    const allowedFields = MODULE_DEFAULT_FIELDS[reportModule];
     const resolvedFields = fieldsParam
-      ? fieldsParam.split(',').map((f) => f.trim()).filter((f) => f.length > 0)
-      : MODULE_DEFAULT_FIELDS[reportModule];
+      ? fieldsParam.split(',').map((f) => f.trim()).filter((f) => f.length > 0 && allowedFields.includes(f))
+      : allowedFields;
+
+    // Validate that at least some fields remain after whitelist
+    if (resolvedFields.length === 0) {
+      throw new ValidationError('No valid fields specified for export');
+    }
 
     // Build query
     const tenantId = payload.tenantId;
@@ -193,8 +199,8 @@ export async function GET(request: NextRequest) {
         throw new ValidationError(`Unknown module: ${reportModule}`);
     }
 
-    // Build CSV
-    const outputFields = resolvedFields;
+    // Build CSV — strip tenantId from output even if somehow present
+    const outputFields = resolvedFields.filter((f) => f !== 'tenantId');
     const csvHeader = outputFields.join(',');
     const csvRows = records.map((record) => toCSVRow(record, outputFields));
     const csvContent = [csvHeader, ...csvRows].join('\n');

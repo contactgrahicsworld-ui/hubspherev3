@@ -90,7 +90,11 @@ export async function GET(request: NextRequest) {
       tenantId: payload.tenantId,
     };
 
-    if (status) where.status = status;
+    if (status) {
+      where.status = status;
+    } else {
+      where.status = { not: 'CANCELLED' };
+    }
     if (priority) where.priority = priority;
     if (ownerId) where.ownerId = ownerId;
     if (entityType) where.entityType = entityType;
@@ -98,8 +102,20 @@ export async function GET(request: NextRequest) {
 
     if (dueDateFrom || dueDateTo) {
       where.dueDate = {} as Record<string, unknown>;
-      if (dueDateFrom) (where.dueDate as Record<string, unknown>).gte = new Date(dueDateFrom);
-      if (dueDateTo) (where.dueDate as Record<string, unknown>).lte = new Date(dueDateTo);
+      if (dueDateFrom) {
+        const from = new Date(dueDateFrom);
+        if (isNaN(from.getTime())) {
+          throw new ValidationError('Invalid dueDateFrom format');
+        }
+        (where.dueDate as Record<string, unknown>).gte = from;
+      }
+      if (dueDateTo) {
+        const to = new Date(dueDateTo);
+        if (isNaN(to.getTime())) {
+          throw new ValidationError('Invalid dueDateTo format');
+        }
+        (where.dueDate as Record<string, unknown>).lte = to;
+      }
     }
 
     const [tasks, total] = await Promise.all([
@@ -140,6 +156,37 @@ export async function POST(request: NextRequest) {
 
     if (data.entityId && !data.entityType) {
       throw new ValidationError('entityType is required when entityId is provided');
+    }
+
+    // Validate owner belongs to the same tenant if provided
+    if (data.ownerId) {
+      const ownerExists = await db.membership.findFirst({
+        where: { userId: data.ownerId, tenantId: payload.tenantId, status: 'ACTIVE' },
+        select: { id: true },
+      });
+      if (!ownerExists) {
+        throw new ValidationError('Owner not found');
+      }
+    }
+
+    // Validate entity belongs to the same tenant if provided
+    if (data.entityId && data.entityType) {
+      const entityQueries: Record<string, { findFirst: (args: { where: { id: string; tenantId: string }; select: { id: boolean } }) => Promise<{ id: string } | null> }> = {
+        LEAD: db.lead,
+        CONTACT: db.contact,
+        COMPANY: db.company,
+        DEAL: db.deal,
+      };
+      const query = entityQueries[data.entityType];
+      if (query) {
+        const entityExists = await query.findFirst({
+          where: { id: data.entityId, tenantId: payload.tenantId! },
+          select: { id: true },
+        });
+        if (!entityExists) {
+          throw new ValidationError(`${data.entityType} not found`);
+        }
+      }
     }
 
     const task = await db.task.create({

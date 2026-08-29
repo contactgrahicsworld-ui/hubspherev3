@@ -993,7 +993,7 @@ model LeaveRequest {
   status        String    @default("PENDING") // PENDING, APPROVED, REJECTED, CANCELLED
   approvedBy    String?   @map("approved_by") @db.Uuid
   approvedAt    DateTime? @map("approved_at")
-  rejectionReason String?  @map("rejection_reason") @db.Text
+  rejectionReason String?  @db.Text @map("rejection_reason")
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
@@ -1097,7 +1097,7 @@ model Expense {
   status        String    @default("PENDING") // PENDING, APPROVED, REJECTED, PAID
   approvedBy    String?   @map("approved_by") @db.Uuid
   approvedAt    DateTime? @map("approved_at")
-  rejectionReason String?  @map("rejection_reason") @db.Text
+  rejectionReason String?  @db.Text @map("rejection_reason")
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
@@ -1195,7 +1195,7 @@ model BankTransfer {
   providerMeta      Json?     @map("provider_meta")
   initiatedAt       DateTime  @map("initiated_at")
   completedAt       DateTime? @map("completed_at")
-  failureReason     String?   @map("failure_reason") @db.Text
+  failureReason     String?   @db.Text @map("failure_reason")
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")
 
@@ -1247,7 +1247,7 @@ model Conversation {
   assignedToId  String?   @map("assigned_to_id") @db.Uuid
   status        String    @default("ACTIVE") // ACTIVE, CLOSED, ARCHIVED
   lastMessageAt DateTime? @map("last_message_at")
-  lastMessagePreview String? @map("last_message_preview") @db.Text
+  lastMessagePreview String? @db.Text @map("last_message_preview")
   unreadCount   Int       @default(0) @map("unread_count")
   metadata      Json      @default("{}")
   createdAt     DateTime  @default(now()) @map("created_at")
@@ -1287,7 +1287,7 @@ model Message {
   deliveredAt    DateTime? @map("delivered_at")
   readAt         DateTime? @map("read_at")
   failedAt       DateTime? @map("failed_at")
-  failureReason  String?   @map("failure_reason") @db.Text
+  failureReason  String?   @db.Text @map("failure_reason")
   metadata       Json      @default("{}")
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")

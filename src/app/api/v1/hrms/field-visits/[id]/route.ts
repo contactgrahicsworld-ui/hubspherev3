@@ -5,6 +5,7 @@ import {
   handleApiError,
   AuthenticationError,
   NotFoundError,
+  ValidationError,
 } from '@/lib/errors';
 import { success } from '@/lib/api-response';
 import { getAuthUser } from '@/lib/api-auth';
@@ -37,9 +38,9 @@ const updateFieldVisitSchema = z.object({
   purpose: z.string().max(5000).optional(),
   outcome: z.string().max(5000).optional(),
   notes: z.string().max(5000).optional(),
-  status: z.string().trim().max(50).optional(),
-  location: z.record(z.string(), z.unknown()).nullable().optional(),
-  nextFollowUp: z.string().nullable().optional(),
+  status: z.enum(['PLANNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']).optional(),
+  location: z.record(z.string(), z.unknown()).max(10, 'Location object too large').nullable().optional(),
+  nextFollowUp: z.string().refine((v) => v === null || v === '' || !isNaN(Date.parse(v)), 'Invalid nextFollowUp date').nullable().optional(),
 });
 
 // ============================================
@@ -48,7 +49,6 @@ const updateFieldVisitSchema = z.object({
 
 const fieldVisitSelect = {
   id: true,
-  tenantId: true,
   employeeId: true,
   leadId: true,
   contactId: true,
@@ -99,6 +99,10 @@ export async function GET(
 
     const { id } = await params;
 
+    if (!z.string().uuid().safeParse(id).success) {
+      throw new ValidationError('Invalid visit ID format');
+    }
+
     const visit = await db.fieldVisit.findFirst({
       where: { id, tenantId: payload.tenantId },
       select: fieldVisitSelect,
@@ -134,6 +138,10 @@ export async function PUT(
     await requirePermission(payload.roleCode ?? null, 'visits.edit', payload.tenantId);
 
     const { id } = await params;
+
+    if (!z.string().uuid().safeParse(id).success) {
+      throw new ValidationError('Invalid visit ID format');
+    }
 
     const existing = await db.fieldVisit.findFirst({
       where: { id, tenantId: payload.tenantId },

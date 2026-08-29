@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { handleApiError, AuthenticationError, NotFoundError } from '@/lib/errors';
+import { handleApiError, AuthenticationError, NotFoundError, ValidationError } from '@/lib/errors';
 import { success } from '@/lib/api-response';
 import { getAuthUser } from '@/lib/api-auth';
 import { requirePermission } from '@/lib/rbac';
 import { createAuditLog } from '@/lib/audit';
+import { z } from 'zod';
+
+const updateSettingsSchema = z.object({
+  name: z.string().trim().min(1).max(255).optional(),
+  domain: z.string().trim().max(255).url().optional().nullable(),
+  logoUrl: z.string().trim().max(1000).url().optional().nullable(),
+  settings: z.record(z.string().max(100), z.unknown()).optional()
+});
 
 export async function GET(request: NextRequest) {
   try {
@@ -66,16 +74,15 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
+    const data = updateSettingsSchema.parse(body);
 
     const updateData: Record<string, unknown> = {};
 
-    // Allow updating specific fields
-    if (body.name !== undefined) updateData.name = body.name;
-    if (body.domain !== undefined) updateData.domain = body.domain;
-    if (body.logoUrl !== undefined) updateData.logoUrl = body.logoUrl;
-    if (body.settings !== undefined) {
-      updateData.settings = body.settings;
-    }
+    // Allow updating specific fields (only validated ones)
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.domain !== undefined) updateData.domain = data.domain;
+    if (data.logoUrl !== undefined) updateData.logoUrl = data.logoUrl;
+    if (data.settings !== undefined) updateData.settings = data.settings;
 
     const updated = await db.tenant.update({
       where: { id: payload.tenantId },

@@ -1,12 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { validate } from '@/lib/validators';
-import { handleApiError, AuthenticationError, NotFoundError } from '@/lib/errors';
+import { handleApiError, AuthenticationError, NotFoundError, ValidationError } from '@/lib/errors';
 import { success } from '@/lib/api-response';
 import { getAuthUser } from '@/lib/api-auth';
 import { requirePermission } from '@/lib/rbac';
 import { createAuditLog } from '@/lib/audit';
 import { z } from 'zod';
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function validateUuid(id: string): void {
+  if (!UUID_RE.test(id)) {
+    throw new NotFoundError('Resource not found');
+  }
+}
 
 // ============================================
 // SCHEMAS
@@ -76,6 +84,7 @@ export async function GET(
     await requirePermission(payload.roleCode ?? null, 'tasks.view', payload.tenantId);
 
     const { id } = await params;
+    validateUuid(id);
 
     const task = await db.task.findFirst({
       where: { id, tenantId: payload.tenantId },
@@ -112,6 +121,7 @@ export async function PUT(
     await requirePermission(payload.roleCode ?? null, 'tasks.edit', payload.tenantId);
 
     const { id } = await params;
+    validateUuid(id);
 
     const existing = await db.task.findFirst({
       where: { id, tenantId: payload.tenantId },
@@ -123,6 +133,39 @@ export async function PUT(
 
     const body = await request.json();
     const data = validate(updateTaskSchema, body);
+
+    // Validate owner belongs to the same tenant if provided
+    if (data.ownerId) {
+      const ownerExists = await db.membership.findFirst({
+        where: { userId: data.ownerId, tenantId: payload.tenantId, status: 'ACTIVE' },
+        select: { id: true },
+      });
+      if (!ownerExists) {
+        throw new ValidationError('Owner not found');
+      }
+    }
+
+    // Validate entity belongs to the same tenant if provided
+    const effectiveEntityType = data.entityType !== undefined ? data.entityType : existing.entityType;
+    const effectiveEntityId = data.entityId !== undefined ? data.entityId : existing.entityId;
+    if (effectiveEntityId && effectiveEntityType) {
+      const entityModel: Record<string, { findFirst: (args: any) => any }> = {
+        LEAD: db.lead as any,
+        CONTACT: db.contact as any,
+        COMPANY: db.company as any,
+        DEAL: db.deal as any,
+      };
+      const model = entityModel[effectiveEntityType];
+      if (model) {
+        const entityExists = await model.findFirst({
+          where: { id: effectiveEntityId, tenantId: payload.tenantId },
+          select: { id: true },
+        });
+        if (!entityExists) {
+          throw new ValidationError(`${effectiveEntityType} not found`);
+        }
+      }
+    }
 
     const updateData: Record<string, unknown> = {};
     if (data.title !== undefined) updateData.title = data.title;
@@ -177,12 +220,13 @@ export async function DELETE(
     await requirePermission(payload.roleCode ?? null, 'tasks.delete', payload.tenantId);
 
     const { id } = await params;
+    validateUuid(id);
 
     const existing = await db.task.findFirst({
       where: { id, tenantId: payload.tenantId },
     });
 
-    if (!existing) {
+    if (!existing || existing.status === 'CANCELLED') {
       throw new NotFoundError('Task not found');
     }
 

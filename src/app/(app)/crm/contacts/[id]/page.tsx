@@ -215,8 +215,8 @@ export default function ContactDetailPage() {
         const res = await apiFetch<{
           success: boolean
           data: FollowUp[]
-        }>(`/api/v1/crm/follow-ups?limit=50`)
-        // Filter client-side for contact-specific follow-ups
+        }>(`/api/v1/crm/follow-ups?contactId=${id}&limit=50`)
+        // Server-side filtered for this contact
         setFollowUps(res.data ?? [])
       } catch { /* silent */ }
     }

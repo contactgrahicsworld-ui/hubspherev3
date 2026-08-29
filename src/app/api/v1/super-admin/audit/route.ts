@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { paginationSchema, validate } from '@/lib/validators';
-import { handleApiError, AuthorizationError } from '@/lib/errors';
+import { handleApiError, AuthorizationError, ValidationError } from '@/lib/errors';
 import { paginated } from '@/lib/api-response';
 import { getAuthUser } from '@/lib/api-auth';
+import { z } from 'zod';
 
 export async function GET(request: NextRequest) {
   try {
@@ -25,8 +26,18 @@ export async function GET(request: NextRequest) {
 
     const where: Record<string, unknown> = {};
     if (action) where.action = action;
-    if (actorId) where.actorId = actorId;
-    if (tenantId) where.tenantId = tenantId;
+    if (actorId) {
+      if (!z.string().uuid().safeParse(actorId).success) {
+        throw new ValidationError('Invalid actorId format');
+      }
+      where.actorId = actorId;
+    }
+    if (tenantId) {
+      if (!z.string().uuid().safeParse(tenantId).success) {
+        throw new ValidationError('Invalid tenantId format');
+      }
+      where.tenantId = tenantId;
+    }
 
     const [logs, total] = await Promise.all([
       db.auditLog.findMany({
@@ -56,8 +67,6 @@ export async function GET(request: NextRequest) {
       targetType: log.targetType,
       targetId: log.targetId,
       metadata: log.metadata ?? null,
-      ipAddress: log.ipAddress,
-      userAgent: log.userAgent,
       createdAt: log.createdAt,
     }));
 

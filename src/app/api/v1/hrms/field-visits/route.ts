@@ -5,6 +5,7 @@ import {
   handleApiError,
   AuthenticationError,
   NotFoundError,
+  ValidationError,
 } from '@/lib/errors';
 import { success, paginated } from '@/lib/api-response';
 import { getAuthUser } from '@/lib/api-auth';
@@ -35,10 +36,10 @@ const createFieldVisitSchema = z.object({
   employeeId: z.string().uuid('Invalid employee ID format'),
   leadId: z.string().uuid().optional(),
   contactId: z.string().uuid().optional(),
-  date: z.string().min(1, 'Date is required'),
+  date: z.string().min(1, 'Date is required').refine((v) => !isNaN(Date.parse(v)), 'Invalid date format'),
   purpose: z.string().max(5000).optional(),
   notes: z.string().max(5000).optional(),
-  nextFollowUp: z.string().optional(),
+  nextFollowUp: z.string().refine((v) => v === undefined || v === '' || !isNaN(Date.parse(v)), 'Invalid nextFollowUp date').optional(),
 });
 
 type CreateFieldVisitInput = z.infer<typeof createFieldVisitSchema>;
@@ -49,7 +50,6 @@ type CreateFieldVisitInput = z.infer<typeof createFieldVisitSchema>;
 
 const fieldVisitSelect = {
   id: true,
-  tenantId: true,
   employeeId: true,
   leadId: true,
   contactId: true,
@@ -112,8 +112,17 @@ export async function GET(request: NextRequest) {
       tenantId: payload.tenantId,
     };
 
-    if (employeeId) where.employeeId = employeeId;
-    if (status) where.status = status;
+    const validStatuses = ['PLANNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
+    if (employeeId) {
+      if (!z.string().uuid().safeParse(employeeId).success) {
+        throw new ValidationError('Invalid employeeId format');
+      }
+      where.employeeId = employeeId;
+    }
+    if (status) {
+      if (!validStatuses.includes(status)) throw new ValidationError(`Invalid status. Must be one of: ${validStatuses.join(', ')}`);
+      where.status = status;
+    }
 
     if (startDate || endDate) {
       const dateFilter: Record<string, unknown> = {};
