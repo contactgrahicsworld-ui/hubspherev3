@@ -1,10 +1,25 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db, isDatabaseConnected } from '@/lib/db';
 import { success } from '@/lib/api-response';
-import { handleApiError } from '@/lib/errors';
 
 export async function GET() {
   try {
+    const dbConnected = await isDatabaseConnected();
+    if (!dbConnected) {
+      return NextResponse.json(
+        {
+          success: true,
+          data: {
+            setupComplete: false,
+            superAdminExists: false,
+            databaseUnavailable: true,
+            message: 'Database is not available. Please configure PostgreSQL to complete setup.',
+          },
+        },
+        { status: 503 }
+      );
+    }
+
     const superAdmin = await db.user.findFirst({
       where: { isSuperAdmin: true },
       select: { id: true },
@@ -16,8 +31,18 @@ export async function GET() {
     return NextResponse.json(
       success({ setupComplete, superAdminExists })
     );
-  } catch (error) {
-    const { statusCode, body } = handleApiError(error);
-    return NextResponse.json(body, { status: statusCode });
+  } catch {
+    return NextResponse.json(
+      {
+        success: true,
+        data: {
+          setupComplete: false,
+          superAdminExists: false,
+          databaseUnavailable: true,
+          message: 'Database is not available. Please configure PostgreSQL to complete setup.',
+        },
+      },
+      { status: 503 }
+    );
   }
 }

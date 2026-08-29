@@ -5,12 +5,13 @@
  */
 
 import { db } from '@/lib/db';
-import { PLATFORM_CONTEXT } from '@/lib/tenant-context';
 import { AuthorizationError } from '@/lib/errors';
 
 /**
  * Check if a role has a specific permission.
  * Super admins always have all permissions.
+ * System roles (tenantId=null) are shared across tenants.
+ * Custom roles are verified to belong to the tenant.
  */
 export async function hasPermission(
   roleCode: string | null,
@@ -24,6 +25,23 @@ export async function hasPermission(
 
   if (!roleCode) {
     return false;
+  }
+
+  // For tenant-scoped checks, verify the role exists for this tenant
+  // (either as a system role or a tenant-specific custom role)
+  if (tenantId) {
+    const roleExists = await db.role.findFirst({
+      where: {
+        code: roleCode,
+        OR: [
+          { tenantId: null },  // System role
+          { tenantId },          // Tenant-specific role
+        ],
+      },
+    });
+    if (!roleExists) {
+      return false;
+    }
   }
 
   // Check for wildcard permissions (e.g., users.*)

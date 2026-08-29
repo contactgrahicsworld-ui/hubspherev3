@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { handleApiError, ValidationError } from '@/lib/errors';
+import { handleApiError, ValidationError, AuthenticationError } from '@/lib/errors';
 import { success } from '@/lib/api-response';
 import { validate } from '@/lib/validators';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
+import { isDatabaseConnected } from '@/lib/db';
 
 // ============================================
 // SCHEMAS
@@ -32,6 +33,70 @@ const EVENT_STATUS_MAP: Record<WebhookEventType, { status: string; timestampFiel
 };
 
 // ============================================
+// HMAC VERIFICATION
+// ============================================
+
+async function verifyWebhookSignature(
+  request: NextRequest,
+  providerName: string
+): Promise<{ valid: boolean; tenantId: string | null }> {
+  // Get the raw body for signature verification
+  const rawBody = await request.text();
+  const signature = request.headers.get('x-hubspot-signature')
+    || request.headers.get('x-twilio-signature')
+    || request.headers.get('whatsapp-webhook-signature')
+    || '';
+
+  if (!signature) {
+    return { valid: false, tenantId: null };
+  }
+
+  // Look up provider config with webhook secret
+  const providerConfig = await db.communicationProviderConfig.findFirst({
+    where: { provider: providerName, isEnabled: true },
+    select: { id: true, tenantId: true, config: true },
+  });
+
+  if (!providerConfig || !providerConfig.config) {
+    return { valid: false, tenantId: null };
+  }
+
+  const config = providerConfig.config as Record<string, unknown>;
+  const webhookSecret = config.webhookSecret as string | undefined;
+
+  if (!webhookSecret) {
+    // If no webhook secret is configured, reject the webhook
+    return { valid: false, tenantId: null };
+  }
+
+  // Verify HMAC-SHA256 signature
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(webhookSecret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+
+  const sig = await crypto.subtle.sign('HMAC', key, encoder.encode(rawBody));
+  const expectedSig = `sha256=${Array.from(new Uint8Array(sig))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')}`;
+
+  // Constant-time comparison
+  const sigBytes = encoder.encode(signature);
+  const expectedBytes = encoder.encode(expectedSig);
+  let result = 0;
+  const len = Math.max(sigBytes.length, expectedBytes.length);
+  for (let i = 0; i < len; i++) {
+    result |= (sigBytes[i] || 0) ^ (expectedBytes[i] || 0);
+  }
+
+  return { valid: result === 0, tenantId: providerConfig.tenantId };
+}
+
+// ============================================
 // HELPERS
 // ============================================
 
@@ -55,26 +120,25 @@ function dbUnavailableResponse() {
 
 export async function POST(request: NextRequest) {
   try {
+    // Check database availability
+    const dbConnected = await isDatabaseConnected();
+    if (!dbConnected) {
+      return dbUnavailableResponse();
+    }
+
     const body = await request.json();
     const data = validate(webhookEventSchema, body);
 
-    // 1. Simple provider validation: check that a CommunicationProviderConfig
-    //    exists for this provider (any tenant). This is a minimal signature check;
-    //    production would use HMAC verification.
-    const providerConfig = await db.communicationProviderConfig.findFirst({
-      where: { provider: data.provider, isEnabled: true },
-      select: { id: true, tenantId: true },
-    });
-
-    if (!providerConfig) {
-      throw new ValidationError(
-        `No active provider configuration found for: ${data.provider}`,
-      );
+    // Verify webhook signature
+    const { valid, tenantId } = await verifyWebhookSignature(request, data.provider);
+    if (!valid) {
+      throw new AuthenticationError('Invalid or missing webhook signature. Configure a webhook secret for this provider.');
     }
 
-    // 2. Look up the message by externalMessageId or by id
+    // Look up the message by externalMessageId or by id
     const message = await db.message.findFirst({
       where: {
+        ...(tenantId ? { tenantId } : {}),
         OR: [
           { id: data.messageId },
           { externalMessageId: data.messageId },
@@ -89,7 +153,6 @@ export async function POST(request: NextRequest) {
     });
 
     if (!message) {
-      // Acknowledge receipt but report message not found
       return NextResponse.json(
         success({ acknowledged: true, found: false }, 'Message not found'),
       );
@@ -99,8 +162,7 @@ export async function POST(request: NextRequest) {
     const mapping = EVENT_STATUS_MAP[eventType];
     const now = new Date();
 
-    // 3. Create/update DeliveryAttempt record
-    //    Find the most recent delivery attempt for this message
+    // Create/update DeliveryAttempt record
     const existingAttempt = await db.deliveryAttempt.findFirst({
       where: { messageId: message.id },
       orderBy: { attemptedAt: 'desc' },
@@ -120,7 +182,6 @@ export async function POST(request: NextRequest) {
         },
       });
     } else {
-      // No existing attempt — create one
       await db.deliveryAttempt.create({
         data: {
           tenantId: message.tenantId,
@@ -137,7 +198,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 4. Create MessageEvent record
+    // Create MessageEvent record
     await db.messageEvent.create({
       data: {
         tenantId: message.tenantId,
@@ -153,15 +214,13 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // 5. Update Message status and appropriate timestamp
+    // Update Message status and appropriate timestamp
     const updateData: Record<string, unknown> = {
       status: mapping.status,
     };
 
-    // Only set timestamps forward, never backward
     updateData[mapping.timestampField] = now;
 
-    // For FAILED events, store the failure reason
     if (eventType === 'FAILED') {
       const responseData = data.responseData;
       const reason =

@@ -1,14 +1,28 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db, isDatabaseConnected } from '@/lib/db';
 import { success } from '@/lib/api-response';
-import { handleApiError } from '@/lib/errors';
 
 export async function GET() {
-  try {
-    // Try a simple DB query to verify connectivity
-    await db.user.count();
+  const uptime = process.uptime();
 
-    const uptime = process.uptime();
+  try {
+    const dbConnected = await isDatabaseConnected();
+
+    if (!dbConnected) {
+      return NextResponse.json(
+        {
+          success: true,
+          data: {
+            status: 'degraded',
+            timestamp: new Date().toISOString(),
+            uptime: Math.floor(uptime),
+            database: 'unavailable',
+            message: 'PostgreSQL is not reachable. Application UI is available but data operations will fail.',
+          },
+        },
+        { status: 503 }
+      );
+    }
 
     return NextResponse.json(
       success({
@@ -18,8 +32,19 @@ export async function GET() {
         database: 'connected',
       })
     );
-  } catch (error) {
-    const { statusCode, body } = handleApiError(error);
-    return NextResponse.json(body, { status: statusCode });
+  } catch {
+    return NextResponse.json(
+      {
+        success: true,
+        data: {
+          status: 'degraded',
+          timestamp: new Date().toISOString(),
+          uptime: Math.floor(uptime),
+          database: 'unavailable',
+          message: 'Health check failed. Database may be unavailable.',
+        },
+      },
+      { status: 503 }
+    );
   }
 }

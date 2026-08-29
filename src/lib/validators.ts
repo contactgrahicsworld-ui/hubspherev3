@@ -111,6 +111,12 @@ export type CreateTenantInput = z.infer<typeof createTenantSchema>;
 // USER SCHEMA (admin creates user)
 // ============================================
 
+export const VALID_ASSIGNABLE_ROLES = [
+  'ADMIN', 'MANAGER', 'SALES_MANAGER', 'SALES_EXECUTIVE', 'TELECALLER',
+  'HR_MANAGER', 'HR_EXECUTIVE', 'FIELD_MANAGER', 'FIELD_EXECUTIVE',
+  'ACCOUNTANT', 'VIEWER',
+] as const;
+
 export const createUserSchema = z.object({
   email: z.string().trim().min(1, 'Email is required').email('Invalid email format'),
   name: z
@@ -126,6 +132,7 @@ export const createUserSchema = z.object({
     .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
     .regex(/[0-9]/, 'Password must contain at least one number')
     .optional(),
+  roleCode: z.enum(VALID_ASSIGNABLE_ROLES).default('VIEWER'),
 });
 
 export type CreateUserInput = z.infer<typeof createUserSchema>;

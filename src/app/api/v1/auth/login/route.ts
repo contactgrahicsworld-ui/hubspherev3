@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db, isDatabaseConnected } from '@/lib/db';
 import { verifyPassword, generateAccessToken, generateRefreshToken, getRefreshTokenExpiry } from '@/lib/auth';
 import { loginSchema, validate } from '@/lib/validators';
 import { handleApiError, AuthenticationError } from '@/lib/errors';
@@ -9,6 +9,21 @@ import { setAuthCookies } from '@/lib/api-auth';
 
 export async function POST(request: NextRequest) {
   try {
+    // Check database availability first
+    const dbConnected = await isDatabaseConnected();
+    if (!dbConnected) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            message: 'Database is not available. Please ensure PostgreSQL is running and configured.',
+            code: 'DATABASE_UNAVAILABLE',
+          },
+        },
+        { status: 503 }
+      );
+    }
+
     const body = await request.json();
     const { email, password } = validate(loginSchema, body);
 

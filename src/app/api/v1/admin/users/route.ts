@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const roleCode = body.roleCode ?? 'VIEWER';
+      const roleCode = data.roleCode;
       const membership = await db.membership.create({
         data: {
           userId: existingUser.id,
@@ -162,7 +162,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    const roleCode = body.roleCode ?? 'VIEWER';
+    const roleCode = data.roleCode;
     const membership = await db.membership.create({
       data: {
         userId: user.id,

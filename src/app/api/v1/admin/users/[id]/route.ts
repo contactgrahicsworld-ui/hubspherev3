@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { createUserSchema, validate } from '@/lib/validators';
+import { validate, VALID_ASSIGNABLE_ROLES } from '@/lib/validators';
 import { handleApiError, AuthenticationError, NotFoundError, ValidationError } from '@/lib/errors';
 import { success } from '@/lib/api-response';
 import { getAuthUser } from '@/lib/api-auth';
@@ -99,8 +99,19 @@ export async function PUT(
     const body = await request.json();
 
     const updateData: Record<string, unknown> = {};
-    if (body.roleCode) updateData.roleCode = body.roleCode;
-    if (body.status) updateData.status = body.status;
+    if (body.roleCode) {
+      if (!(VALID_ASSIGNABLE_ROLES as readonly string[]).includes(body.roleCode)) {
+        throw new ValidationError(`Invalid role code. Must be one of: ${VALID_ASSIGNABLE_ROLES.join(', ')}`);
+      }
+      updateData.roleCode = body.roleCode;
+    }
+    if (body.status) {
+      const validStatuses = ['ACTIVE', 'INACTIVE', 'SUSPENDED'];
+      if (!validStatuses.includes(body.status)) {
+        throw new ValidationError(`Invalid status. Must be one of: ${validStatuses.join(', ')}`);
+      }
+      updateData.status = body.status;
+    }
 
     const updated = await db.membership.update({
       where: { id: membership.id },

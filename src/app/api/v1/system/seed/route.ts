@@ -1,10 +1,24 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { runSeed } from '@/lib/seed';
 import { success } from '@/lib/api-response';
-import { handleApiError } from '@/lib/errors';
+import { handleApiError, AuthenticationError } from '@/lib/errors';
+import { verifyAccessToken } from '@/lib/auth';
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
+    // Require SUPER_ADMIN authentication for seeding
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+
+    if (!token) {
+      throw new AuthenticationError('Authentication required');
+    }
+
+    const payload = await verifyAccessToken(token);
+    if (!payload || !payload.isSuperAdmin) {
+      throw new AuthenticationError('Super Admin access required');
+    }
+
     const results = await runSeed();
 
     return NextResponse.json(

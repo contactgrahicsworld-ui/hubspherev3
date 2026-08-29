@@ -181,14 +181,18 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const data = validate(createEmployeeSchema, body);
 
-    // Verify the user exists
-    const userExists = await db.user.findUnique({
-      where: { id: data.userId },
+    // Verify the user exists AND belongs to this tenant
+    const userMembership = await db.membership.findFirst({
+      where: {
+        userId: data.userId,
+        tenantId: payload.tenantId,
+        status: 'ACTIVE',
+      },
       select: { id: true },
     });
 
-    if (!userExists) {
-      throw new NotFoundError('User not found');
+    if (!userMembership) {
+      throw new NotFoundError('User not found in this tenant');
     }
 
     const employee = await db.employee.create({

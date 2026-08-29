@@ -105,9 +105,12 @@ export function middleware(request: NextRequest): NextResponse {
   return res;
 }
 
+// Use broad matcher but ONLY for paths that are clearly app routes or API routes.
+// Static assets (.json, .svg, .js, .css, images) are excluded by extension.
+// Public files (manifest, robots, sw, offline) are excluded by name.
 export const config = {
   matcher: [
     '/api/v1/:path*',
-    '/((?!_next/static|_next/image|favicon\\.ico|robots\\.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|woff2?)$).*)',
+    '/((?!_next/static|_next/image|_next/Chunks|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|woff2?|json|webmanifest|txt|xml|html)$).*)',
   ],
 };
