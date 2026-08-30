@@ -1,0 +1,2002 @@
+     1→#!/usr/bin/env python3
+     2→"""
+     3→PDF Processing Toolkit — All-in-One CLI
+     4→
+     5→Usage:
+     6→    python3 pdf.py <command> [args...]
+     7→
+     8→Commands:
+     9→    env.check [--json]          Check environment dependencies
+    10→    env.fix                     Auto-install missing dependencies
+    11→
+    12→    extract.text  <pdf> [-p pages]
+    13→    extract.table <pdf> [-p pages]
+    14→    extract.image <pdf> -o <dir>
+    15→
+    16→    pages.merge <pdf>... -o <out>
+    17→    pages.split <pdf> -o <dir>
+    18→    pages.rotate <pdf> <deg> -o <out> [-p pages]
+    19→    pages.crop <pdf> <box> -o <out> [-p pages]
+    20→
+    21→    meta.get <pdf>
+    22→    meta.set <pdf> -o <out> -d <json>
+    23→    meta.brand <pdf>... [-o <out>] [-t title] [-q]
+    24→
+    25→    form.info <pdf>
+    26→    form.fill <pdf> -o <out> -d <json>
+    27→    form.detail <pdf> <output.json>
+    28→    form.fill-legacy <pdf> <fields.json> <output.pdf>
+    29→    form.annotate <pdf> <fields.json> <output.pdf>
+    30→    form.render <pdf> <output_dir> [--max-dim N]
+    31→    form.validate <page> <fields.json> <input_img> <output_img>
+    32→    form.check-bbox <fields.json>
+    33→
+    34→    pages.clean <pdf> -o <out>       Remove blank pages
+    35→
+    36→    convert.office <file> [-o <out>]
+    37→    convert.html <file> [-o <out>] [--css <file>]
+    38→    convert.blueprint <llm_response.txt> [-o <out>]
+    39→    convert.latex <file> [--runs N] [--keep-logs]
+    40→
+    41→    palette.generate [--title "..."] [--mode minimal] [--format python|json|css]
+    42→    palette.cascade [--title "..."] [--mode minimal] [--format summary|json|css|reportlab]
+    43→
+    44→    code.sanitize <file>
+    45→    content.sanitize <file> [--apply]  Fix content issues (CJK, encoding)
+    46→
+    47→    font.check <pdf>
+    48→
+    49→    toc.check <pdf>
+    50→"""
+    51→
+    52→from __future__ import annotations
+    53→
+    54→import html
+    55→import json
+    56→import os
+    57→import re
+    58→import shutil
+    59→import subprocess
+    60→import sys
+    61→from dataclasses import dataclass
+    62→from datetime import datetime
+    63→from pathlib import Path
+    64→from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+    65→
+    66→
+    67→# ═══════════════════════════════════════════════════════════════
+    68→#  Section 0: Framework — Output, @cmd registry, CLI parser
+    69→# ═══════════════════════════════════════════════════════════════
+    70→
+    71→class Output:
+    72→    """Structured JSON output for all subcommands."""
+    73→
+    74→    @staticmethod
+    75→    def success(data: dict):
+    76→        payload = {"status": "success", "data": data}
+    77→        sys.stdout.write(json.dumps(payload, ensure_ascii=False, indent=2) + "\n")
+    78→        raise SystemExit(0)
+    79→
+    80→    @staticmethod
+    81→    def error(error: str, message: str, hint: Optional[str] = None, code: int = 1):
+    82→        payload = {"status": "error", "error": error, "message": message}
+    83→        if hint is not None:
+    84→            payload["hint"] = hint
+    85→        sys.stderr.write(json.dumps(payload, ensure_ascii=False, indent=2) + "\n")
+    86→        raise SystemExit(code)
+    87→
+    88→    @staticmethod
+    89→    def check_file(filepath: str) -> Path:
+    90→        target = Path(filepath)
+    91→        if not target.exists():
+    92→            Output.error("FileNotFound", f"File not found: {filepath}", code=2)
+    93→        return target
+    94→
+    95→
+    96→# Command registry
+    97→_COMMANDS: Dict[str, Callable] = {}
+    98→
+    99→
+   100→def cmd(name: str):
+   101→    """Decorator to register a CLI command under a dotted namespace."""
+   102→    def decorator(fn: Callable) -> Callable:
+   103→        _COMMANDS[name] = fn
+   104→        return fn
+   105→    return decorator
+   106→
+   107→
+   108→def _pop_flag(argv: list, short: str, long: str, needs_value: bool = True):
+   109→    """Extract a flag (and optional value) from *argv* in-place."""
+   110→    for idx, tok in enumerate(argv):
+   111→        if tok in (short, long):
+   112→            argv.pop(idx)
+   113→            if needs_value:
+   114→                if idx < len(argv):
+   115→                    return argv.pop(idx)
+   116→                Output.error("MissingArg", f"Flag {long} requires a value")
+   117→            return True
+   118→    return None
+   119→
+   120→
+   121→def _load_json_arg(argv: list) -> dict:
+   122→    """Read JSON from -d/--data string or -f/--file path."""
+   123→    raw = _pop_flag(argv, "-d", "--data")
+   124→    if raw is not None:
+   125→        try:
+   126→            return json.loads(raw)
+   127→        except json.JSONDecodeError as exc:
+   128→            Output.error("InvalidJSON", f"JSON parse error: {exc}")
+   129→
+   130→    fpath = _pop_flag(argv, "-f", "--file")
+   131→    if fpath is not None:
+   132→        try:
+   133→            with open(fpath) as fh:
+   134→                return json.load(fh)
+   135→        except Exception as exc:
+   136→            Output.error("FileError", f"Failed to read file: {exc}")
+   137→
+   138→    Output.error("MissingData", "Requires --data or --file argument")
+   139→
+   140→
+   141→def _resolve_page_indices(range_spec: Optional[str], page_count: int) -> List[int]:
+   142→    """Turn a human-friendly range string (1-indexed) into a sorted list of 0-based indices."""
+   143→    if not range_spec:
+   144→        return list(range(page_count))
+   145→    indices: Set[int] = set()
+   146→    for segment in range_spec.split(","):
+   147→        segment = segment.strip()
+   148→        if "-" in segment:
+   149→            lo, hi = segment.split("-", 1)
+   150→            for i in range(int(lo) - 1, min(int(hi), page_count)):
+   151→                indices.add(i)
+   152→        else:
+   153→            val = int(segment) - 1
+   154→            if 0 <= val < page_count:
+   155→                indices.add(val)
+   156→    return sorted(indices)
+   157→
+   158→
+   159→_SCRIPT_DIR = Path(__file__).resolve().parent
+   160→
+   161→
+   162→# ═══════════════════════════════════════════════════════════════
+   163→#  Section 1: env — environment diagnostics and auto-fix
+   164→# ═══════════════════════════════════════════════════════════════
+   165→
+   166→def _probe_cmd(name: str, version_args: Optional[List[str]] = None) -> Tuple[str, str]:
+   167→    """Check if a command exists and optionally get its version. Returns (status, detail)."""
+   168→    path = shutil.which(name)
+   169→    if path is None:
+   170→        return ("missing", "")
+   171→    if version_args is None:
+   172→        return ("ok", "")
+   173→    try:
+   174→        result = subprocess.run(
+   175→            [path] + version_args,
+   176→            capture_output=True, text=True, timeout=10
+   177→        )
+   178→        ver = result.stdout.strip() or result.stderr.strip()
+   179→        return ("ok", ver)
+   180→    except Exception:
+   181→        return ("ok", "")
+   182→
+   183→
+   184→def _probe_python_module(mod_name: str) -> Tuple[str, str]:
+   185→    """Check if a Python module is importable and get its version."""
+   186→    try:
+   187→        result = subprocess.run(
+   188→            [sys.executable, "-c", f"import {mod_name}; print(getattr({mod_name}, '__version__', 'installed'))"],
+   189→            capture_output=True, text=True, timeout=10
+   190→        )
+   191→        if result.returncode == 0:
+   192→            return ("ok", result.stdout.strip())
+   193→        return ("missing", "")
+   194→    except Exception:
+   195→        return ("missing", "")
+   196→
+   197→
+   198→def _probe_node() -> Tuple[str, str]:
+   199→    s, d = _probe_cmd("node", ["--version"])
+   200→    if s == "ok" and d:
+   201→        d = d.lstrip("v")
+   202→    return (s, d)
+   203→
+   204→
+   205→def _probe_python() -> Tuple[str, str]:
+   206→    try:
+   207→        import platform
+   208→        return ("ok", platform.python_version())
+   209→    except Exception:
+   210→        return ("ok", "")
+   211→
+   212→
+   213→def _probe_libreoffice() -> Tuple[str, str]:
+   214→    candidates = [
+   215→        "/Applications/LibreOffice.app/Contents/MacOS/soffice",
+   216→        os.path.expanduser("~/Applications/LibreOffice.app/Contents/MacOS/soffice"),
+   217→        "/usr/bin/soffice",
+   218→        "/usr/local/bin/soffice",
+   219→        "/usr/lib/libreoffice/program/soffice",
+   220→        "/opt/libreoffice/program/soffice",
+   221→        "/snap/bin/libreoffice.soffice",
+   222→    ]
+   223→    for c in candidates:
+   224→        if Path(c).is_file():
+   225→            return ("ok", "")
+   226→    for alias in ("soffice", "libreoffice"):
+   227→        if shutil.which(alias):
+   228→            return ("ok", "")
+   229→    return ("missing", "")
+   230→
+   231→
+   232→def _probe_tectonic() -> Tuple[str, str]:
+   233→    home_bin = Path.home() / "tectonic"
+   234→    if home_bin.exists() and os.access(home_bin, os.X_OK):
+   235→        return ("ok", "")
+   236→    tec_local = _SCRIPT_DIR / "tectonic"
+   237→    if tec_local.exists() and os.access(tec_local, os.X_OK):
+   238→        return ("ok", "")
+   239→    if shutil.which("tectonic"):
+   240→        return ("ok", "")
+   241→    return ("missing", "")
+   242→
+   243→
+   244→def _probe_playwright_npm() -> Tuple[str, str]:
+   245→    """Check if playwright npm package is installed."""
+   246→    try:
+   247→        result = subprocess.run(
+   248→            ["node", "-e", "console.log(require('playwright/package.json').version)"],
+   249→            capture_output=True, text=True, timeout=10
+   250→        )
+   251→        if result.returncode == 0 and result.stdout.strip():
+   252→            return ("ok", result.stdout.strip())
+   253→    except Exception:
+   254→        pass
+   255→    # Try global
+   256→    try:
+   257→        result = subprocess.run(
+   258→            ["npm", "list", "-g", "playwright", "--depth=0"],
+   259→            capture_output=True, text=True, timeout=15
+   260→        )
+   261→        import re as _re
+   262→        m = _re.search(r"playwright@(\S+)", result.stdout)
+   263→        if m:
+   264→            return ("ok", m.group(1))
+   265→    except Exception:
+   266→        pass
+   267→    return ("missing", "")
+   268→
+   269→
+   270→def _probe_chromium() -> Tuple[str, str]:
+   271→    """Check if Playwright Chromium browser is installed."""
+   272→    import platform as _platform
+   273→    home = Path.home()
+   274→    if _platform.system() == "Darwin":
+   275→        cache_dir = home / "Library" / "Caches" / "ms-playwright"
+   276→    else:
+   277→        cache_dir = home / ".cache" / "ms-playwright"
+   278→    if cache_dir.is_dir():
+   279→        for entry in sorted(cache_dir.iterdir(), reverse=True):
+   280→            if "chromium" in entry.name.lower():
+   281→                return ("ok", entry.name)
+   282→    return ("missing", "")
+   283→
+   284→
+   285→@cmd("env.check")
+   286→def env_check(argv: list):
+   287→    """Check environment dependencies."""
+   288→    use_json = _pop_flag(argv, "-j", "--json", needs_value=False)
+   289→
+   290→    s_node = _probe_node()
+   291→    s_pw = _probe_playwright_npm()
+   292→    s_cr = _probe_chromium()
+   293→    s_py = _probe_python()
+   294→    s_pike = _probe_python_module("pikepdf")
+   295→    s_plumb = _probe_python_module("pdfplumber")
+   296→    s_lo = _probe_libreoffice()
+   297→    s_tec = _probe_tectonic()
+   298→    s_pw_py = _probe_python_module("playwright")
+   299→
+   300→    if use_json:
+   301→        report = {
+   302→            "html_route": {
+   303→                "node": s_node[0], "node_version": s_node[1],
+   304→                "playwright": s_pw[0], "playwright_version": s_pw[1],
+   305→                "chromium": s_cr[0], "chromium_detail": s_cr[1],
+   306→            },
+   307→            "process_route": {
+   308→                "python3": s_py[0], "python3_version": s_py[1],
+   309→                "pikepdf": s_pike[0], "pikepdf_version": s_pike[1],
+   310→                "pdfplumber": s_plumb[0], "pdfplumber_version": s_plumb[1],
+   311→                "playwright_python": s_pw_py[0], "playwright_python_version": s_pw_py[1],
+   312→            },
+   313→            "optional": {
+   314→                "libreoffice": s_lo[0],
+   315→                "tectonic": s_tec[0],
+   316→            },
+   317→        }
+   318→        sys.stdout.write(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
+   319→        # Determine exit code
+   320→        rc = 0
+   321→        for v in [s_node, s_pw, s_cr, s_py, s_pike, s_plumb]:
+   322→            if v[0] != "ok":
+   323→                rc = 2
+   324→                break
+   325→        raise SystemExit(rc)
+   326→
+   327→    # Human-readable output
+   328→    rc = 0
+   329→
+   330→    def show(name: str, status: Tuple[str, str], optional: bool = False):
+   331→        nonlocal rc
+   332→        s, d = status
+   333→        if s == "ok":
+   334→            detail = f" ({d})" if d else ""
+   335→            print(f"  \u2713 {name}{detail}")
+   336→        elif optional:
+   337→            print(f"  \u25cb {name} (optional, not installed)")
+   338→        else:
+   339→            print(f"  \u2717 {name} (missing)")
+   340→            rc = 2
+   341→
+   342→    print("=== PDF Skill Environment ===\n")
+   343→    print("--- HTML Route ---")
+   344→    show("node", s_node)
+   345→    show("playwright", s_pw)
+   346→    show("chromium", s_cr)
+   347→
+   348→    print("\n--- Process Route ---")
+   349→    show("python3", s_py)
+   350→    show("pikepdf", s_pike)
+   351→    show("pdfplumber", s_plumb)
+   352→    if s_pw_py[0] == "ok":
+   353→        print(f"    (playwright-python: {s_pw_py[1]})")
+   354→
+   355→    print("\n--- Optional ---")
+   356→    show("libreoffice", s_lo, optional=True)
+   357→    show("tectonic", s_tec, optional=True)
+   358→
+   359→    print("\n=== Install Commands ===")
+   360→    print("  Node.js:     brew install node (macOS) / apt install nodejs (Ubuntu)")
+   361→    print("  Playwright:  npm install -g playwright@1.50.0 && npx playwright install chromium")
+   362→    print("  Python:      brew install python3 (macOS) / apt install python3 (Ubuntu)")
+   363→    print("  pikepdf:     pip install pikepdf pdfplumber --user")
+   364→    print("  LibreOffice: brew install --cask libreoffice (macOS)")
+   365→    print("  Tectonic:    conda install -c conda-forge tectonic  # Tsinghua mirror: conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/conda-forge/")
+   366→    raise SystemExit(rc)
+   367→
+   368→
+   369→@cmd("env.fix")
+   370→def env_fix(argv: list):
+   371→    """Auto-install missing Python dependencies."""
+   372→    modules = {
+   373→        "pikepdf": "pikepdf",
+   374→        "pdfplumber": "pdfplumber",
+   375→        "pypdf": "pypdf",
+   376→        "pdf2image": "pdf2image",
+   377→        "PIL": "Pillow",
+   378→    }
+   379→    installed = []
+   380→    for mod, pkg in modules.items():
+   381→        s, _ = _probe_python_module(mod)
+   382→        if s == "missing":
+   383→            print(f"Installing {pkg}...")
+   384→            for attempt in (
+   385→                [sys.executable, "-m", "pip", "install", "-q", pkg],
+   386→                [sys.executable, "-m", "pip", "install", "-q", "--user", pkg],
+   387→                [sys.executable, "-m", "pip", "install", "-q", "--break-system-packages", pkg],
+   388→            ):
+   389→                result = subprocess.run(attempt, capture_output=True, text=True)
+   390→                if result.returncode == 0:
+   391→                    installed.append(pkg)
+   392→                    break
+   393→            else:
+   394→                print(f"  Failed to install {pkg}")
+   395→
+   396→    if installed:
+   397→        print(f"\nInstalled: {', '.join(installed)}")
+   398→    else:
+   399→        print("All Python dependencies are already installed.")
+   400→    raise SystemExit(0)
+   401→
+   402→
+   403→# ═══════════════════════════════════════════════════════════════
+   404→#  Section 2: extract — text, tables, and embedded images
+   405→# ═══════════════════════════════════════════════════════════════
+   406→
+   407→@cmd("extract.text")
+   408→def extract_text(argv: list):
+   409→    """Pull plain text from selected pages."""
+   410→    if not argv:
+   411→        Output.error("MissingArg", "pdf path required")
+   412→    pdf_path = argv.pop(0)
+   413→    page_range = _pop_flag(argv, "-p", "--pages")
+   414→
+   415→    import pdfplumber
+   416→    src = Output.check_file(pdf_path)
+   417→    try:
+   418→        doc = pdfplumber.open(src)
+   419→    except Exception as exc:
+   420→        Output.error("PDFError", f"Cannot open PDF: {exc}", code=3)
+   421→
+   422→    total_pages = len(doc.pages)
+   423→    target_pages = _resolve_page_indices(page_range, total_pages)
+   424→    char_total = 0
+   425→    page_results = []
+   426→
+   427→    for pg_idx in target_pages:
+   428→        content = doc.pages[pg_idx].extract_text() or ""
+   429→        char_total += len(content)
+   430→        page_results.append({"page": pg_idx + 1, "chars": len(content), "text": content})
+   431→
+   432→    doc.close()
+   433→    Output.success({
+   434→        "total_pages": total_pages,
+   435→        "extracted_pages": len(target_pages),
+   436→        "total_chars": char_total,
+   437→        "pages": page_results,
+   438→    })
+   439→
+   440→
+   441→@cmd("extract.table")
+   442→def extract_table(argv: list):
+   443→    """Locate and return every table on selected pages."""
+   444→    if not argv:
+   445→        Output.error("MissingArg", "pdf path required")
+   446→    pdf_path = argv.pop(0)
+   447→    page_range = _pop_flag(argv, "-p", "--pages")
+   448→
+   449→    import pdfplumber
+   450→    src = Output.check_file(pdf_path)
+   451→    try:
+   452→        doc = pdfplumber.open(src)
+   453→    except Exception as exc:
+   454→        Output.error("PDFError", f"Cannot open PDF: {exc}", code=3)
+   455→
+   456→    total_pages = len(doc.pages)
+   457→    target_pages = _resolve_page_indices(page_range, total_pages)
+   458→    collected = []
+   459→
+   460→    for pg_idx in target_pages:
+   461→        for tbl_num, raw_table in enumerate(doc.pages[pg_idx].extract_tables()):
+   462→            if not raw_table:
+   463→                continue
+   464→            sanitised = [
+   465→                [(cell.strip() if cell else "") for cell in row]
+   466→                for row in raw_table
+   467→            ]
+   468→            collected.append({
+   469→                "page": pg_idx + 1,
+   470→                "table_index": tbl_num,
+   471→                "rows": len(sanitised),
+   472→                "cols": len(sanitised[0]) if sanitised else 0,
+   473→                "data": sanitised,
+   474→            })
+   475→
+   476→    doc.close()
+   477→    Output.success({
+   478→        "total_pages": total_pages,
+   479→        "extracted_pages": len(target_pages),
+   480→        "total_tables": len(collected),
+   481→        "tables": collected,
+   482→    })
+   483→
+   484→
+   485→@cmd("extract.image")
+   486→def extract_image(argv: list):
+   487→    """Save every embedded raster image to output dir."""
+   488→    if not argv:
+   489→        Output.error("MissingArg", "pdf path required")
+   490→    pdf_path = argv.pop(0)
+   491→    out_dir = _pop_flag(argv, "-o", "--output") or "."
+   492→
+   493→    import pikepdf
+   494→    src = Output.check_file(pdf_path)
+   495→    dest = Path(out_dir)
+   496→    dest.mkdir(parents=True, exist_ok=True)
+   497→
+   498→    try:
+   499→        doc = pikepdf.open(src)
+   500→    except Exception as exc:
+   501→        Output.error("PDFError", f"Cannot open PDF: {exc}", code=3)
+   502→
+   503→    saved = []
+   504→    seq = 0
+   505→    _EXT_MAP = {
+   506→        "/DCTDecode": "jpg",
+   507→        "/FlateDecode": "png",
+   508→        "/JPXDecode": "jp2",
+   509→    }
+   510→
+   511→    for page_no, pg in enumerate(doc.pages, 1):
+   512→        res = pg.get("/Resources")
+   513→        if res is None or "/XObject" not in res:
+   514→            continue
+   515→        for key, ref in res.XObject.items():
+   516→            try:
+   517→                img_obj = doc.get_object(ref.objgen)
+   518→                if img_obj.get("/Subtype") != "/Image":
+   519→                    continue
+   520→                seq += 1
+   521→                w = int(img_obj.get("/Width", 0))
+   522→                h = int(img_obj.get("/Height", 0))
+   523→                filt = img_obj.get("/Filter")
+   524→                ext = _EXT_MAP.get(str(filt) if filt else None, "bin")
+   525→                fname = f"page{page_no}_img{seq}.{ext}"
+   526→                out_file = dest / fname
+   527→                out_file.write_bytes(img_obj.read_raw_bytes())
+   528→                saved.append({
+   529→                    "page": page_no, "name": str(key), "file": str(out_file),
+   530→                    "width": w, "height": h, "format": ext,
+   531→                })
+   532→            except Exception:
+   533→                continue
+   534→
+   535→    doc.close()
+   536→    Output.success({"output_dir": str(dest), "total_images": len(saved), "images": saved})
+   537→
+   538→
+   539→# ═══════════════════════════════════════════════════════════════
+   540→#  Section 3: pages — merge, split, rotate, crop
+   541→# ═══════════════════════════════════════════════════════════════
+   542→
+   543→@cmd("pages.merge")
+   544→def pages_merge(argv: list):
+   545→    """Concatenate several PDF files into one."""
+   546→    out_path = _pop_flag(argv, "-o", "--output")
+   547→    if out_path is None:
+   548→        Output.error("MissingArg", "--output is required")
+   549→    if not argv:
+   550→        Output.error("MissingArg", "At least one PDF required")
+   551→
+   552→    import pikepdf
+   553→    sources = [Output.check_file(p) for p in argv]
+   554→    handles = []
+   555→    try:
+   556→        combined = pikepdf.new()
+   557→        descriptions = []
+   558→        for src in sources:
+   559→            handle = pikepdf.open(src)
+   560→            handles.append(handle)
+   561→            n = len(handle.pages)
+   562→            descriptions.append(f"{src.name} ({n} pages)")
+   563→            for pg in handle.pages:
+   564→                combined.pages.append(pg)
+   565→        total = len(combined.pages)
+   566→        combined.save(out_path)
+   567→        combined.close()
+   568→    except Exception as exc:
+   569→        Output.error("MergeError", f"Merge failed: {exc}", code=4)
+   570→    finally:
+   571→        for h in handles:
+   572→            try:
+   573→                h.close()
+   574→            except Exception:
+   575→                pass
+   576→
+   577→    Output.success({"output": out_path, "total_pages": total, "sources": descriptions})
+   578→
+   579→
+   580→@cmd("pages.split")
+   581→def pages_split(argv: list):
+   582→    """Write each page as a separate single-page PDF."""
+   583→    if not argv:
+   584→        Output.error("MissingArg", "pdf path required")
+   585→    pdf_path = argv.pop(0)
+   586→    out_dir = _pop_flag(argv, "-o", "--output") or "."
+   587→
+   588→    import pikepdf
+   589→    src = Output.check_file(pdf_path)
+   590→    dest = Path(out_dir)
+   591→    dest.mkdir(parents=True, exist_ok=True)
+   592→
+   593→    try:
+   594→        doc = pikepdf.open(src)
+   595→    except Exception as exc:
+   596→        Output.error("PDFError", f"Cannot open PDF: {exc}", code=3)
+   597→
+   598→    generated = []
+   599→    base = src.stem
+   600→    try:
+   601→        for idx, pg in enumerate(doc.pages, 1):
+   602→            fp = dest / f"{base}_page{idx:03d}.pdf"
+   603→            single_doc = pikepdf.new()
+   604→            single_doc.pages.append(pg)
+   605→            single_doc.save(fp)
+   606→            single_doc.close()
+   607→            generated.append(str(fp))
+   608→        doc.close()
+   609→    except Exception as exc:
+   610→        Output.error("SplitError", f"Split failed: {exc}", code=4)
+   611→
+   612→    Output.success({"output_dir": str(dest), "total_pages": len(generated), "files": generated})
+   613→
+   614→
+   615→@cmd("pages.rotate")
+   616→def pages_rotate(argv: list):
+   617→    """Rotate selected pages by 90/180/270 degrees."""
+   618→    if len(argv) < 2:
+   619→        Output.error("MissingArg", "pdf path and degrees required")
+   620→    pdf_path = argv.pop(0)
+   621→    degrees = int(argv.pop(0))
+   622→    out_path = _pop_flag(argv, "-o", "--output")
+   623→    if out_path is None:
+   624→        Output.error("MissingArg", "--output is required")
+   625→    page_range = _pop_flag(argv, "-p", "--pages")
+   626→
+   627→    if degrees not in (90, 180, 270):
+   628→        Output.error("InvalidDegrees", "Rotation angle must be 90, 180, or 270")
+   629→
+   630→    import pikepdf
+   631→    src = Output.check_file(pdf_path)
+   632→    try:
+   633→        doc = pikepdf.open(src)
+   634→    except Exception as exc:
+   635→        Output.error("PDFError", f"Cannot open PDF: {exc}", code=3)
+   636→
+   637→    targets = _resolve_page_indices(page_range, len(doc.pages))
+   638→    try:
+   639→        for i in targets:
+   640→            existing = int(doc.pages[i].get("/Rotate", 0))
+   641→            doc.pages[i]["/Rotate"] = (existing + degrees) % 360
+   642→        doc.save(out_path)
+   643→        doc.close()
+   644→    except Exception as exc:
+   645→        Output.error("RotateError", f"Rotation failed: {exc}", code=4)
+   646→
+   647→    Output.success({"output": out_path, "degrees": degrees, "pages_rotated": len(targets)})
+   648→
+   649→
+   650→@cmd("pages.crop")
+   651→def pages_crop(argv: list):
+   652→    """Set the media/crop box on selected pages. box = 'left,bottom,right,top' in pt."""
+   653→    if len(argv) < 2:
+   654→        Output.error("MissingArg", "pdf path and crop box required")
+   655→    pdf_path = argv.pop(0)
+   656→    box_str = argv.pop(0)
+   657→    out_path = _pop_flag(argv, "-o", "--output")
+   658→    if out_path is None:
+   659→        Output.error("MissingArg", "--output is required")
+   660→    page_range = _pop_flag(argv, "-p", "--pages")
+   661→
+   662→    try:
+   663→        coords = [float(v.strip()) for v in box_str.split(",")]
+   664→        assert len(coords) == 4
+   665→        left, bottom, right, top = coords
+   666→    except Exception:
+   667→        Output.error("InvalidBox", "Invalid crop box format, should be: left,bottom,right,top",
+   668→                      hint="Example: 50,50,550,750")
+   669→
+   670→    import pikepdf
+   671→    src = Output.check_file(pdf_path)
+   672→    try:
+   673→        doc = pikepdf.open(src)
+   674→    except Exception as exc:
+   675→        Output.error("PDFError", f"Cannot open PDF: {exc}", code=3)
+   676→
+   677→    targets = _resolve_page_indices(page_range, len(doc.pages))
+   678→    try:
+   679→        arr = pikepdf.Array([left, bottom, right, top])
+   680→        for i in targets:
+   681→            doc.pages[i].mediabox = arr
+   682→            doc.pages[i].cropbox = arr
+   683→        doc.save(out_path)
+   684→        doc.close()
+   685→    except Exception as exc:
+   686→        Output.error("CropError", f"Crop failed: {exc}", code=4)
+   687→
+   688→    Output.success({
+   689→        "output": out_path,
+   690→        "box": {"left": left, "bottom": bottom, "right": right, "top": top},
+   691→        "pages_cropped": len(targets),
+   692→    })
+   693→
+   694→
+   695→@cmd("pages.clean")
+   696→def pages_clean(argv: list):
+   697→    """Remove truly blank pages from a PDF.
+   698→
+   699→    A page is considered blank ONLY if it has exactly 0 text characters AND
+   700→    0 images.  Pages with even a single character or a tiny image are kept.
+   701→
+   702→    Usage:
+   703→        pdf.py pages.clean input.pdf -o output.pdf
+   704→    """
+   705→    if not argv:
+   706→        Output.error("MissingArg", "PDF path required")
+   707→    pdf_path = argv.pop(0)
+   708→    out_path = _pop_flag(argv, "-o", "--output")
+   709→    if out_path is None:
+   710→        Output.error("MissingArg", "--output is required")
+   711→    # --threshold is accepted but ignored (kept for backward compat)
+   712→    _pop_flag(argv, "-t", "--threshold")
+   713→
+   714→    src = Output.check_file(pdf_path)
+   715→
+   716→    # Phase 1: Detect blank pages using pdfplumber (text extraction)
+   717→    try:
+   718→        import pdfplumber
+   719→    except ImportError:
+   720→        Output.error("DependencyMissing", "pdfplumber required: pip install pdfplumber")
+   721→
+   722→    blank_indices = []  # 0-indexed
+   723→    total_pages = 0
+   724→    try:
+   725→        pdf = pdfplumber.open(str(src))
+   726→        total_pages = len(pdf.pages)
+   727→        for i, page in enumerate(pdf.pages):
+   728→            text = (page.extract_text() or "").strip()
+   729→            # Check for ANY images on the page (no size filter)
+   730→            images = page.images if hasattr(page, 'images') else []
+   731→            # A page is blank ONLY if it has exactly 0 characters AND 0 images
+   732→            if len(text) == 0 and len(images) == 0:
+   733→                blank_indices.append(i)
+   734→        pdf.close()
+   735→    except Exception as exc:
+   736→        Output.error("PDFError", f"Cannot analyze PDF: {exc}", code=3)
+   737→
+   738→    if not blank_indices:
+   739→        Output.success({
+   740→            "output": str(src),
+   741→            "total_pages": total_pages,
+   742→            "blank_pages_removed": 0,
+   743→            "message": "No blank pages found",
+   744→        })
+   745→        return
+   746→
+   747→    # Phase 2: Remove blank pages using pikepdf
+   748→    try:
+   749→        import pikepdf
+   750→    except ImportError:
+   751→        Output.error("DependencyMissing", "pikepdf required: pip install pikepdf")
+   752→
+   753→    try:
+   754→        doc = pikepdf.open(str(src))
+   755→        # Remove in reverse order to preserve indices
+   756→        for idx in sorted(blank_indices, reverse=True):
+   757→            if idx < len(doc.pages):
+   758→                del doc.pages[idx]
+   759→        doc.save(out_path)
+   760→        doc.close()
+   761→    except Exception as exc:
+   762→        Output.error("PDFError", f"Cannot remove blank pages: {exc}", code=4)
+   763→
+   764→    remaining = total_pages - len(blank_indices)
+   765→    Output.success({
+   766→        "output": out_path,
+   767→        "total_pages": total_pages,
+   768→        "blank_pages_removed": len(blank_indices),
+   769→        "blank_page_numbers": [i + 1 for i in blank_indices],  # 1-indexed for humans
+   770→        "remaining_pages": remaining,
+   771→    })
+   772→
+   773→
+   774→# ═══════════════════════════════════════════════════════════════
+   775→#  Section 4: meta — metadata reading, writing, and branding
+   776→# ═══════════════════════════════════════════════════════════════
+   777→
+   778→_XMP_MAPPING = {
+   779→    "Title": "dc:title",
+   780→    "Author": "dc:creator",
+   781→    "Subject": "dc:description",
+   782→    "Keywords": "pdf:Keywords",
+   783→    "Creator": "xmp:CreatorTool",
+   784→    "Producer": "pdf:Producer",
+   785→}
+   786→_ACCEPTED_KEYS = set(_XMP_MAPPING.keys())
+   787→
+   788→
+   789→@cmd("meta.get")
+   790→def meta_get(argv: list):
+   791→    """Read document information and metadata."""
+   792→    if not argv:
+   793→        Output.error("MissingArg", "pdf path required")
+   794→
+   795→    import pikepdf
+   796→    src = Output.check_file(argv[0])
+   797→    try:
+   798→        doc = pikepdf.open(src)
+   799→    except Exception as exc:
+   800→        Output.error("PDFError", f"Cannot open PDF: {exc}", code=3)
+   801→
+   802→    record: dict = {
+   803→        "pages": len(doc.pages),
+   804→        "pdf_version": str(doc.pdf_version),
+   805→    }
+   806→
+   807→    if doc.pages:
+   808→        mb = doc.pages[0].mediabox
+   809→        record["page_size"] = {
+   810→            "width": float(mb[2] - mb[0]),
+   811→            "height": float(mb[3] - mb[1]),
+   812→            "unit": "pt",
+   813→        }
+   814→
+   815→    kv_pairs = {}
+   816→    if doc.docinfo:
+   817→        for k in doc.docinfo.keys():
+   818→            try:
+   819→                kv_pairs[str(k).lstrip("/")] = str(doc.docinfo[k])
+   820→            except Exception:
+   821→                pass
+   822→    record["metadata"] = kv_pairs
+   823→    record["encrypted"] = doc.is_encrypted
+   824→    record["has_form"] = "/AcroForm" in doc.Root
+   825→    record["has_outlines"] = "/Outlines" in doc.Root
+   826→
+   827→    doc.close()
+   828→    Output.success(record)
+   829→
+   830→
+   831→@cmd("meta.set")
+   832→def meta_set(argv: list):
+   833→    """Update XMP + legacy docinfo metadata fields."""
+   834→    if not argv:
+   835→        Output.error("MissingArg", "pdf path required")
+   836→    pdf_path = argv.pop(0)
+   837→    out_path = _pop_flag(argv, "-o", "--output")
+   838→    if out_path is None:
+   839→        Output.error("MissingArg", "--output is required")
+   840→    data = _load_json_arg(argv)
+   841→
+   842→    import pikepdf
+   843→    src = Output.check_file(pdf_path)
+   844→    try:
+   845→        doc = pikepdf.open(src)
+   846→    except Exception as exc:
+   847→        Output.error("PDFError", f"Cannot open PDF: {exc}", code=3)
+   848→
+   849→    # XMP layer
+   850→    with doc.open_metadata() as xmp:
+   851→        for raw_key, raw_val in data.items():
+   852→            norm = raw_key.title()
+   853→            xmp_key = _XMP_MAPPING.get(norm)
+   854→            if xmp_key is None:
+   855→                continue
+   856→            try:
+   857→                xmp[xmp_key] = str(raw_val)
+   858→            except Exception:
+   859→                pass
+   860→
+   861→    # Legacy docinfo layer
+   862→    if not doc.docinfo:
+   863→        doc.docinfo = pikepdf.Dictionary()
+   864→    for raw_key, raw_val in data.items():
+   865→        norm = raw_key.title()
+   866→        if norm in _ACCEPTED_KEYS:
+   867→            doc.docinfo[pikepdf.Name(f"/{norm}")] = pikepdf.String(str(raw_val))
+   868→
+   869→    doc.docinfo[pikepdf.Name("/ModDate")] = pikepdf.String(
+   870→        datetime.now().strftime("D:%Y%m%d%H%M%S")
+   871→    )
+   872→
+   873→    try:
+   874→        doc.save(out_path)
+   875→        doc.close()
+   876→    except Exception as exc:
+   877→        Output.error("SaveError", f"Save failed: {exc}", code=4)
+   878→
+   879→    Output.success({"output": out_path, "updated_fields": list(data.keys())})
+   880→
+   881→
+   882→@cmd("meta.brand")
+   883→def meta_brand(argv: list):
+   884→    """Add Z.ai branding metadata to PDF documents."""
+   885→    output_path = _pop_flag(argv, "-o", "--output")
+   886→    custom_title = _pop_flag(argv, "-t", "--title")
+   887→    quiet = _pop_flag(argv, "-q", "--quiet", needs_value=False)
+   888→
+   889→    if not argv:
+   890→        Output.error("MissingArg", "At least one PDF file required")
+   891→
+   892→    # Check if output is specified for multiple files
+   893→    if output_path and len(argv) > 1:
+   894→        Output.error("InvalidArg", "--output can only be used with a single input file")
+   895→
+   896→    from pypdf import PdfReader, PdfWriter
+   897→
+   898→    for input_path in argv:
+   899→        if not os.path.exists(input_path):
+   900→            print(f"Error: Input file not found: {input_path}", file=sys.stderr)
+   901→            continue
+   902→
+   903→        try:
+   904→            reader = PdfReader(input_path)
+   905→        except Exception as e:
+   906→            print(f"Error: Cannot open PDF: {e}", file=sys.stderr)
+   907→            continue
+   908→
+   909→        writer = PdfWriter()
+   910→        for page in reader.pages:
+   911→            writer.add_page(page)
+   912→
+   913→        # Determine title
+   914→        if custom_title:
+   915→            title = custom_title
+   916→        else:
+   917→            original_meta = reader.metadata
+   918→            if original_meta and original_meta.title and original_meta.title not in ('(anonymous)', 'unspecified', None):
+   919→                title = original_meta.title
+   920→            else:
+   921→                title = os.path.splitext(os.path.basename(input_path))[0]
+   922→
+   923→        writer.add_metadata({
+   924→            '/Title': title,
+   925→            '/Author': 'Z.ai',
+   926→            '/Creator': 'Z.ai',
+   927→            '/Producer': 'http://z.ai',
+   928→        })
+   929→
+   930→        # Write output
+   931→        out = output_path if (len(argv) == 1 and output_path) else input_path
+   932→        try:
+   933→            with open(out, "wb") as f:
+   934→                writer.write(f)
+   935→        except Exception as e:
+   936→            print(f"Error: Cannot write output file: {e}", file=sys.stderr)
+   937→            continue
+   938→
+   939→        if not quiet:
+   940→            print(f"\u2713 Updated metadata for: {os.path.basename(input_path)}")
+   941→            print(f"  Title: {title}")
+   942→            print(f"  Author: Z.ai")
+   943→            print(f"  Creator: Z.ai")
+   944→            print(f"  Producer: http://z.ai")
+   945→            if out != input_path:
+   946→                print(f"  Output: {out}")
+   947→
+   948→    raise SystemExit(0)
+   949→
+   950→
+   951→# ═══════════════════════════════════════════════════════════════
+   952→#  Section 5: form — inspection, filling, annotation, rendering
+   953→# ═══════════════════════════════════════════════════════════════
+   954→
+   955→# --- form.info (pikepdf-based) ---
+   956→
+   957→_FIELD_TYPE_MAP = {
+   958→    "/Tx": "text",
+   959→    "/Sig": "signature",
+   960→}
+   961→
+   962→
+   963→def _classify_field(node) -> str:
+   964→    """Map a PDF field type token to a human label."""
+   965→    ft = str(node.get("/FT", ""))
+   966→    if ft in _FIELD_TYPE_MAP:
+   967→        return _FIELD_TYPE_MAP[ft]
+   968→    flags = int(node.get("/Ff", 0))
+   969→    if ft == "/Btn":
+   970→        return "radio" if (flags & (1 << 15)) else "checkbox"
+   971→    if ft == "/Ch":
+   972→        return "dropdown" if (flags & (1 << 17)) else "listbox"
+   973→    return "unknown"
+   974→
+   975→
+   976→def _extra_props(node, kind: str) -> dict:
+   977→    """Gather type-specific metadata (options, checked value, etc.)."""
+   978→    props: dict = {}
+   979→    if kind == "checkbox":
+   980→        ap = node.get("/AP")
+   981→        if ap and "/N" in ap:
+   982→            states = [str(s) for s in ap["/N"].keys()]
+   983→            props["states"] = states
+   984→            props["checked_value"] = next((s for s in states if s != "/Off"), states[0] if states else None)
+   985→    elif kind in ("dropdown", "listbox"):
+   986→        raw_opts = node.get("/Opt")
+   987→        if raw_opts:
+   988→            props["options"] = [
+   989→                {"value": str(item[0]), "label": str(item[1])} if isinstance(item, list) and len(item) >= 2
+   990→                else {"value": str(item), "label": str(item)}
+   991→                for item in raw_opts
+   992→            ]
+   993→    elif kind == "radio":
+   994→        kids = node.get("/Kids")
+   995→        if kids:
+   996→            radio_vals = []
+   997→            for child in kids:
+   998→                ap = child.get("/AP")
+   999→                if ap and "/N" in ap:
+  1000→                    radio_vals.extend(str(k) for k in ap["/N"].keys() if str(k) != "/Off")
+  1001→            if radio_vals:
+  1002→                props["options"] = radio_vals
+  1003→    return props
+  1004→
+  1005→
+  1006→def _current_value(node):
+  1007→    v = node.get("/V")
+  1008→    return str(v) if v is not None else None
+  1009→
+  1010→
+  1011→def _gather_fields(doc) -> list:
+  1012→    """Walk the AcroForm field tree iteratively and return a flat list."""
+  1013→    if "/AcroForm" not in doc.Root:
+  1014→        return []
+  1015→    acro = doc.Root.AcroForm
+  1016→    if "/Fields" not in acro:
+  1017→        return []
+  1018→
+  1019→    page_lookup = {pg.objgen: idx for idx, pg in enumerate(doc.pages)}
+  1020→    results = []
+  1021→    stack = [(field, "") for field in reversed(list(acro.Fields))]
+  1022→
+  1023→    while stack:
+  1024→        node, parent_path = stack.pop()
+  1025→        name = str(node.get("/T", ""))
+  1026→        full = f"{parent_path}.{name}" if parent_path else name
+  1027→
+  1028→        kids = node.get("/Kids")
+  1029→        if kids and any("/T" in k for k in kids):
+  1030→            for kid in reversed(list(kids)):
+  1031→                stack.append((kid, full))
+  1032→            continue
+  1033→
+  1034→        kind = _classify_field(node)
+  1035→        if kind == "unknown":
+  1036→            continue
+  1037→
+  1038→        entry = {"id": full, "type": kind}
+  1039→        val = _current_value(node)
+  1040→        if val:
+  1041→            entry["current_value"] = val
+  1042→        entry.update(_extra_props(node, kind))
+  1043→
+  1044→        page_ref = node.get("/P")
+  1045→        if page_ref and hasattr(page_ref, "objgen"):
+  1046→            pg_num = page_lookup.get(page_ref.objgen)
+  1047→            if pg_num is not None:
+  1048→                entry["page"] = pg_num + 1
+  1049→
+  1050→        results.append(entry)
+  1051→
+  1052→    return results
+  1053→
+  1054→
+  1055→@cmd("form.info")
+  1056→def form_info(argv: list):
+  1057→    """Return structured JSON describing every form field (pikepdf + check_fillable)."""
+  1058→    if not argv:
+  1059→        Output.error("MissingArg", "pdf path required")
+  1060→
+  1061→    import pikepdf
+  1062→    src = Output.check_file(argv[0])
+  1063→    try:
+  1064→        doc = pikepdf.open(src)
+  1065→    except Exception as exc:
+  1066→        Output.error("PDFError", f"Cannot open PDF: {exc}", code=3)
+  1067→
+  1068→    fields = _gather_fields(doc)
+  1069→    if not fields:
+  1070→        Output.success({"has_fields": False, "count": 0, "fields": [], "hint": "This PDF has no fillable form fields"})
+  1071→    Output.success({"has_fields": True, "count": len(fields), "fields": fields})
+  1072→
+  1073→
+  1074→@cmd("form.fill")
+  1075→def form_fill(argv: list):
+  1076→    """Write values into a fillable PDF (pikepdf version)."""
+  1077→    if not argv:
+  1078→        Output.error("MissingArg", "pdf path required")
+  1079→    pdf_path = argv.pop(0)
+  1080→    out_path = _pop_flag(argv, "-o", "--output")
+  1081→    if out_path is None:
+  1082→        Output.error("MissingArg", "--output is required")
+  1083→    data = _load_json_arg(argv)
+  1084→
+  1085→    import pikepdf
+  1086→    src = Output.check_file(pdf_path)
+  1087→    try:
+  1088→        doc = pikepdf.open(src)
+  1089→    except Exception as exc:
+  1090→        Output.error("PDFError", f"Cannot open PDF: {exc}", code=3)
+  1091→
+  1092→    if "/AcroForm" not in doc.Root or "/Fields" not in doc.Root.AcroForm:
+  1093→        Output.error("NoForm", "This PDF has no form fields")
+  1094→
+  1095→    known = {f["id"]: f for f in _gather_fields(doc)}
+  1096→
+  1097→    # Validation
+  1098→    issues = []
+  1099→    for fid, fval in data.items():
+  1100→        if fid not in known:
+  1101→            issues.append(f"Field not found: {fid}")
+  1102→            continue
+  1103→        fmeta = known[fid]
+  1104→        ftype = fmeta["type"]
+  1105→        if ftype == "checkbox" and "states" in fmeta:
+  1106→            ok_vals = fmeta["states"]
+  1107→            if fval not in ok_vals and f"/{fval}" not in ok_vals and fval not in ("true", "True", "false", "False", "1", "0"):
+  1108→                issues.append(f"Invalid value for field {fid}, options: {ok_vals} or true/false")
+  1109→        if ftype in ("dropdown", "listbox") and "options" in fmeta:
+  1110→            ok_vals = [o["value"] for o in fmeta["options"]]
+  1111→            if fval not in ok_vals:
+  1112→                issues.append(f"Invalid value for field {fid}, options: {ok_vals}")
+  1113→    if issues:
+  1114→        Output.error("ValidationError", "Field validation failed", hint="; ".join(issues))
+  1115→
+  1116→    # Fill
+  1117→    written = 0
+  1118→
+  1119→    def _apply(node, parent_path=""):
+  1120→        nonlocal written
+  1121→        name = str(node.get("/T", ""))
+  1122→        full = f"{parent_path}.{name}" if parent_path else name
+  1123→        kids = node.get("/Kids")
+  1124→        if kids and any("/T" in k for k in kids):
+  1125→            for kid in kids:
+  1126→                _apply(kid, full)
+  1127→            return
+  1128→        if full not in data:
+  1129→            return
+  1130→        val = data[full]
+  1131→        kind = _classify_field(node)
+  1132→        if kind == "checkbox":
+  1133→            if val in ("true", "True", "1", True):
+  1134→                ap = node.get("/AP")
+  1135→                if ap and "/N" in ap:
+  1136→                    checked_name = next((str(k) for k in ap["/N"].keys() if str(k) != "/Off"), "/Yes")
+  1137→                    if not checked_name.startswith("/"):
+  1138→                        checked_name = f"/{checked_name}"
+  1139→                    node["/V"] = pikepdf.Name(checked_name)
+  1140→                    node["/AS"] = pikepdf.Name(checked_name)
+  1141→            else:
+  1142→                node["/V"] = pikepdf.Name("/Off")
+  1143→                node["/AS"] = pikepdf.Name("/Off")
+  1144→        else:
+  1145→            node["/V"] = pikepdf.String(str(val))
+  1146→        written += 1
+  1147→
+  1148→    for field in doc.Root.AcroForm.Fields:
+  1149→        _apply(field)
+  1150→
+  1151→    acro = doc.Root.AcroForm
+  1152→    if "/NeedAppearances" not in acro:
+  1153→        acro["/NeedAppearances"] = True
+  1154→
+  1155→    try:
+  1156→        doc.save(out_path)
+  1157→    except Exception as exc:
+  1158→        Output.error("SaveError", f"Save failed: {exc}", code=4)
+  1159→
+  1160→    Output.success({"output": out_path, "fields_filled": written, "fields_requested": len(data)})
+  1161→
+  1162→
+  1163→# --- form.detail (pypdf-based detailed field extraction) ---
+  1164→
+  1165→def _get_full_annotation_field_id(annotation):
+  1166→    """Build dotted field ID by walking parent chain."""
+  1167→    components = []
+  1168→    while annotation:
+  1169→        field_name = annotation.get('/T')
+  1170→        if field_name:
+  1171→            components.append(field_name)
+  1172→        annotation = annotation.get('/Parent')
+  1173→    return ".".join(reversed(components)) if components else None
+  1174→
+  1175→
+  1176→def _make_field_dict(field, field_id):
+  1177→    field_dict = {"field_id": field_id}
+  1178→    ft = field.get('/FT')
+  1179→    if ft == "/Tx":
+  1180→        field_dict["type"] = "text"
+  1181→    elif ft == "/Btn":
+  1182→        field_dict["type"] = "checkbox"
+  1183→        states = field.get("/_States_", [])
+  1184→        if len(states) == 2:
+  1185→            if "/Off" in states:
+  1186→                field_dict["checked_value"] = states[0] if states[0] != "/Off" else states[1]
+  1187→                field_dict["unchecked_value"] = "/Off"
+  1188→            else:
+  1189→                print(f"Unexpected state values for checkbox `${field_id}`. Its checked and unchecked values may not be correct; if you're trying to check it, visually verify the results.")
+  1190→                field_dict["checked_value"] = states[0]
+  1191→                field_dict["unchecked_value"] = states[1]
+  1192→    elif ft == "/Ch":
+  1193→        field_dict["type"] = "choice"
+  1194→        states = field.get("/_States_", [])
+  1195→        field_dict["choice_options"] = [{
+  1196→            "value": state[0],
+  1197→            "text": state[1],
+  1198→        } for state in states]
+  1199→    else:
+  1200→        field_dict["type"] = f"unknown ({ft})"
+  1201→    return field_dict
+  1202→
+  1203→
+  1204→def _get_field_info(reader) -> list:
+  1205→    """Extract detailed field info from a PdfReader, including radio group aggregation."""
+  1206→    fields = reader.get_fields()
+  1207→
+  1208→    field_info_by_id = {}
+  1209→    possible_radio_names: Set[str] = set()
+  1210→
+  1211→    for field_id, field in fields.items():
+  1212→        if field.get("/Kids"):
+  1213→            if field.get("/FT") == "/Btn":
+  1214→                possible_radio_names.add(field_id)
+  1215→            continue
+  1216→        field_info_by_id[field_id] = _make_field_dict(field, field_id)
+  1217→
+  1218→    radio_fields_by_id: Dict[str, dict] = {}
+  1219→
+  1220→    for page_index, page in enumerate(reader.pages):
+  1221→        annotations = page.get('/Annots', [])
+  1222→        for ann in annotations:
+  1223→            field_id = _get_full_annotation_field_id(ann)
+  1224→            if field_id in field_info_by_id:
+  1225→                field_info_by_id[field_id]["page"] = page_index + 1
+  1226→                field_info_by_id[field_id]["rect"] = ann.get('/Rect')
+  1227→            elif field_id in possible_radio_names:
+  1228→                try:
+  1229→                    on_values = [v for v in ann["/AP"]["/N"] if v != "/Off"]
+  1230→                except KeyError:
+  1231→                    continue
+  1232→                if len(on_values) == 1:
+  1233→                    rect = ann.get("/Rect")
+  1234→                    if field_id not in radio_fields_by_id:
+  1235→                        radio_fields_by_id[field_id] = {
+  1236→                            "field_id": field_id,
+  1237→                            "type": "radio_group",
+  1238→                            "page": page_index + 1,
+  1239→                            "radio_options": [],
+  1240→                        }
+  1241→                    radio_fields_by_id[field_id]["radio_options"].append({
+  1242→                        "value": on_values[0],
+  1243→                        "rect": rect,
+  1244→                    })
+  1245→
+  1246→    # Filter fields without location
+  1247→    fields_with_location = []
+  1248→    for field_info in field_info_by_id.values():
+  1249→        if "page" in field_info:
+  1250→            fields_with_location.append(field_info)
+  1251→        else:
+  1252→            print(f"Unable to determine location for field id: {field_info.get('field_id')}, ignoring")
+  1253→
+  1254→    # Sort by page number, then Y position (flipped), then X
+  1255→    def sort_key(f):
+  1256→        if "radio_options" in f:
+  1257→            rect = f["radio_options"][0]["rect"] or [0, 0, 0, 0]
+  1258→        else:
+  1259→            rect = f.get("rect") or [0, 0, 0, 0]
+  1260→        adjusted_position = [-rect[1], rect[0]]
+  1261→        return [f.get("page"), adjusted_position]
+  1262→
+  1263→    sorted_fields = fields_with_location + list(radio_fields_by_id.values())
+  1264→    sorted_fields.sort(key=sort_key)
+  1265→
+  1266→    return sorted_fields
+  1267→
+  1268→
+  1269→@cmd("form.detail")
+  1270→def form_detail(argv: list):
+  1271→    """Extract detailed field info (pypdf version) to JSON."""
+  1272→    if len(argv) < 2:
+  1273→        Output.error("MissingArg", "Usage: form.detail <pdf> <output.json>")
+  1274→    pdf_path = argv[0]
+  1275→    json_output_path = argv[1]
+  1276→
+  1277→    from pypdf import PdfReader
+  1278→    reader = PdfReader(pdf_path)
+  1279→    field_info = _get_field_info(reader)
+  1280→    with open(json_output_path, "w") as f:
+  1281→        json.dump(field_info, f, indent=2)
+  1282→    print(f"Wrote {len(field_info)} fields to {json_output_path}")
+  1283→    raise SystemExit(0)
+  1284→
+  1285→
+  1286→# --- form.fill-legacy (pypdf version with monkeypatch) ---
+  1287→
+  1288→def _validation_error_for_field_value(field_info, field_value):
+  1289→    field_type = field_info["type"]
+  1290→    field_id = field_info["field_id"]
+  1291→    if field_type == "checkbox":
+  1292→        checked_val = field_info["checked_value"]
+  1293→        unchecked_val = field_info["unchecked_value"]
+  1294→        if field_value != checked_val and field_value != unchecked_val:
+  1295→            return f'ERROR: Invalid value "{field_value}" for checkbox field "{field_id}". The checked value is "{checked_val}" and the unchecked value is "{unchecked_val}"'
+  1296→    elif field_type == "radio_group":
+  1297→        option_values = [opt["value"] for opt in field_info["radio_options"]]
+  1298→        if field_value not in option_values:
+  1299→            return f'ERROR: Invalid value "{field_value}" for radio group field "{field_id}". Valid values are: {option_values}'
+  1300→    elif field_type == "choice":
+  1301→        choice_values = [opt["value"] for opt in field_info["choice_options"]]
+  1302→        if field_value not in choice_values:
+  1303→            return f'ERROR: Invalid value "{field_value}" for choice field "{field_id}". Valid values are: {choice_values}'
+  1304→    return None
+  1305→
+  1306→
+  1307→def _monkeypatch_pypdf_method():
+  1308→    """
+  1309→    Workaround for pypdf bug with selection list fields.
+  1310→    pypdf's get_inherited returns a list of two-element lists for /Opt fields
+  1311→    in selection lists, causing join() to throw TypeError. We patch it to
+  1312→    return just the value strings.
+  1313→    """
+  1314→    from pypdf.generic import DictionaryObject
+  1315→    from pypdf.constants import FieldDictionaryAttributes
+  1316→
+  1317→    original_get_inherited = DictionaryObject.get_inherited
+  1318→
+  1319→    def patched_get_inherited(self, key: str, default=None):
+  1320→        result = original_get_inherited(self, key, default)
+  1321→        if key == FieldDictionaryAttributes.Opt:
+  1322→            if isinstance(result, list) and all(isinstance(v, list) and len(v) == 2 for v in result):
+  1323→                result = [r[0] for r in result]
+  1324→        return result
+  1325→
+  1326→    DictionaryObject.get_inherited = patched_get_inherited
+  1327→
+  1328→
+  1329→@cmd("form.fill-legacy")
+  1330→def form_fill_legacy(argv: list):
+  1331→    """Fill fillable form fields (pypdf version with monkeypatch)."""
+  1332→    if len(argv) < 3:
+  1333→        Output.error("MissingArg", "Usage: form.fill-legacy <pdf> <fields.json> <output.pdf>")
+  1334→    input_pdf = argv[0]
+  1335→    fields_json = argv[1]
+  1336→    output_pdf = argv[2]
+  1337→
+  1338→    from pypdf import PdfReader, PdfWriter
+  1339→
+  1340→    _monkeypatch_pypdf_method()
+  1341→
+  1342→    with open(fields_json) as f:
+  1343→        fields = json.load(f)
+  1344→
+  1345→    # Group by page number
+  1346→    fields_by_page: Dict[int, dict] = {}
+  1347→    for field in fields:
+  1348→        if "value" in field:
+  1349→            field_id = field["field_id"]
+  1350→            page = field["page"]
+  1351→            if page not in fields_by_page:
+  1352→                fields_by_page[page] = {}
+  1353→            fields_by_page[page][field_id] = field["value"]
+  1354→
+  1355→    reader = PdfReader(input_pdf)
+  1356→
+  1357→    has_error = False
+  1358→    field_info = _get_field_info(reader)
+  1359→    fields_by_ids = {f["field_id"]: f for f in field_info}
+  1360→    for field in fields:
+  1361→        existing_field = fields_by_ids.get(field["field_id"])
+  1362→        if not existing_field:
+  1363→            has_error = True
+  1364→            print(f"ERROR: `{field['field_id']}` is not a valid field ID")
+  1365→        elif field["page"] != existing_field["page"]:
+  1366→            has_error = True
+  1367→            print(f"ERROR: Incorrect page number for `{field['field_id']}` (got {field['page']}, expected {existing_field['page']})")
+  1368→        else:
+  1369→            if "value" in field:
+  1370→                err = _validation_error_for_field_value(existing_field, field["value"])
+  1371→                if err:
+  1372→                    print(err)
+  1373→                    has_error = True
+  1374→    if has_error:
+  1375→        raise SystemExit(1)
+  1376→
+  1377→    writer = PdfWriter(clone_from=reader)
+  1378→    for page, field_values in fields_by_page.items():
+  1379→        writer.update_page_form_field_values(writer.pages[page - 1], field_values, auto_regenerate=False)
+  1380→
+  1381→    writer.set_need_appearances_writer(True)
+  1382→
+  1383→    with open(output_pdf, "wb") as f:
+  1384→        writer.write(f)
+  1385→
+  1386→    print(f"Filled {len(fields_by_page)} page(s) in {output_pdf}")
+  1387→    raise SystemExit(0)
+  1388→
+  1389→
+  1390→# --- form.annotate (annotation-based filling with coordinate transform) ---
+  1391→
+  1392→def _transform_coordinates(bbox, image_width, image_height, pdf_width, pdf_height):
+  1393→    """Transform bounding box from image coordinates to PDF coordinates."""
+  1394→    x_scale = pdf_width / image_width
+  1395→    y_scale = pdf_height / image_height
+  1396→
+  1397→    left = bbox[0] * x_scale
+  1398→    right = bbox[2] * x_scale
+  1399→
+  1400→    # Flip Y coordinates for PDF
+  1401→    top = pdf_height - (bbox[1] * y_scale)
+  1402→    bottom = pdf_height - (bbox[3] * y_scale)
+  1403→
+  1404→    return left, bottom, right, top
+  1405→
+  1406→
+  1407→def _normalise_fields_json(raw: dict) -> dict:
+  1408→    """Accept both the current sheet-based schema and the legacy flat schema.
+  1409→
+  1410→    Current (v2) schema uses ``sheet[].pg/dims/regions[]`` with nested
+  1411→    ``label.bbox``, ``target.bbox``, ``ink{}``.
+  1412→
+  1413→    Legacy (v1) schema uses ``pages[]`` + ``form_fields[]`` with flat keys
+  1414→    like ``entry_bounding_box``, ``label_bounding_box``, ``entry_text{}``.
+  1415→
+  1416→    Returns a normalised dict in the **v2** internal format used by all
+  1417→    downstream functions.
+  1418→    """
+  1419→    # Already v2
+  1420→    if "sheet" in raw:
+  1421→        return raw
+  1422→
+  1423→    # Convert legacy → v2
+  1424→    pages_lut = {p["page_number"]: p for p in raw.get("pages", [])}
+  1425→    sheets: dict = {}  # pg -> sheet entry
+  1426→
+  1427→    for f in raw.get("form_fields", []):
+  1428→        pg = f["page_number"]
+  1429→        if pg not in sheets:
+  1430→            pi = pages_lut.get(pg, {})
+  1431→            sheets[pg] = {
+  1432→                "pg": pg,
+  1433→                "dims": [pi.get("image_width", 0), pi.get("image_height", 0)],
+  1434→                "regions": [],
+  1435→            }
+  1436→        et = f.get("entry_text", {})
+  1437→        region = {
+  1438→            "id": f.get("field_label", f.get("description", "")),
+  1439→            "hint": f.get("description", ""),
+  1440→            "label": {"tag": f.get("field_label", ""), "bbox": f.get("label_bounding_box", [0, 0, 0, 0])},
+  1441→            "target": {"bbox": f.get("entry_bounding_box", [0, 0, 0, 0])},
+  1442→            "ink": {},
+  1443→        }
+  1444→        if isinstance(et, dict) and et.get("text"):
+  1445→            region["ink"]["value"] = et["text"]
+  1446→            if "font_size" in et:
+  1447→                region["ink"]["size"] = et["font_size"]
+  1448→            if "font_color" in et:
+  1449→                region["ink"]["color"] = et["font_color"]
+  1450→            if "font" in et:
+  1451→                region["ink"]["font"] = et["font"]
+  1452→        sheets[pg]["regions"].append(region)
+  1453→
+  1454→    return {"sheet": list(sheets.values())}
+  1455→
+  1456→
+  1457→@cmd("form.annotate")
+  1458→def form_annotate(argv: list):
+  1459→    """Fill a PDF by adding text annotations (FreeText) defined in fields.json."""
+  1460→    if len(argv) < 3:
+  1461→        Output.error("MissingArg", "Usage: form.annotate <pdf> <fields.json> <output.pdf>")
+  1462→    input_pdf = argv[0]
+  1463→    fields_json_path = argv[1]
+  1464→    output_pdf = argv[2]
+  1465→
+  1466→    from pypdf import PdfReader, PdfWriter
+  1467→    from pypdf.annotations import FreeText
+  1468→
+  1469→    with open(fields_json_path, "r") as f:
+  1470→        fields_data = _normalise_fields_json(json.load(f))
+  1471→
+  1472→    reader = PdfReader(input_pdf)
+  1473→    writer = PdfWriter()
+  1474→    writer.append(reader)
+  1475→
+  1476→    # Get PDF dimensions for each page
+  1477→    pdf_dimensions = {}
+  1478→    for i, page in enumerate(reader.pages):
+  1479→        mediabox = page.mediabox
+  1480→        pdf_dimensions[i + 1] = [mediabox.width, mediabox.height]
+  1481→
+  1482→    annotations = []
+  1483→    for page_entry in fields_data["sheet"]:
+  1484→        pg = page_entry["pg"]
+  1485→        image_width, image_height = page_entry["dims"]
+  1486→        pdf_width, pdf_height = pdf_dimensions[pg]
+  1487→
+  1488→        for region in page_entry["regions"]:
+  1489→            ink = region.get("ink", {})
+  1490→            text = ink.get("value", "")
+  1491→            if not text:
+  1492→                continue
+  1493→
+  1494→            transformed_box = _transform_coordinates(
+  1495→                region["target"]["bbox"],
+  1496→                image_width, image_height,
+  1497→                pdf_width, pdf_height
+  1498→            )
+  1499→
+  1500→            font_name = ink.get("font", "FreeSerif")
+  1501→            font_size = str(ink.get("size", 14)) + "pt"
+  1502→            font_color = ink.get("color", "000000")
+  1503→
+  1504→            annotation = FreeText(
+  1505→                text=text,
+  1506→                rect=transformed_box,
+  1507→                font=font_name,
+  1508→                font_size=font_size,
+  1509→                font_color=font_color,
+  1510→                border_color=None,
+  1511→                background_color=None,
+  1512→            )
+  1513→            annotations.append(annotation)
+  1514→            writer.add_annotation(page_number=pg - 1, annotation=annotation)
+  1515→
+  1516→    with open(output_pdf, "wb") as output:
+  1517→        writer.write(output)
+  1518→
+  1519→    print(f"Successfully filled PDF form and saved to {output_pdf}")
+  1520→    print(f"Added {len(annotations)} text annotations")
+  1521→    raise SystemExit(0)
+  1522→
+  1523→
+  1524→# --- form.render (PDF to PNG images) ---
+  1525→
+  1526→@cmd("form.render")
+  1527→def form_render(argv: list):
+  1528→    """Convert each page of a PDF to a PNG image."""
+  1529→    if len(argv) < 2:
+  1530→        Output.error("MissingArg", "Usage: form.render <pdf> <output_dir> [--max-dim N]")
+  1531→    pdf_path = argv.pop(0)
+  1532→    output_dir = argv.pop(0)
+  1533→    max_dim_str = _pop_flag(argv, "-m", "--max-dim")
+  1534→    max_dim = int(max_dim_str) if max_dim_str else 1000
+  1535→
+  1536→    from pdf2image import convert_from_path
+  1537→
+  1538→    os.makedirs(output_dir, exist_ok=True)
+  1539→    images = convert_from_path(pdf_path, dpi=200)
+  1540→
+  1541→    for i, image in enumerate(images):
+  1542→        width, height = image.size
+  1543→        if width > max_dim or height > max_dim:
+  1544→            scale_factor = min(max_dim / width, max_dim / height)
+  1545→            new_width = int(width * scale_factor)
+  1546→            new_height = int(height * scale_factor)
+  1547→            image = image.resize((new_width, new_height))
+  1548→
+  1549→        image_path = os.path.join(output_dir, f"page_{i+1}.png")
+  1550→        image.save(image_path)
+  1551→        print(f"Saved page {i+1} as {image_path} (size: {image.size})")
+  1552→
+  1553→    print(f"Converted {len(images)} pages to PNG images")
+  1554→    raise SystemExit(0)
+  1555→
+  1556→
+  1557→# --- form.validate (bounding box validation image) ---
+  1558→
+  1559→@cmd("form.validate")
+  1560→def form_validate(argv: list):
+  1561→    """Create validation images with bounding box rectangles."""
+  1562→    if len(argv) < 4:
+  1563→        Output.error("MissingArg", "Usage: form.validate <page> <fields.json> <input_img> <output_img>")
+  1564→    page_number = int(argv[0])
+  1565→    fields_json_path = argv[1]
+  1566→    input_path = argv[2]
+  1567→    output_path = argv[3]
+  1568→
+  1569→    from PIL import Image, ImageDraw
+  1570→
+  1571→    with open(fields_json_path, 'r') as f:
+  1572→        data = _normalise_fields_json(json.load(f))
+  1573→
+  1574→    img = Image.open(input_path)
+  1575→    draw = ImageDraw.Draw(img)
+  1576→    num_boxes = 0
+  1577→
+  1578→    for page_entry in data["sheet"]:
+  1579→        if page_entry["pg"] != page_number:
+  1580→            continue
+  1581→        for region in page_entry["regions"]:
+  1582→            target_box = region["target"]["bbox"]
+  1583→            label_box = region["label"]["bbox"]
+  1584→            draw.rectangle(target_box, outline='red', width=2)
+  1585→            draw.rectangle(label_box, outline='blue', width=2)
+  1586→            num_boxes += 2
+  1587→
+  1588→    img.save(output_path)
+  1589→    print(f"Created validation image at {output_path} with {num_boxes} bounding boxes")
+  1590→    raise SystemExit(0)
+  1591→
+  1592→
+  1593→# --- form.check-bbox (bounding box overlap detection) ---
+  1594→
+  1595→@dataclass
+  1596→class _RectAndField:
+  1597→    rect: list
+  1598→    rect_type: str
+  1599→    field: dict
+  1600→
+  1601→
+  1602→def get_bounding_box_messages(fields_json_stream) -> List[str]:
+  1603→    """Check for overlapping bounding boxes. Returns list of messages (max 20)."""
+  1604→    messages = []
+  1605→    raw = json.load(fields_json_stream)
+  1606→    data = _normalise_fields_json(raw)
+  1607→
+  1608→    total_regions = sum(len(pe["regions"]) for pe in data["sheet"])
+  1609→    messages.append(f"Read {total_regions} regions across {len(data['sheet'])} page(s)")
+  1610→
+  1611→    def rects_intersect(r1, r2):
+  1612→        disjoint_horizontal = r1[0] >= r2[2] or r1[2] <= r2[0]
+  1613→        disjoint_vertical = r1[1] >= r2[3] or r1[3] <= r2[1]
+  1614→        return not (disjoint_horizontal or disjoint_vertical)
+  1615→
+  1616→    has_error = False
+  1617→
+  1618→    for page_entry in data["sheet"]:
+  1619→        pg = page_entry["pg"]
+  1620→        # Collect all rects on this page
+  1621→        rects_and_regions = []
+  1622→        for region in page_entry["regions"]:
+  1623→            rects_and_regions.append(_RectAndField(region["label"]["bbox"], "label", region))
+  1624→            rects_and_regions.append(_RectAndField(region["target"]["bbox"], "target", region))
+  1625→
+  1626→        for i, ri in enumerate(rects_and_regions):
+  1627→            for j in range(i + 1, len(rects_and_regions)):
+  1628→                rj = rects_and_regions[j]
+  1629→                if rects_intersect(ri.rect, rj.rect):
+  1630→                    has_error = True
+  1631→                    rid = ri.field.get("id", ri.field.get("hint", "?"))
+  1632→                    rjd = rj.field.get("id", rj.field.get("hint", "?"))
+  1633→                    if ri.field is rj.field:
+  1634→                        messages.append(f"FAILURE: pg {pg} — label/target overlap for `{rid}` ({ri.rect}, {rj.rect})")
+  1635→                    else:
+  1636→                        messages.append(f"FAILURE: pg {pg} — {ri.rect_type} of `{rid}` ({ri.rect}) overlaps {rj.rect_type} of `{rjd}` ({rj.rect})")
+  1637→                    if len(messages) >= 20:
+  1638→                        messages.append("Aborting further checks; fix bounding boxes and try again")
+  1639→                        return messages
+  1640→
+  1641→            # Height check for target rects
+  1642→            if ri.rect_type == "target":
+  1643→                ink = ri.field.get("ink", {})
+  1644→                if ink.get("value"):
+  1645→                    font_size = ink.get("size", 14)
+  1646→                    entry_height = ri.rect[3] - ri.rect[1]
+  1647→                    if entry_height < font_size:
+  1648→                        has_error = True
+  1649→                        rid = ri.field.get("id", ri.field.get("hint", "?"))
+  1650→                        messages.append(f"FAILURE: pg {pg} — target box height ({entry_height}) for `{rid}` is shorter than font size ({font_size}). Increase box height or decrease ink.size.")
+  1651→                        if len(messages) >= 20:
+  1652→                            messages.append("Aborting further checks; fix bounding boxes and try again")
+  1653→                            return messages
+  1654→
+  1655→    if not has_error:
+  1656→        messages.append("SUCCESS: All bounding boxes are valid")
+  1657→    return messages
+  1658→
+  1659→
+  1660→@cmd("form.check-bbox")
+  1661→def form_check_bbox(argv: list):
+  1662→    """Check bounding boxes in fields.json for overlaps."""
+  1663→    if not argv:
+  1664→        Output.error("MissingArg", "Usage: form.check-bbox <fields.json>")
+  1665→    with open(argv[0]) as f:
+  1666→        messages = get_bounding_box_messages(f)
+  1667→    for msg in messages:
+  1668→        print(msg)
+  1669→    raise SystemExit(0)
+  1670→
+  1671→
+  1672→# ═══════════════════════════════════════════════════════════════
+  1673→#  Section 6: convert — office, HTML, and LaTeX
+  1674→# ═══════════════════════════════════════════════════════════════
+  1675→
+  1676→_CONVERTIBLE_EXTENSIONS = frozenset({
+  1677→    ".docx", ".doc", ".odt", ".rtf",
+  1678→    ".pptx", ".ppt", ".odp",
+  1679→    ".xlsx", ".xls", ".ods", ".csv",
+  1680→    ".txt", ".html", ".htm",
+  1681→})
+  1682→
+  1683→_SOFFICE_CANDIDATES = [
+  1684→    "/Applications/LibreOffice.app/Contents/MacOS/soffice",
+  1685→    os.path.expanduser("~/Applications/LibreOffice.app/Contents/MacOS/soffice"),
+  1686→    "/usr/bin/soffice",
+  1687→    "/usr/local/bin/soffice",
+  1688→    "/usr/lib/libreoffice/program/soffice",
+  1689→    "/opt/libreoffice/program/soffice",
+  1690→    "/snap/bin/libreoffice.soffice",
+  1691→]
+  1692→
+  1693→
+  1694→def _locate_soffice() -> Optional[str]:
+  1695→    """Search for a working soffice binary."""
+  1696→    for candidate in _SOFFICE_CANDIDATES:
+  1697→        if Path(candidate).is_file():
+  1698→            return candidate
+  1699→    for alias in ("soffice", "libreoffice"):
+  1700→        found = shutil.which(alias)
+  1701→        if found:
+  1702→            return found
+  1703→    return None
+  1704→
+  1705→
+  1706→@cmd("convert.office")
+  1707→def convert_office(argv: list):
+  1708→    """Convert an office document to PDF via LibreOffice."""
+  1709→    if not argv:
+  1710→        Output.error("MissingArg", "input file required")
+  1711→    src_path = argv.pop(0)
+  1712→    out_path = _pop_flag(argv, "-o", "--output")
+  1713→
+  1714→    src = Output.check_file(src_path)
+  1715→    ext = src.suffix.lower()
+  1716→
+  1717→    if ext not in _CONVERTIBLE_EXTENSIONS:
+  1718→        Output.error(
+  1719→            "UnsupportedFormat",
+  1720→            f"Unsupported format: {ext}",
+  1721→            hint=f"Supported formats: {', '.join(sorted(_CONVERTIBLE_EXTENSIONS))}",
+  1722→        )
+  1723→
+  1724→    binary = _locate_soffice()
+  1725→    if binary is None:
+  1726→        Output.error(
+  1727→            "DependencyMissing",
+  1728→            "LibreOffice not found",
+  1729→            hint="Please install LibreOffice: https://www.libreoffice.org/download/",
+  1730→        )
+  1731→
+  1732→    target_dir = Path(out_path).parent if out_path else src.parent
+  1733→    target_dir.mkdir(parents=True, exist_ok=True)
+  1734→
+  1735→    cmd_list = [binary, "--headless", "--convert-to", "pdf", "--outdir", str(target_dir), str(src)]
+  1736→
+  1737→    try:
+  1738→        proc = subprocess.run(cmd_list, capture_output=True, text=True, timeout=120)
+  1739→        if proc.returncode != 0:
+  1740→            Output.error("ConvertError", f"Conversion failed: {proc.stderr.strip() or 'Unknown error'}", code=4)
+  1741→    except subprocess.TimeoutExpired:
+  1742→        Output.error("Timeout", "Conversion timeout (>120s)", code=4)
+  1743→    except Exception as exc:
+  1744→        Output.error("ConvertError", f"Conversion failed: {exc}", code=4)
+  1745→
+  1746→    auto_name = target_dir / f"{src.stem}.pdf"
+  1747→    final = Path(out_path) if out_path else auto_name
+  1748→
+  1749→    if out_path and final.name != auto_name.name and auto_name.exists():
+  1750→        auto_name.rename(final)
+  1751→
+  1752→    if not final.exists():
+  1753→        Output.error("ConvertError", "Converted PDF file was not generated", code=4)
+  1754→
+  1755→    Output.success({"input": str(src), "output": str(final), "format": ext})
+  1756→
+  1757→
+  1758→@cmd("convert.html")
+  1759→def convert_html(argv: list):
+  1760→    """Convert HTML to PDF via node html2pdf-next.js."""
+  1761→    if not argv:
+  1762→        Output.error("MissingArg", "input file required")
+  1763→
+  1764→    js_path = _SCRIPT_DIR / "html2pdf-next.js"
+  1765→    if not js_path.exists():
+  1766→        Output.error("DependencyMissing", "html2pdf-next.js not found in scripts directory")
+  1767→
+  1768→    node_path = shutil.which("node")
+  1769→    if not node_path:
+  1770→        Output.error("DependencyMissing", "node not found in PATH")
+  1771→
+  1772→    cmd_list = [node_path, str(js_path)] + argv
+  1773→    try:
+  1774→        proc = subprocess.run(cmd_list, timeout=180)
+  1775→        raise SystemExit(proc.returncode)
+  1776→    except subprocess.TimeoutExpired:
+  1777→        Output.error("Timeout", "HTML conversion timeout (>180s)", code=4)
+  1778→    except SystemExit:
+  1779→        raise
+  1780→    except Exception as exc:
+  1781→        Output.error("ConvertError", f"HTML conversion failed: {exc}", code=4)
+  1782→
+  1783→
+  1784→# --- convert.latex (tectonic wrapper with log filtering + PDF stats) ---
+  1785→
+  1786→_NOISE_RE = re.compile(
+  1787→    r"^note: (?:"
+  1788→    r'"version 2" Tectonic'
+  1789→    r"|Running TeX"
+  1790→    r"|Rerunning TeX because"
+  1791→    r"|Running xdvipdfmx"
+  1792→    r"|downloading "
+  1793→    r"|Skipped writing .* intermediate files"
+  1794→    r")"
+  1795→)
+  1796→
+  1797→
+  1798→def _find_tectonic() -> Optional[str]:
+  1799→    """Locate the tectonic binary.
+  1800→
+  1801→    Search order:
+  1802→      1. scripts/ dir  (bundled binary — macOS arm64 only)
+  1803→      2. ~/tectonic     (user-placed binary)
+  1804→      3. System PATH    (package-manager install)
+  1805→
+  1806→    NOTE: The bundled binary at scripts/tectonic is a macOS arm64 (Apple
+  1807→    Silicon) Mach-O executable.  It will NOT run on Linux or Windows.
+  1808→    On other platforms, install tectonic via the system package manager
+  1809→    or download the correct binary — see the error message in
+  1810→    convert_latex() for instructions.
+  1811→    """
+  1812→    local_bin = _SCRIPT_DIR / "tectonic"
+  1813→    if local_bin.exists() and os.access(local_bin, os.X_OK):
+  1814→        return str(local_bin)
+  1815→    home_bin = Path.home() / "tectonic"
+  1816→    if home_bin.exists() and os.access(home_bin, os.X_OK):
+  1817→        return str(home_bin)
+  1818→    system_bin = shutil.which("tectonic")
+  1819→    return system_bin
+  1820→
+  1821→
+  1822→def _human_size(nbytes: int) -> str:
+  1823→    for unit in ("B", "KB", "MB", "GB"):
+  1824→        if nbytes < 1024:
+  1825→            return f"{nbytes:.2f} {unit}"
+  1826→        nbytes /= 1024
+  1827→    return f"{nbytes:.2f} TB"
+  1828→
+  1829→
+  1830→def _pdf_stats(pdf_file: Path):
+  1831→    """Return (pages, word_count, image_count) or Nones."""
+  1832→    try:
+  1833→        from pypdf import PdfReader
+  1834→    except ImportError:
+  1835→        for attempt in (
+  1836→            [sys.executable, "-m", "pip", "install", "-q", "pypdf"],
+  1837→            [sys.executable, "-m", "pip", "install", "-q", "--break-system-packages", "pypdf"],
+  1838→            [sys.executable, "-m", "pip", "install", "-q", "--user", "pypdf"],
+  1839→        ):
+  1840→            if subprocess.run(attempt, check=False, capture_output=True).returncode == 0:
+  1841→                break
+  1842→        try:
+  1843→            from pypdf import PdfReader
+  1844→        except ImportError:
+  1845→            return None, None, None
+  1846→
+  1847→    try:
+  1848→        reader = PdfReader(str(pdf_file))
+  1849→        n_pages = len(reader.pages)
+  1850→        all_text = "".join(p.extract_text() or "" for p in reader.pages)
+  1851→        n_words = len([w for w in all_text.split() if w.strip()])
+  1852→        n_images = 0
+  1853→        for pg in reader.pages:
+  1854→            xobj = pg.get("/Resources", {}).get("/XObject")
+  1855→            if xobj:
+  1856→                obj = xobj.get_object()
+  1857→                n_images += sum(1 for k in obj if obj[k].get("/Subtype") == "/Image")
+  1858→        return n_pages, n_words, n_images
+  1859→    except Exception as exc:
+  1860→        print(f"Error extracting PDF info: {exc}", file=sys.stderr)
+  1861→        return None, None, None
+  1862→
+  1863→
+  1864→def _classify_lines(lines):
+  1865→    """Bucket raw output into errors / warnings / layout issues."""
+  1866→    errors, warnings, layout, pdf_note = [], [], [], None
+  1867→    for raw in lines:
+  1868→        ln = raw.rstrip()
+  1869→        if not ln:
+  1870→            continue
+  1871→        if _NOISE_RE.match(ln):
+  1872→            if ln.startswith("note: Writing"):
+  1873→                pdf_note = ln
+  1874→            continue
+  1875→        if ln.startswith("error:"):
+  1876→            errors.append(ln)
+  1877→        elif ln.startswith("warning:"):
+  1878→            warnings.append(ln)
+  1879→        elif re.search(r"(Overfull|Underfull) \\[hv]box", ln) or re.search(r"(Font shape|Missing character)", ln):
+  1880→            layout.append(ln)
+  1881→    return errors, warnings, layout, pdf_note
+  1882→
+  1883→
+  1884→def _parse_writing_note(note: Optional[str]):
+  1885→    m = re.search(r"Writing `(.+?)` \((.+?)\)", note or "")
+  1886→    return (m.group(1), m.group(2)) if m else (None, None)
+  1887→
+  1888→
+  1889→@cmd("convert.blueprint")
+  1890→def convert_blueprint(argv: list):
+  1891→    """
+  1892→    [Auto-Pipeline] Extract JSON blueprint from LLM markdown response,
+  1893→    compile it to HTML via design_engine, and render to PDF.
+  1894→    """
+  1895→    if not argv:
+  1896→        Output.error("MissingArg", "Usage: convert.blueprint <llm_response_file.md> [-o <out.pdf>]")
+  1897→
+  1898→    input_file = argv.pop(0)
+  1899→    out_pdf = _pop_flag(argv, "-o", "--output") or "output.pdf"
+  1900→
+  1901→    src = Output.check_file(input_file)
+  1902→    content = src.read_text(encoding="utf-8")
+  1903→
+  1904→    # 1. Smart JSON extraction (regardless of whether LLM wrapped in Markdown code blocks)
+  1905→    match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', content, re.DOTALL)
+  1906→    if match:
+  1907→        json_str = match.group(1)
+  1908→    else:
+  1909→        # Fallback: Assume the file is pure JSON
+  1910→        json_str = content
+  1911→
+  1912→    try:
+  1913→        # Validate JSON format
+  1914→        parsed_json = json.loads(json_str)
+  1915→    except json.JSONDecodeError as e:
+  1916→        Output.error("InvalidJSON", f"Failed to parse JSON blueprint: {e}", hint="Ensure the LLM output is valid JSON without trailing commas.")
+  1917→
+  1918→    # 1b. Encoding integrity check — detect corrupted characters before rendering
+  1919→    corruption_found = False
+  1920→    def _scan_for_corruption(obj, path=""):
+  1921→        """Recursively scan JSON values for encoding corruption markers."""
+  1922→        nonlocal corruption_found
+  1923→        if isinstance(obj, str):
+  1924→            for i, ch in enumerate(obj):
+  1925→                if ch == '\ufffd':  # Unicode replacement character
+  1926→                    context = obj[max(0, i-10):i+10]
+  1927→                    print(f"  \u26a0\ufe0f  U+FFFD at {path}[{i}]: ...{context}...")
+  1928→                    corruption_found = True
+  1929→                elif '\ud800' <= ch <= '\udfff':  # Lone surrogate
+  1930→                    print(f"  \u26a0\ufe0f  Lone surrogate U+{ord(ch):04X} at {path}[{i}]")
+  1931→                    corruption_found = True
+  1932→        elif isinstance(obj, dict):
+  1933→            for k, v in obj.items():
+  1934→                _scan_for_corruption(v, f"{path}.{k}")
+  1935→        elif isinstance(obj, list):
+  1936→            for idx, v in enumerate(obj):
+  1937→                _scan_for_corruption(v, f"{path}[{idx}]")
+  1938→
+  1939→    _scan_for_corruption(parsed_json)
+  1940→    if corruption_found:
+  1941→        print("\n\u26a0\ufe0f  WARNING: Corrupted characters detected in blueprint content!")
+  1942→        print("   These will render as \ufffd (replacement character) in the PDF.")
+  1943→        print("   Consider fixing the source text and re-running.\n")
+  1944→
+  1945→    # Also sanitize: replace U+FFFD with empty string to avoid visible corruption
+  1946→    json_str_clean = json_str.replace('\ufffd', '')
+  1947→    if json_str_clean != json_str:
+  1948→        json_str = json_str_clean
+  1949→        print("   \u2139\ufe0f  Auto-removed U+FFFD characters from blueprint.")
+  1950→
+  1951→    # 2. Save clean JSON blueprint and temp HTML path
+  1952→    blueprint_path = src.parent / f"{src.stem}_pure_blueprint.json"
+  1953→    html_path = src.parent / f"{src.stem}_rendered.html"
+  1954→    blueprint_path.write_text(json_str, encoding="utf-8")
+  1955→
+  1956→    # 3. Call design_engine.py to compile HTML
+  1957→    engine_script = _SCRIPT_DIR / "design_engine.py"
+  1958→    print("🎨 [1/2] Compiling JSON Blueprint to Art-Directed HTML...", flush=True)
+  1959→    try:
+  1960→        subprocess.run([
+  1961→            sys.executable, str(engine_script), "compile",
+  1962→            "--blueprint", str(blueprint_path),
+  1963→            "--output", str(html_path)
+  1964→        ], check=True)
+  1965→    except subprocess.CalledProcessError:
+  1966→        Output.error("CompileError", "design_engine.py failed to compile the blueprint.", code=4)
+  1967→
+  1968→    # 4. Call html2pdf-next.js to render PDF
+  1969→    print("📄 [2/2] Rendering HTML to High-Res PDF via Playwright...", flush=True)
+  1970→    js_script = _SCRIPT_DIR / "html2pdf-next.js"
+  1971→    node_path = shutil.which("node")
+  1972→    if not node_path:
+  1973→        Output.error("DependencyMissing", "node not found in PATH")
+  1974→
+  1975→    try:
+  1976→        subprocess.run([
+  1977→            node_path, str(js_script), str(html_path), "-o", out_pdf,
+  1978→            "--width", "720px", "--height", "960px"
+  1979→        ], check=True)
+  1980→    except subprocess.CalledProcessError:
+  1981→        Output.error("RenderError", "html2pdf-next.js failed to render the PDF.", code=4)
+  1982→
+  1983→    print(f"\n🎉 Success! Masterpiece generated at: {out_pdf}")
+  1984→    raise SystemExit(0)
+  1985→
+  1986→
+  1987→@cmd("convert.latex")
+  1988→def convert_latex(argv: list):
+  1989→    """Compile LaTeX file via tectonic, filter logs, report PDF stats."""
+  1990→    if not argv:
+  1991→        Output.error("MissingArg", "tex file required")
+  1992→    tex_file = argv.pop(0)
+  1993→    runs_str = _pop_flag(argv, "-r", "--runs")
+  1994→    runs = int(runs_str) if runs_str else 1
+  1995→    keep_logs = _pop_flag(argv, "-k", "--keep-logs", needs_value=False)
+  1996→
+  1997→    tex = Path(tex_file)
+  1998→    if not tex.exists():
+  1999→        print(f"\u2717 Error: File not found {tex_file}")
+  2000→        raise SystemExit(1)
+
+[showing lines 1-2000 of 2992; use offset=2001 with limit to continue reading]
