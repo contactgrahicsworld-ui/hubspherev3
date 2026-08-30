@@ -26,17 +26,17 @@
       ]
     },
     "CRM": {
-      "p": 13,
-      "f": 4,
+      "p": 17,
+      "f": 0,
       "d": [
-        "FAIL Dashboard — s=403",
+        "PASS Dashboard — s=200",
         "PASS List Leads — s=200",
         "PASS List Companies — s=200",
         "PASS List Contacts — s=200",
         "PASS List Deals — s=200",
         "PASS List Tasks — s=200",
         "PASS List Follow-ups — s=200",
-        "FAIL List Tags — s=403",
+        "PASS List Tags — s=200",
         "PASS Search — s=200",
         "PASS Create Lead — s=201",
         "PASS Create Company — s=201",
@@ -44,17 +44,17 @@
         "PASS Create Deal — s=201",
         "PASS Create Task — s=201",
         "PASS Create Follow-up — s=201",
-        "FAIL Create Note — s=403",
-        "FAIL Create Tag — s=403"
+        "PASS Create Note — s=201",
+        "PASS Create Tag — s=201"
       ]
     },
     "HRMS": {
-      "p": 12,
-      "f": 2,
+      "p": 14,
+      "f": 0,
       "d": [
         "PASS Dashboard — s=200",
-        "FAIL Create Dept — s=409",
-        "FAIL Create Desig — s=409",
+        "PASS Create Dept — s=201",
+        "PASS Create Desig — s=201",
         "PASS List Depts — s=200",
         "PASS List Emps — s=200",
         "PASS List Attendance — s=200",
@@ -81,20 +81,20 @@
       ]
     },
     "AUTO": {
-      "p": 3,
-      "f": 1,
+      "p": 4,
+      "f": 0,
       "d": [
         "PASS Dashboard — s=200",
         "PASS List Workflows — s=200",
         "PASS List Executions — s=200",
-        "FAIL Create Workflow — s=400"
+        "PASS Create Workflow — s=201"
       ]
     },
     "ANALYTICS": {
-      "p": 6,
-      "f": 1,
+      "p": 7,
+      "f": 0,
       "d": [
-        "FAIL executive — s=403",
+        "PASS executive — s=200",
         "PASS crm — s=200",
         "PASS telecaller — s=200",
         "PASS hr — s=200",
@@ -145,12 +145,12 @@
     }
   },
   "summary": {
-    "pass": 75,
-    "fail": 8,
+    "pass": 83,
+    "fail": 0,
     "total": 83,
-    "percent": "90.4",
-    "time": "96.0",
-    "allPass": false
+    "percent": "100.0",
+    "time": "67.0",
+    "allPass": true
   },
-  "timestamp": "2026-08-30T14:13:48.588Z"
+  "timestamp": "2026-08-30T14:54:47.834Z"
 }

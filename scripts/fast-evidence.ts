@@ -89,9 +89,9 @@ async function main() {
   L('CRM', 'Create Tag', tg.ok && tg.d?.data?.id, 's=' + tg.s);
 
   // HRMS
-  const hrDept = await api('/api/v1/hrms/departments', { method: 'POST', body: JSON.stringify({ name: 'EvDept', description: 'Test' }) });
+  const hrDept = await api('/api/v1/hrms/departments', { method: 'POST', body: JSON.stringify({ name: 'EvDept-' + Date.now(), description: 'Test' }) });
   const [hrDesig, hrDash, hrLdp, hrLe, hrAtt, hrLv, hrExp, hrFd] = await Promise.all([
-    api('/api/v1/hrms/designations', { method: 'POST', body: JSON.stringify({ title: 'EvDesig', departmentId: hrDept.d?.data?.id }) }),
+    api('/api/v1/hrms/designations', { method: 'POST', body: JSON.stringify({ title: 'EvDesig-' + Date.now(), departmentId: hrDept.d?.data?.id }) }),
     api('/api/v1/hrms/dashboard'), api('/api/v1/hrms/departments'), api('/api/v1/hrms/employees'),
     api('/api/v1/hrms/attendance'), api('/api/v1/hrms/leave-requests'),
     api('/api/v1/hrms/expenses'), api('/api/v1/hrms/field-dashboard'),
@@ -129,7 +129,7 @@ async function main() {
   const [au1, au2, au3, au4] = await Promise.all([
     api('/api/v1/automation/dashboard'), api('/api/v1/automation/workflows'),
     api('/api/v1/automation/executions'),
-    api('/api/v1/automation/workflows', { method: 'POST', body: JSON.stringify({ name: 'EvWF', description: 'Test', triggerType: 'manual', triggerConfig: {}, conditions: [], actions: [{ type: 'create_notification', config: { message: 'Triggered' }, sortOrder: 0 }] }) }),
+    api('/api/v1/automation/workflows', { method: 'POST', body: JSON.stringify({ name: 'EvWF', description: 'Test', triggerType: 'manual', triggers: [{ eventType: 'manual', config: {} }], conditions: [], actions: [{ type: 'create_notification', config: { message: 'Triggered' }, sortOrder: 0 }] }) }),
   ]);
   L('AUTO', 'Dashboard', au1.ok, 's=' + au1.s);
   L('AUTO', 'List Workflows', au2.ok, 's=' + au2.s);
