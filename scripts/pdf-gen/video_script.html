@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet"/>
+<style>
+@page { size: 720px 1020px; margin: 0; }
+:root {
+    --bg: #f8f8f7; --white: #ffffff; --text: #1a1a1a; --muted: #6b6b6b;
+    --accent: #927520; --accent-light: #f5eed9; --mid: #63593e; --border: #e0ddd5;
+    --scene-bg: #faf9f7; --vo-bg: #f0efe9; --action-bg: #eef4f0;
+    --visual-bg: #f0ecf5; --duration-bg: #fef3e0;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+    margin: 0; padding: 0; width: 720px;
+    background: var(--bg); color: var(--text);
+    font-family: 'Inter', -apple-system, sans-serif;
+    font-size: 10pt; line-height: 1.6;
+}
+@media screen {
+    html { height: auto; display: flex; justify-content: center; background: #e0e0e0; }
+    body { transform-origin: top center; margin: 20px auto; box-shadow: 0 4px 30px rgba(0,0,0,0.15); }
+}
+
+.cover {
+    width: 720px; height: 1020px; background: var(--white);
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    padding: 60px 70px; box-sizing: border-box; break-after: page;
+}
+.cover-tag { font-size: 9pt; font-weight: 600; letter-spacing: 3pt; text-transform: uppercase; color: var(--accent); margin-bottom: 20px; }
+.cover-title { font-size: 36pt; font-weight: 800; color: var(--text); line-height: 1.1; text-align: center; max-width: 500px; }
+.cover-title span { color: var(--accent); }
+.cover-sub { font-size: 12pt; color: var(--muted); margin-top: 18px; text-align: center; max-width: 440px; line-height: 1.6; }
+.cover-meta { margin-top: 40px; font-size: 9pt; color: var(--muted); letter-spacing: 1pt; text-transform: uppercase; }
+
+.main-content { padding: 50px 60px 40px 60px; }
+.chapter-header { break-after: avoid; break-inside: avoid; margin-top: 26px; }
+.section-tag { font-size: 8pt; font-weight: 700; letter-spacing: 2.5pt; text-transform: uppercase; color: var(--accent); margin-bottom: 5px; }
+.section-title { font-size: 18pt; font-weight: 800; color: var(--text); line-height: 1.25; }
+.divider { width: 40px; height: 3px; background: var(--accent); margin-top: 8px; margin-bottom: 14px; border-radius: 2px; }
+.body-text { color: var(--text); margin-bottom: 10px; text-align: justify; }
+.body-text strong { color: var(--mid); }
+
+.scene {
+    border: 1px solid var(--border); border-radius: 8px;
+    margin-bottom: 16px; break-inside: avoid; overflow: hidden;
+}
+.scene-header {
+    background: var(--scene-bg); padding: 10px 16px;
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid var(--border);
+}
+.scene-number { font-size: 9pt; font-weight: 700; color: var(--accent); letter-spacing: 1pt; }
+.scene-title-text { font-size: 11pt; font-weight: 700; color: var(--text); }
+.scene-duration { font-size: 8pt; font-weight: 600; color: var(--accent); background: var(--duration-bg); padding: 3px 10px; border-radius: 4px; }
+.scene-body { padding: 14px 16px; }
+
+.vo-block { background: var(--vo-bg); padding: 12px 14px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid var(--muted); }
+.vo-label { font-size: 8pt; font-weight: 700; color: var(--muted); letter-spacing: 1.5pt; text-transform: uppercase; margin-bottom: 4px; }
+.vo-text { font-size: 10pt; color: var(--text); line-height: 1.6; font-style: italic; }
+
+.action-block { background: var(--action-bg); padding: 12px 14px; border-radius: 6px; margin-bottom: 10px; }
+.action-label { font-size: 8pt; font-weight: 700; color: #407251; letter-spacing: 1.5pt; text-transform: uppercase; margin-bottom: 4px; }
+.action-text { font-size: 10pt; color: var(--text); line-height: 1.6; }
+
+.visual-block { background: var(--visual-bg); padding: 12px 14px; border-radius: 6px; }
+.visual-label { font-size: 8pt; font-weight: 700; color: #5b3eae; letter-spacing: 1.5pt; text-transform: uppercase; margin-bottom: 4px; }
+.visual-text { font-size: 10pt; color: var(--text); line-height: 1.6; }
+
+table.prod-table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 9.5pt; break-inside: avoid; }
+.prod-table th { background: var(--mid); color: white; padding: 8px 12px; text-align: left; font-weight: 600; font-size: 9pt; }
+.prod-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.prod-table tr:nth-child(even) td { background: #faf9f7; }
+
+.info-box { background: var(--accent-light); border-left: 3px solid var(--accent); padding: 12px 16px; margin: 12px 0; border-radius: 0 6px 6px 0; break-inside: avoid; font-size: 10pt; }
+.info-box strong { color: var(--accent); }
+
+code { background: #f3f1ed; padding: 2px 6px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 9pt; color: var(--mid); }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+    <div class="cover-tag">Video Production Script</div>
+    <div class="cover-title">HubSphere <span>Enterprise V3</span></div>
+    <div class="cover-sub">Complete screen recording script for the HubSphere Enterprise V3 platform walkthrough video. Covers all modules from login to advanced features.</div>
+    <div class="cover-meta">Production Script  |  August 2026  |  V3.0.0</div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main-content">
+
+<!-- PRODUCTION OVERVIEW -->
+<div class="chapter-header">
+    <div class="section-tag">Production Overview</div>
+    <div class="section-title">Video Specifications</div>
+    <div class="divider"></div>
+</div>
+
+<table class="prod-table">
+    <thead><tr><th>Property</th><th>Specification</th></tr></thead>
+    <tbody>
+        <tr><td><strong>Total Duration</strong></td><td>25-30 minutes</td></tr>
+        <tr><td><strong>Resolution</strong></td><td>1920x1080 (Full HD)</td></tr>
+        <tr><td><strong>Frame Rate</strong></td><td>30 fps</td></tr>
+        <tr><td><strong>Recording Tool</strong></td><td>OBS Studio / Loom / ScreenPal</td></tr>
+        <tr><td><strong>Audio</strong></td><td>Voice-over (recorded separately) + system audio off</td></tr>
+        <tr><td><strong>Target Audience</strong></td><td>Company users, administrators, super admins</td></tr>
+        <tr><td><strong>Platform URL</strong></td><td>Production deployment URL</td></tr>
+        <tr><td><strong>Test Account</strong></td><td>admin@hubsphere.com</td></tr>
+    </tbody>
+</table>
+
+<div class="info-box">
+    <strong>Recording Tips:</strong> Use a clean browser profile with no extensions. Set zoom to 100%. Close all other tabs and applications. Record in a quiet environment with a quality microphone. Pause recording between scenes rather than editing later. Use the full-screen browser window (F11) for maximum clarity.
+</div>
+
+<!-- SCENE 1 -->
+<div class="chapter-header">
+    <div class="section-tag">Scene 1</div>
+    <div class="section-title">Introduction and Platform Overview</div>
+    <div class="divider"></div>
+</div>
+
+<div class="scene">
+    <div class="scene-header">
+        <div class="scene-number">SCENE 01</div>
+        <div class="scene-title-text">Introduction and Platform Overview</div>
+        <div class="scene-duration">2:00 - 2:30</div>
+    </div>
+    <div class="scene-body">
+        <div class="vo-block">
+            <div class="vo-label">Voice-Over / Narrator</div>
+            <div class="vo-text">Welcome to HubSphere Enterprise V3, the all-in-one multi-tenant SaaS platform for managing your entire business operations. In this video, we will walk you through every module and feature, from initial login to advanced automation workflows. Whether you are a sales professional managing leads, an HR manager handling employee records, or a system administrator configuring the platform, this guide covers everything you need to know.</div>
+        </div>
+        <div class="action-block">
+            <div class="action-label">On-Screen Action</div>
+            <div class="action-text">Show the login page at the production URL. Slowly pan across the login form highlighting the email field, password field, and sign-in button. Do NOT fill in credentials yet. Show the "Forgot Password" link and the HubSphere logo.</div>
+        </div>
+        <div class="visual-block">
+            <div class="visual-label">Visual / Transition</div>
+            <div class="visual-text">Fade in from black. Use slow zoom on the login page. Add a text overlay: "HubSphere Enterprise V3 - Complete Platform Walkthrough" that fades out after 3 seconds. Background music: light corporate, fades to low when narration begins.</div>
+        </div>
+    </div>
+</div>
+
+<!-- SCENE 2 -->
+<div class="chapter-header">
+    <div class="section-tag">Scene 2</div>
+    <div class="section-title">Login and Dashboard</div>
+    <div class="divider"></div>
+</div>
+
+<div class="scene">
+    <div class="scene-header">
+        <div class="scene-number">SCENE 02</div>
+        <div class="scene-title-text">Login and Dashboard Tour</div>
+        <div class="scene-duration">3:00 - 3:30</div>
+    </div>
+    <div class="scene-body">
+        <div class="vo-block">
+            <div class="vo-label">Voice-Over / Narrator</div>
+            <div class="vo-text">Let us start by logging into the platform. Enter the admin email and password, then click Sign In. The authentication system uses secure JWT tokens with automatic refresh, so you will stay logged in throughout the day. Once authenticated, you land on the main Dashboard. This is your command center, displaying key performance indicators from all modules. At the top, you see the CRM summary with lead counts and conversion rates. Below that, HRMS shows employee count and attendance. The sidebar on the left provides navigation to all modules. Notice how each module expands to show its sub-sections when you hover over it.</div>
+        </div>
+        <div class="action-block">
+            <div class="action-label">On-Screen Action</div>
+            <div class="action-text">Type the admin email and password (show keystrokes clearly). Click Sign In. Wait for the dashboard to load. Slowly scroll down the dashboard to show all KPI cards. Hover over each sidebar module (CRM, HRMS, Communication, Automation, Analytics, AI) to show the sub-menu expansion. Click the global search bar and type a test query, then clear it.</div>
+        </div>
+        <div class="visual-block">
+            <div class="visual-label">Visual / Transition</div>
+            <div class="visual-text">Smooth transition from login to dashboard. Use a subtle highlight effect when mentioning each KPI card. Circle or highlight the sidebar during navigation demo. Add a zoom-in effect on the search bar during the search demo.</div>
+        </div>
+    </div>
+</div>
+
+<!-- SCENE 3 -->
+<div class="chapter-header">
+    <div class="section-tag">Scene 3</div>
+    <div class="section-title">CRM Module - Leads and Deals</div>
+    <div class="divider"></div>
+</div>
+
+<div class="scene">
+    <div class="scene-header">
+        <div class="scene-number">SCENE 03</div>
+        <div class="scene-title-text">CRM Module: Leads, Contacts, Deals</div>
+        <div class="scene-duration">4:00 - 4:30</div>
+    </div>
+    <div class="scene-body">
+        <div class="vo-block">
+            <div class="vo-label">Voice-Over / Narrator</div>
+            <div class="vo-text">The CRM module is the heart of HubSphere. Let us navigate to CRM and then Leads. Here you see all your sales leads in a sortable, filterable table. Let us create a new lead. Click the New Lead button, fill in the name, email, phone, company, and source. Assign it to a sales executive and set an estimated deal value. Click Save. The lead now appears in the list. Click on it to see the detail view with the activity timeline. Now let us convert this lead to a deal. The conversion process creates a company record, a contact record, and a deal record all at once. Navigate to Deals to see the pipeline view. Each deal can be dragged between stages to update its progress. This visual pipeline makes it easy to see where every opportunity stands.</div>
+        </div>
+        <div class="action-block">
+            <div class="action-label">On-Screen Action</div>
+            <div class="action-text">Click CRM in sidebar, then click Leads. Show the data table with filters. Click "New Lead" and fill in all fields with sample data. Save the lead. Click on the new lead to open detail view. Show the Convert to Deal button. Click it and confirm. Navigate to Deals. Show the pipeline view. Drag a deal from one stage to another to demonstrate the drag-and-drop feature. Click on a deal to show its detail view with activity history.</div>
+        </div>
+        <div class="visual-block">
+            <div class="visual-label">Visual / Transition</div>
+            <div class="visual-text">Highlight the form fields as they are being filled. Add a brief pause after the conversion to show the new records. Use an arrow annotation pointing to the drag-and-drop zone in the pipeline view.</div>
+        </div>
+    </div>
+</div>
+
+<!-- SCENE 4 -->
+<div class="chapter-header">
+    <div class="section-tag">Scene 4</div>
+    <div class="section-title">CRM Module - Tasks, Follow-Ups, Notes</div>
+    <div class="divider"></div>
+</div>
+
+<div class="scene">
+    <div class="scene-header">
+        <div class="scene-number">SCENE 04</div>
+        <div class="scene-title-text">CRM: Tasks, Follow-Ups, Notes, Contacts, Companies</div>
+        <div class="scene-duration">3:00 - 3:30</div>
+    </div>
+    <div class="scene-body">
+        <div class="vo-block">
+            <div class="vo-label">Voice-Over / Narrator</div>
+            <div class="vo-text">Staying organized is critical for sales success. The Tasks section lets you create and assign action items with due dates and priorities. Create a task, link it to a deal, and assign it to a team member. Follow-Ups help you schedule customer interactions so nothing falls through the cracks. Notes provide a free-form space for meeting summaries and observations. Now let us quickly look at Contacts and Companies. The Contacts directory maintains detailed records for all your business contacts with communication history. Companies track organizational accounts with industry and employee count data. Both support search, filtering, and CSV export for external analysis.</div>
+        </div>
+        <div class="action-block">
+            <div class="action-label">On-Screen Action</div>
+            <div class="action-text">Navigate to CRM then Tasks. Click "New Task", fill in subject, due date, priority, assignee, and link to a deal. Save. Navigate to Follow-Ups, show the list. Create a new follow-up linked to the lead from Scene 3. Navigate to Notes, show the list. Navigate to Contacts, show the directory. Click on a contact to show detail. Navigate to Companies, show the list. Click on a company to show its associated contacts.</div>
+        </div>
+        <div class="visual-block">
+            <div class="visual-label">Visual / Transition</div>
+            <div class="visual-text">Quick-cut between each sub-section to maintain pace. Highlight the linked records when showing task and follow-up detail views. Use a split-screen moment showing a company and its associated contacts side by side if the UI supports it.</div>
+        </div>
+    </div>
+</div>
+
+<!-- SCENE 5 -->
+<div class="chapter-header">
+    <div class="section-tag">Scene 5</div>
+    <div class="section-title">HRMS Module</div>
+    <div class="divider"></div>
+</div>
+
+<div class="scene">
+    <div class="scene-header">
+        <div class="scene-number">SCENE 05</div>
+        <div class="scene-title-text">HRMS: Employees, Departments, Attendance, Leave, Payroll</div>
+        <div class="scene-duration">4:00 - 4:30</div>
+    </div>
+    <div class="scene-body">
+        <div class="vo-block">
+            <div class="vo-label">Voice-Over / Narrator</div>
+            <div class="vo-text">The HRMS module handles all your workforce management needs. Starting with the HRMS Dashboard, you see an overview of employee count, attendance rates, and pending leave requests. Navigate to Departments to set up your organizational structure. Create departments like Engineering, Sales, and Marketing. Designations define job titles. Now let us add an employee. Go to Employees, click Add Employee, and fill in personal details, department, designation, and reporting manager. The Attendance section lets you record daily attendance. Leave Management supports multiple leave types with configurable balances. Employees submit requests that route to their manager for approval. Finally, the Payroll section allows you to process monthly salary payments with configurable components, and the Expenses section handles employee expense claims with receipt attachments.</div>
+        </div>
+        <div class="action-block">
+            <div class="action-label">On-Screen Action</div>
+            <div class="action-text">Navigate to HRMS, show the dashboard. Go to Departments, create a new department. Go to Designations, show the list. Go to Employees, click "Add Employee", fill in sample data, save. Show the employee detail view. Navigate to Attendance, show the view. Navigate to Leave, show pending requests if any. Navigate to Payroll, show the view. Navigate to Expenses, show the claims list.</div>
+        </div>
+        <div class="visual-block">
+            <div class="visual-label">Visual / Transition</div>
+            <div class="visual-text">Use a smooth pan across the HRMS dashboard KPIs. Speed up slightly during form-filling to maintain viewer engagement. Add annotation callouts for key fields like department assignment and reporting manager. Show the employee detail view with a brief zoom to highlight linked records.</div>
+        </div>
+    </div>
+</div>
+
+<!-- SCENE 6 -->
+<div class="chapter-header">
+    <div class="section-tag">Scene 6</div>
+    <div class="section-title">Communication Module</div>
+    <div class="divider"></div>
+</div>
+
+<div class="scene">
+    <div class="scene-header">
+        <div class="scene-number">SCENE 06</div>
+        <div class="scene-title-text">Communication: Templates, Inbox, Notifications</div>
+        <div class="scene-duration">2:30 - 3:00</div>
+    </div>
+    <div class="scene-body">
+        <div class="vo-block">
+            <div class="vo-label">Voice-Over / Narrator</div>
+            <div class="vo-text">The Communication module centralizes all messaging. Start with Templates to create reusable message formats with dynamic variables like the recipient name and company. Navigate to Inbox to view conversations. The notification center shows system alerts and status updates. Communication providers like email SMTP and SMS gateways are configured in Settings by the Communication Manager. This module supports both one-to-one conversations and bulk campaigns, making it versatile for sales outreach and internal announcements.</div>
+        </div>
+        <div class="action-block">
+            <div class="action-label">On-Screen Action</div>
+            <div class="action-text">Navigate to Communication, show the dashboard. Go to Templates, create a new email template with dynamic variables. Show the variable insertion. Navigate to Inbox, show conversations if any. Navigate to Notifications, show the notification list. Navigate to Settings, show the provider configuration page.</div>
+        </div>
+        <div class="visual-block">
+            <div class="visual-label">Visual / Transition</div>
+            <div class="visual-text">Highlight the dynamic variable placeholders in the template with a brief zoom. Circle the variable syntax to draw attention. Smooth transition between sub-sections with a brief fade effect.</div>
+        </div>
+    </div>
+</div>
+
+<!-- SCENE 7 -->
+<div class="chapter-header">
+    <div class="section-tag">Scene 7</div>
+    <div class="section-title">Automation Module</div>
+    <div class="divider"></div>
+</div>
+
+<div class="scene">
+    <div class="scene-header">
+        <div class="scene-number">SCENE 07</div>
+        <div class="scene-title-text">Automation: Workflows and Executions</div>
+        <div class="scene-duration">2:30 - 3:00</div>
+    </div>
+    <div class="scene-body">
+        <div class="vo-block">
+            <div class="vo-label">Voice-Over / Narrator</div>
+            <div class="vo-text">Automation is where HubSphere really saves time. Navigate to Automation, then Workflows. Click New Workflow to create an automated process. Define a trigger event, such as "New Lead Created." Add conditions to control when the workflow fires, for example, only when the lead source is "Website." Then add actions like sending a welcome email and creating a follow-up task. Activate the workflow. Now whenever a new website lead is created, the system automatically sends the welcome email and creates the follow-up. Check the Executions page to monitor workflow performance and debug any failed runs.</div>
+        </div>
+        <div class="action-block">
+            <div class="action-label">On-Screen Action</div>
+            <div class="action-text">Navigate to Automation, show dashboard. Go to Workflows, click "New Workflow." Enter a name. Show the trigger selection dropdown. Show the condition builder. Show the action selector. Activate the workflow. Navigate to Executions, show the execution history table.</div>
+        </div>
+        <div class="visual-block">
+            <div class="visual-label">Visual / Transition</div>
+            <div class="visual-text">Add a flowchart-style annotation overlay showing the trigger, condition, and action flow as they are being configured. This helps viewers understand the automation logic visually. Use a success indicator animation when the workflow is activated.</div>
+        </div>
+    </div>
+</div>
+
+<!-- SCENE 8 -->
+<div class="chapter-header">
+    <div class="section-tag">Scene 8</div>
+    <div class="section-title">Analytics Module</div>
+    <div class="divider"></div>
+</div>
+
+<div class="scene">
+    <div class="scene-header">
+        <div class="scene-number">SCENE 08</div>
+        <div class="scene-title-text">Analytics: Executive, CRM, HR, and AI Dashboards</div>
+        <div class="scene-duration">2:30 - 3:00</div>
+    </div>
+    <div class="scene-body">
+            <div class="vo-block">
+            <div class="vo-label">Voice-Over / Narrator</div>
+            <div class="vo-text">Data-driven decisions start with the Analytics module. HubSphere provides seven specialized dashboards. The Executive dashboard gives leadership a high-level business overview with revenue, growth, and pipeline health metrics. The CRM dashboard shows lead conversion rates, deal velocity, and sales performance. The HR dashboard tracks headcount trends, attendance rates, and leave utilization. The Communication dashboard displays message delivery rates and engagement. The Automation dashboard monitors workflow performance. And the AI Usage dashboard tracks agent utilization and token consumption. Each dashboard features interactive charts and summary tables that help you identify trends and make informed decisions.</div>
+        </div>
+        <div class="action-block">
+            <div class="action-label">On-Screen Action</div>
+            <div class="action-text">Navigate to Analytics. Show the Executive dashboard with its KPIs and charts. Click through to CRM Analytics, highlight key metrics. Navigate to HR Analytics, show charts. Navigate to Communication Analytics. Navigate to Automation Analytics. Navigate to AI Usage Analytics. For each dashboard, slowly pan to show all charts and data points.</div>
+        </div>
+        <div class="visual-block">
+            <div class="visual-label">Visual / Transition</div>
+            <div class="visual-text">Use smooth horizontal pans across each dashboard. Add brief zoom effects on key chart elements. Consider adding a split-screen comparison showing two dashboards side by side for a few seconds to demonstrate the breadth of analytics available.</div>
+        </div>
+    </div>
+</div>
+
+<!-- SCENE 9 -->
+<div class="chapter-header">
+    <div class="section-tag">Scene 9</div>
+    <div class="section-title">AI Agents and Admin Panel</div>
+    <div class="divider"></div>
+</div>
+
+<div class="scene">
+    <div class="scene-header">
+        <div class="scene-number">SCENE 09</div>
+        <div class="scene-title-text">AI Agents, Admin Panel, Super Admin</div>
+        <div class="scene-duration">3:00 - 3:30</div>
+    </div>
+    <div class="scene-body">
+        <div class="vo-block">
+            <div class="vo-label">Voice-Over / Narrator</div>
+            <div class="vo-text">HubSphere includes five AI-powered agents. Navigate to AI, then Chat. NOVA is your business copilot for general intelligence. VOX handles communication optimization. SALESPRO provides sales intelligence. PEOPLEMIND assists with HR queries. And INSIGHT delivers cross-functional analysis. Note that AI features require provider configuration by your administrator. Moving to the Admin panel, this is where tenant-level management happens. Manage users and roles, view audit logs, and configure tenant settings. For Super Administrators, the Super Admin panel provides platform-level controls including tenant management, system configuration, and cross-tenant audit logs. Super Admins can create, suspend, and manage all tenant organizations on the platform.</div>
+        </div>
+        <div class="action-block">
+            <div class="action-label">On-Screen Action</div>
+            <div class="action-text">Navigate to AI, show the Chat interface. Show the agent list. Navigate to Admin, show Users list. Show Roles page. Show Audit Log. Navigate to Super Admin (if accessible), show Tenants page. Show System Settings. Show the platform-level Audit Log. Briefly show the Security page with CSP and 2FA status.</div>
+        </div>
+        <div class="visual-block">
+            <div class="visual-label">Visual / Transition</div>
+            <div class="visual-text">For the AI chat, show the agent selection dropdown with a brief annotation listing all five agents. For Admin/Super Admin, use a faster pace with quick cuts between sections. Add a security badge overlay when showing the Security page to emphasize the platform's security features.</div>
+        </div>
+    </div>
+</div>
+
+<!-- SCENE 10 -->
+<div class="chapter-header">
+    <div class="section-tag">Scene 10</div>
+    <div class="section-title">Conclusion</div>
+    <div class="divider"></div>
+</div>
+
+<div class="scene">
+    <div class="scene-header">
+        <div class="scene-number">SCENE 10</div>
+        <div class="scene-title-text">Summary and Closing</div>
+        <div class="scene-duration">1:00 - 1:30</div>
+    </div>
+    <div class="scene-body">
+        <div class="vo-block">
+            <div class="vo-label">Voice-Over / Narrator</div>
+            <div class="vo-text">That completes our walkthrough of HubSphere Enterprise V3. We covered authentication and the dashboard, the complete CRM module with leads, deals, contacts, and tasks, the HRMS module with employee management, attendance, leave, and payroll, the Communication module for messaging and templates, the Automation module for workflow creation, the Analytics module with seven specialized dashboards, AI-powered agents, and both Admin and Super Admin panels. HubSphere is a powerful, secure, and comprehensive platform designed to streamline your business operations. Explore each module at your own pace, set up automation workflows to eliminate repetitive tasks, and leverage AI agents for intelligent insights. Thank you for watching.</div>
+        </div>
+        <div class="action-block">
+            <div class="action-label">On-Screen Action</div>
+            <div class="action-text">Show a rapid montage of key screens: dashboard, CRM pipeline, HRMS employee list, analytics charts, automation workflow. Return to the login page. Fade to the HubSphere logo with a closing text: "HubSphere Enterprise V3 - Your Complete Business Platform."</div>
+        </div>
+        <div class="visual-block">
+            <div class="visual-label">Visual / Transition</div>
+            <div class="visual-text">Fast-cut montage at 1-2 seconds per screen. Fade to white, then show the logo and closing text. Background music fades back in and up to full volume. Fade to black over 3 seconds. End.</div>
+        </div>
+    </div>
+</div>
+
+<div class="info-box">
+    <strong>Total Estimated Runtime:</strong> Scene 1 (2:15) + Scene 2 (3:15) + Scene 3 (4:15) + Scene 4 (3:15) + Scene 5 (4:15) + Scene 6 (2:45) + Scene 7 (2:45) + Scene 8 (2:45) + Scene 9 (3:15) + Scene 10 (1:15) = approximately 27 minutes. Adjust individual scene pacing as needed during recording. It is better to record slightly longer and trim in post-production than to rush through demonstrations.
+</div>
+
+</div><!-- end main-content -->
+
+</body>
+</html>

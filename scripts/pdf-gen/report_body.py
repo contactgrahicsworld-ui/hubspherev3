@@ -21,13 +21,12 @@ from reportlab.lib.colors import HexColor
 
 # ── Register Fonts ──
 for fname, alias in [
-    ('/usr/share/fonts/truetype/english/Tinos-Regular.ttf', 'Tinos'),
-    ('/usr/share/fonts/truetype/english/Tinos-Bold.ttf', 'Tinos-Bold'),
-    ('/usr/share/fonts/truetype/english/Tinos-Italic.ttf', 'Tinos-Italic'),
-    ('/usr/share/fonts/truetype/english/Tinos-BoldItalic.ttf', 'Tinos-BoldItalic'),
+    ('/usr/share/fonts/truetype/english/Carlito-Regular.ttf', 'Carlito'),
+    ('/usr/share/fonts/truetype/english/Carlito-Bold.ttf', 'Carlito-Bold'),
+    ('/usr/share/fonts/truetype/english/Carlito-Italic.ttf', 'Carlito-Italic'),
+    ('/usr/share/fonts/truetype/english/Carlito-BoldItalic.ttf', 'Carlito-BoldItalic'),
     ('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', 'DejaVuSans'),
     ('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', 'DejaVuSans-Bold'),
-    ('/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf', 'DejaVuMono'),
 ]:
     if os.path.exists(fname):
         pdfmetrics.registerFont(TTFont(alias, fname))
@@ -61,7 +60,7 @@ OUTPUT = '/home/z/my-project/scripts/pdf-gen/body.pdf'
 styles = getSampleStyleSheet()
 
 s_body = ParagraphStyle('Body', parent=styles['Normal'],
-    fontName='Tinos', fontSize=10, leading=15,
+    fontName='Carlito', fontSize=10, leading=15,
     textColor=TEXT_PRIMARY, alignment=TA_JUSTIFY,
     spaceAfter=8, spaceBefore=2)
 
@@ -84,23 +83,23 @@ s_h3 = ParagraphStyle('H3', parent=styles['Heading3'],
 s_toc_h0 = ParagraphStyle('TOC0', fontName='DejaVuSans-Bold',
     fontSize=12, leading=20, leftIndent=0, textColor=TEXT_PRIMARY)
 
-s_toc_h1 = ParagraphStyle('TOC1', fontName='Tinos',
+s_toc_h1 = ParagraphStyle('TOC1', fontName='Carlito',
     fontSize=10, leading=18, leftIndent=20, textColor=TEXT_MUTED)
 
 s_table_header = ParagraphStyle('TH', fontName='DejaVuSans-Bold',
     fontSize=8.5, leading=12, textColor=colors.white, alignment=TA_LEFT)
 
-s_table_cell = ParagraphStyle('TC', fontName='Tinos',
+s_table_cell = ParagraphStyle('TC', fontName='Carlito',
     fontSize=8.5, leading=12, textColor=TEXT_PRIMARY)
 
-s_table_cell_sm = ParagraphStyle('TCSm', fontName='Tinos',
+s_table_cell_sm = ParagraphStyle('TCSm', fontName='Carlito',
     fontSize=7.5, leading=11, textColor=TEXT_PRIMARY)
 
 s_kicker = ParagraphStyle('Kicker', fontName='DejaVuSans',
     fontSize=8, leading=10, textColor=TEXT_MUTED,
     letterSpacing=2, spaceBefore=0, spaceAfter=2)
 
-s_caption = ParagraphStyle('Caption', fontName='Tinos-Italic',
+s_caption = ParagraphStyle('Caption', fontName='Carlito-Italic',
     fontSize=8, leading=11, textColor=TEXT_MUTED, alignment=TA_LEFT,
     spaceBefore=4, spaceAfter=12)
 
@@ -109,6 +108,21 @@ s_pass = ParagraphStyle('Pass', fontName='DejaVuSans-Bold',
 
 s_fail = ParagraphStyle('Fail', fontName='DejaVuSans-Bold',
     fontSize=8, leading=11, textColor=SEM_ERROR, alignment=TA_CENTER)
+
+# ── Page number footer ──
+
+def add_page_number(canvas, doc):
+    canvas.saveState()
+    canvas.setFont('Carlito', 8)
+    canvas.setFillColor(TEXT_MUTED)
+    page_num = canvas.getPageNumber()
+    text = f"HubSphere Enterprise V3  |  Production Hardening Report  |  Page {page_num}"
+    canvas.drawCentredString(PAGE_W / 2, 0.5 * inch, text)
+    canvas.setStrokeColor(BORDER)
+    canvas.setLineWidth(0.3)
+    canvas.line(MARGIN, PAGE_H - MARGIN + 8, PAGE_W - MARGIN, PAGE_H - MARGIN + 8)
+    canvas.line(MARGIN, 0.65 * inch, PAGE_W - MARGIN, 0.65 * inch)
+    canvas.restoreState()
 
 # ── TOC Document Template ──
 class TocDocTemplate(SimpleDocTemplate):
@@ -678,5 +692,5 @@ vt.setStyle(TableStyle([
 story.append(vt)
 
 # ── Build ──
-doc.multiBuild(story)
+doc.multiBuild(story, onLaterPages=add_page_number)
 print(f'Body PDF generated: {OUTPUT}')
