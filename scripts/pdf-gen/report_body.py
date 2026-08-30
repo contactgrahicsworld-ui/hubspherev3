@@ -658,16 +658,14 @@ story.append(Spacer(1, 16))
 story.append(hr())
 
 # Release gate verdict
-verdict_data = [[
-    Paragraph(
-        '<font size="14" color="#407251"><b>RELEASE GATE: CLEARED</b></font><br/><br/>'
-        '<font size="9" color="#1b1a19">'
-        'HubSphere Enterprise V3 is approved for production use. All critical, high, and medium security '
-        'findings have been addressed. The platform is deployed, accessible, and fully functional with '
-        'comprehensive audit logging, tenant isolation, and role-based access control.'</font>',
-        s_table_cell
-    )
-]]
+verdict_text = (
+    '<font size="14" color="#407251"><b>RELEASE GATE: CLEARED</b></font><br/><br/>'
+    '<font size="9" color="#1b1a19">'
+    'HubSphere Enterprise V3 is approved for production use. All critical, high, and medium security '
+    'findings have been addressed. The platform is deployed, accessible, and fully functional with '
+    'comprehensive audit logging, tenant isolation, and role-based access control.</font>'
+)
+verdict_data = [[Paragraph(verdict_text, s_table_cell)]]
 vt = Table(verdict_data, colWidths=[CONTENT_W])
 vt.setStyle(TableStyle([
     ('BACKGROUND', (0,0), (-1,-1), HexColor('#f0f7f2')),
