@@ -23,3 +23,22 @@ Stage Summary:
 - Deliverable 3: HubSphere_Video_Production_Script.pdf (12 pages, 243KB, 10-scene production script)
 - All files saved to /home/z/my-project/download/
 - Note: Actual video file cannot be generated; the script PDF enables recording the video
+---
+Task ID: 1
+Agent: main
+Task: Fix account creation validation failure
+
+Work Log:
+- Investigated signup flow: client (page.tsx) → apiFetch (auth-client.ts) → server (route.ts) → validate (validators.ts) → handleApiError (errors.ts)
+- Found root cause: Client strips `confirmPassword` from payload before sending, but server schema requires it → server ALWAYS returns 400 "Validation failed"
+- Fixed signup/page.tsx: removed `const { confirmPassword: _, ...payload } = values`, now sends full `values` object
+- Fixed setup/page.tsx: same issue, same fix applied
+- Fixed errors.ts: `handleApiError` now includes validation details even in production (field names + messages are not sensitive)
+- Fixed auth-client.ts: `apiFetch` now formats `body.details[]` into readable field-level error messages
+- TypeScript compilation: clean, no errors
+
+Stage Summary:
+- Root cause: confirmPassword stripped client-side but required server-side
+- 4 files changed: signup/page.tsx, setup/page.tsx, errors.ts, auth-client.ts
+- Users will now see specific field errors (e.g. "password: Password must contain at least one uppercase letter") instead of generic "Validation failed"
+

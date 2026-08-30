@@ -190,13 +190,14 @@ export function handleApiError(error: unknown): {
   // Handle known application errors
   if (error instanceof AppError) {
     const isDev = process.env.NODE_ENV === 'development';
+    // Always include validation details — they contain only field names and messages, not secrets
+    const includeDetails = error.code === 'VALIDATION_ERROR' || isDev;
     return {
       statusCode: error.statusCode,
       body: {
         error: error.message,
         code: error.code,
-        // Only include details in development
-        ...(isDev && error.details !== undefined
+        ...(includeDetails && error.details !== undefined
           ? { details: sanitizeDetails(error.details) }
           : {}),
       },

@@ -102,10 +102,9 @@ export default function SetupPage() {
     setIsLoading(true)
 
     try {
-      const { confirmPassword: _, ...payload } = values
       const data = await apiFetch<SetupResponse>('/api/v1/auth/setup', {
         method: 'POST',
-        body: JSON.stringify(payload),
+        body: JSON.stringify(values),
       })
 
       setTokens(data.accessToken, data.refreshToken)

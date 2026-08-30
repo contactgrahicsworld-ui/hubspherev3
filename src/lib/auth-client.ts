@@ -118,11 +118,24 @@ export async function apiFetch<T = unknown>(
   if (!response.ok) {
     const body = await response.json().catch(() => ({ message: 'Request failed' }))
     // Handle both { error: { message } } and { error: 'string' } formats
-    const msg =
+    let msg =
       (body.error && typeof body.error === 'object' ? body.error.message : null) ||
       (typeof body.error === 'string' ? body.error : null) ||
       body.message ||
       `Request failed with status ${response.status}`
+
+    // Format validation details into user-friendly message
+    if (Array.isArray(body.details) && body.details.length > 0) {
+      const fieldErrors = body.details
+        .map((d: { field?: string; message?: string }) =>
+          d.field ? `${d.field}: ${d.message}` : d.message
+        )
+        .join('. ')
+      if (fieldErrors) {
+        msg = fieldErrors
+      }
+    }
+
     throw new Error(msg)
   }
 

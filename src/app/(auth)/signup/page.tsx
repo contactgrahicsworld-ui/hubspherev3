@@ -78,10 +78,9 @@ export default function SignupPage() {
     setIsLoading(true)
 
     try {
-      const { confirmPassword: _, ...payload } = values
       const data = await apiFetch<SignupResponse>('/api/v1/auth/signup', {
         method: 'POST',
-        body: JSON.stringify(payload),
+        body: JSON.stringify(values),
       })
 
       setTokens(data.accessToken, data.refreshToken)
