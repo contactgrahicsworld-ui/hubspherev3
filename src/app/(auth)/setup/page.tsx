@@ -48,16 +48,23 @@ const setupSchema = z
 type SetupValues = z.infer<typeof setupSchema>
 
 interface SetupStatusResponse {
-  setupComplete: boolean
+  success: boolean
+  data: {
+    setupComplete: boolean
+    superAdminExists: boolean
+  }
 }
 
 interface SetupResponse {
-  accessToken: string
-  refreshToken: string
-  user: {
-    name: string
-    email: string
+  success: boolean
+  data: {
+    user: {
+      name: string
+      email: string
+    }
     role: string
+    accessToken: string
+    refreshToken: string
   }
 }
 
@@ -80,8 +87,8 @@ export default function SetupPage() {
   useEffect(() => {
     async function checkSetupStatus() {
       try {
-        const data = await apiFetch<SetupStatusResponse>('/api/v1/auth/setup/status')
-        if (data.setupComplete) {
+        const res = await apiFetch<SetupStatusResponse>('/api/v1/auth/setup/status')
+        if (res.data?.setupComplete) {
           toast.info('Setup already completed', {
             description: 'Redirecting to login...',
           })
@@ -102,13 +109,14 @@ export default function SetupPage() {
     setIsLoading(true)
 
     try {
-      const data = await apiFetch<SetupResponse>('/api/v1/auth/setup', {
+      const res = await apiFetch<SetupResponse>('/api/v1/auth/setup', {
         method: 'POST',
         body: JSON.stringify(values),
       })
 
-      setTokens(data.accessToken, data.refreshToken)
-      setUserInfo(data.user)
+      const { accessToken, refreshToken, user, role } = res.data
+      setTokens(accessToken, refreshToken)
+      setUserInfo({ name: user.name, email: user.email, role })
 
       toast.success('Super Admin account created!', {
         description: 'Welcome to HubSphere. Let\'s get you started.',

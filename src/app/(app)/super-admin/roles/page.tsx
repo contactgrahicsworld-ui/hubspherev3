@@ -120,7 +120,15 @@ export default function RoleManagement() {
       try {
         setLoading(true)
         setError(null)
-        const data = await apiFetch<Role[]>('/api/v1/super-admin/roles')
+        const res = await apiFetch<{ success: boolean; data: { roles: Array<{ id: string; code: string; name: string; description: string; isSystem: boolean; permissions: string[]; createdAt: string }>; permissions: Array<{ id: string; code: string; name: string; module: string; action: string }> } }>('/api/v1/super-admin/roles')
+        const permMap = new Map(res.data.permissions.map(p => [p.code, { id: p.id, code: p.code, name: p.name, description: null }]))
+        const data: Role[] = res.data.roles.map(r => ({
+          id: r.id,
+          name: r.name,
+          code: r.code,
+          createdAt: r.createdAt,
+          permissions: r.permissions.map(code => permMap.get(code) ?? { id: code, code, name: code, description: null }),
+        }))
         if (!cancelled) {
           setRoles(data)
         }

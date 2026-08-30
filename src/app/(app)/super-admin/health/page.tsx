@@ -111,16 +111,22 @@ export default function SystemHealth() {
         setError(null)
 
         const [healthData, providersData] = await Promise.allSettled([
-          apiFetch<HealthData>('/api/v1/system/health'),
-          apiFetch<ProvidersData>('/api/v1/system/providers'),
+          apiFetch<{ success: boolean; data: { status: string; timestamp: string; uptime: number; database?: string; message?: string } }>('/api/v1/system/health'),
+          apiFetch<{ success: boolean; data: ProviderInfo[] }>('/api/v1/system/providers'),
         ])
 
         if (!cancelled) {
           if (healthData.status === 'fulfilled') {
-            setHealth(healthData.value)
+            const raw = healthData.value.data
+            setHealth({
+              status: raw.status,
+              uptime: raw.uptime,
+              timestamp: raw.timestamp,
+              database: raw.database ? { status: raw.database } : undefined,
+            })
           }
           if (providersData.status === 'fulfilled') {
-            setProviders(providersData.value.providers || [])
+            setProviders(providersData.value.data || [])
           }
           if (healthData.status === 'rejected' && providersData.status === 'rejected') {
             throw healthData.reason

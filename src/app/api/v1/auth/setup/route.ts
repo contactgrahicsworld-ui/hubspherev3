@@ -102,6 +102,7 @@ export async function POST(request: NextRequest) {
           isSuperAdmin: user.isSuperAdmin,
           status: user.status,
         },
+        role: 'SUPER_ADMIN',
         accessToken,
         refreshToken,
       }, 'Setup completed successfully'),

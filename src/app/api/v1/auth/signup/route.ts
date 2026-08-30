@@ -112,7 +112,9 @@ export async function POST(request: NextRequest) {
             isSuperAdmin: user.isSuperAdmin,
             status: user.status,
           },
+          role: roleCode ?? null,
           accessToken,
+          refreshToken,
         },
         'Account created successfully'
       ),

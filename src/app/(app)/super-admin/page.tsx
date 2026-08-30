@@ -71,9 +71,16 @@ export default function SuperAdminDashboard() {
       try {
         setLoading(true)
         setError(null)
-        const data = await apiFetch<Stats>('/api/v1/super-admin/stats')
+        const res = await apiFetch<{ success: boolean; data: { tenants: { total: number; suspended: number }; users: { total: number; active: number }; auditLogs: number } }>('/api/v1/super-admin/stats')
+        const raw = res.data
+        const stats: Stats = {
+          totalTenants: raw.tenants.total,
+          totalUsers: raw.users.total,
+          activeSubscriptions: 0,
+          auditEvents: raw.auditLogs,
+        }
         if (!cancelled) {
-          setStats(data)
+          setStats(stats)
         }
       } catch (err) {
         if (!cancelled) {

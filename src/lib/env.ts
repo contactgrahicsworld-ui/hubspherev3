@@ -53,13 +53,19 @@ function loadEnv(): EnvironmentConfig {
     }
   }
 
-  const isDev = (process.env.NODE_ENV || 'development') !== 'production';
+  const nodeEnv = process.env.NODE_ENV || 'development';
+  const isDev = nodeEnv !== 'production';
+  // During Next.js build (next build), env vars come from Vercel at runtime.
+  // Only throw at actual runtime in production, not during static analysis/build.
+  const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build' || !process.env.DATABASE_URL;
 
   if (missing.length > 0) {
-    if (isDev) {
+    if (isDev || isBuildTime) {
       console.warn(
         `[HubSphere] Missing env vars: ${missing.join(', ')}. ` +
-        'Some features may not work. Set these in .env for full functionality.'
+        (isBuildTime
+          ? 'Build will succeed; vars must be set in deployment environment (Vercel/Supabase).'
+          : 'Some features may not work. Set these in .env for full functionality.')
       );
     } else {
       throw new Error(
@@ -71,7 +77,7 @@ function loadEnv(): EnvironmentConfig {
 
   const dbUrl = process.env.DATABASE_URL || '';
   if (dbUrl && !dbUrl.startsWith('postgresql://') && !dbUrl.startsWith('postgres://')) {
-    if (isDev) {
+    if (isDev || isBuildTime) {
       console.warn(
         `[HubSphere] DATABASE_URL should be PostgreSQL (postgresql://...). Got: ${dbUrl.substring(0, 15)}...`
       );

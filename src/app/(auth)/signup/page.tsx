@@ -49,12 +49,15 @@ const signupSchema = z
 type SignupValues = z.infer<typeof signupSchema>
 
 interface SignupResponse {
-  accessToken: string
-  refreshToken: string
-  user: {
-    name: string
-    email: string
-    role: string
+  success: boolean
+  data: {
+    user: {
+      name: string
+      email: string
+    }
+    role: string | null
+    accessToken: string
+    refreshToken: string
   }
 }
 
@@ -78,21 +81,22 @@ export default function SignupPage() {
     setIsLoading(true)
 
     try {
-      const data = await apiFetch<SignupResponse>('/api/v1/auth/signup', {
+      const res = await apiFetch<SignupResponse>('/api/v1/auth/signup', {
         method: 'POST',
         body: JSON.stringify(values),
       })
 
-      setTokens(data.accessToken, data.refreshToken)
-      setUserInfo(data.user)
+      const { accessToken, refreshToken, user, role } = res.data
+      setTokens(accessToken, refreshToken)
+      setUserInfo({ name: user.name, email: user.email, role: role ?? 'VIEWER' })
 
       toast.success('Account created!', {
-        description: `Welcome to HubSphere, ${data.user.name}`,
+        description: `Welcome to HubSphere, ${user.name}`,
       })
 
-      if (data.user.role === 'SUPER_ADMIN') {
+      if (role === 'SUPER_ADMIN') {
         router.push('/super-admin')
-      } else if (['ADMIN', 'MANAGER'].includes(data.user.role)) {
+      } else if (['ADMIN', 'MANAGER'].includes(role ?? '')) {
         router.push('/admin')
       } else {
         router.push('/crm/leads')

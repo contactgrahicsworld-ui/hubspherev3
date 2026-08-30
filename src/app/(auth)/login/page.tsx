@@ -37,12 +37,15 @@ const loginSchema = z.object({
 type LoginValues = z.infer<typeof loginSchema>
 
 interface LoginResponse {
-  accessToken: string
-  refreshToken: string
-  user: {
-    name: string
-    email: string
-    role: string
+  success: boolean
+  data: {
+    user: {
+      name: string
+      email: string
+    }
+    role: string | null
+    accessToken: string
+    refreshToken: string
   }
 }
 
@@ -64,21 +67,22 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      const data = await apiFetch<LoginResponse>('/api/v1/auth/login', {
+      const res = await apiFetch<LoginResponse>('/api/v1/auth/login', {
         method: 'POST',
         body: JSON.stringify(values),
       })
 
-      setTokens(data.accessToken, data.refreshToken)
-      setUserInfo(data.user)
+      const { accessToken, refreshToken, user, role } = res.data
+      setTokens(accessToken, refreshToken)
+      setUserInfo({ name: user.name, email: user.email, role: role ?? 'VIEWER' })
 
       toast.success('Welcome back!', {
-        description: `Logged in as ${data.user.name}`,
+        description: `Logged in as ${user.name}`,
       })
 
-      if (data.user.role === 'SUPER_ADMIN') {
+      if (role === 'SUPER_ADMIN') {
         router.push('/super-admin')
-      } else if (['ADMIN', 'MANAGER'].includes(data.user.role)) {
+      } else if (['ADMIN', 'MANAGER'].includes(role ?? '')) {
         router.push('/admin')
       } else {
         router.push('/crm/leads')

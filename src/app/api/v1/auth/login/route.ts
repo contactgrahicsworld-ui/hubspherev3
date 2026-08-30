@@ -133,6 +133,7 @@ export async function POST(request: NextRequest) {
           : null,
         role: roleCode ?? null,
         accessToken,
+        refreshToken,
       }),
       { status: 200 }
     );

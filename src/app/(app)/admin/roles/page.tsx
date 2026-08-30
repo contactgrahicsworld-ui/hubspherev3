@@ -75,7 +75,14 @@ export default function AdminRolesPage() {
     try {
       setLoading(true)
       setError(null)
-      const data = await apiFetch<Role[]>('/api/v1/admin/roles')
+      const res = await apiFetch<{ success: boolean; data: Array<{ id: string; code: string; name: string; description: string | null; isSystem: boolean; isTenantScoped: boolean; permissions: string[]; createdAt: string }> }>('/api/v1/admin/roles')
+      const data: Role[] = res.data.map(r => ({
+        id: r.id,
+        code: r.code,
+        name: r.name,
+        description: r.description ?? '',
+        memberCount: 0,
+      }))
       setRoles(data)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load roles'

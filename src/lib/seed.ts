@@ -135,7 +135,10 @@ async function seedSystemRoles() {
       .filter(Boolean);
 
     if (rpData.length > 0) {
-      await db.rolePermission.createMany({ data: rpData as Array<{ roleCode: string; permissionId: string }> });
+      await db.rolePermission.createMany({
+        data: rpData as Array<{ roleCode: string; permissionId: string }>,
+        skipDuplicates: true,
+      });
     }
   }
 

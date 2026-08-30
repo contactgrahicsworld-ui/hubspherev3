@@ -111,9 +111,21 @@ export default function AdminDashboard() {
       try {
         setLoading(true)
         setError(null)
-        const result = await apiFetch<MeResponse>('/api/v1/auth/me')
+        const res = await apiFetch<{ success: boolean; data: { user: { id: string; email: string; name: string }; currentTenant: { id: string; name: string; slug: string; status: string; role: string } | null; permissions: unknown[] } }>('/api/v1/auth/me')
+        const { user, currentTenant, permissions } = res.data
+        const me: MeResponse = {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: currentTenant?.role ?? '',
+          tenantId: currentTenant?.id ?? '',
+          tenantName: currentTenant?.name ?? '',
+          tenantPlan: '',
+          memberCount: 0,
+          permissionsCount: permissions.length,
+        }
         if (!cancelled) {
-          setData(result)
+          setData(me)
         }
       } catch (err) {
         if (!cancelled) {
