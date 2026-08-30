@@ -1,105 +1,31 @@
 import { PrismaClient } from '@prisma/client';
-
-const db = new PrismaClient();
-
-async function resetDatabase() {
-  console.log('🗑️  Starting complete database reset...');
-
-  // Delete in correct FK order to avoid constraint violations
-  const deleteOrder = [
-    // Automation (depends on users, tenants)
-    'AutomationExecutionLog',
-    'AutomationExecution',
-    'AutomationAction',
-    'AutomationCondition',
-    'AutomationTrigger',
-    'AutomationWorkflow',
-
-    // Communication (depends on users, tenants, templates)
-    'MessageEvent',
-    'DeliveryAttempt',
-    'MessageAttachment',
-    'Message',
-    'Conversation',
-    'CommunicationTemplate',
-    'CommunicationProviderConfig',
-    'Notification',
-
-    // AI
-    'AiUsageLog',
-
-    // HRMS
-    'BankTransfer',
-    'PayrollItem',
-    'PayrollRecord',
-    'Expense',
-    'FieldVisit',
-    'AttendanceSession',
-    'LeaveRequest',
-    'LeaveType',
-    'EmployeeDocument',
-    'Employee',
-    'Designation',
-    'Department',
-
-    // CRM
-    'CallRecording',
-    'Call',
-    'FollowUp',
-    'Task',
-    'Note',
-    'Activity',
-    'StageHistory',
-    'CompanyTag',
-    'ContactTag',
-    'LeadTag',
-    'Tag',
-    'Deal',
-    'Contact',
-    'Company',
-    'Lead',
-
-    // Auth tokens
-    'EmailVerificationToken',
-    'PasswordResetToken',
-    'RefreshToken',
-
-    // Core platform
-    'TenantFeatureFlag',
-    'FeatureFlag',
-    'AuditLog',
-    'RolePermission',
-    'Membership',
-    'Subscription',
-    'User',
-    'Role',
-    'Permission',
-    'Tenant',
-    'ProviderConfig',
+const db = new PrismaClient({
+  datasources: { db: { url: 'postgresql://postgres.nhgijoqgekhhoonmrsru:ipgroup%409301056006@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres?pgbouncer=true' } }
+});
+async function reset() {
+  console.log('Deleting all data...');
+  const models = [
+    'AutomationExecutionLog','AutomationExecution','AutomationAction','AutomationCondition','AutomationTrigger','AutomationWorkflow',
+    'MessageEvent','DeliveryAttempt','MessageAttachment','Message','Conversation','CommunicationTemplate','CommunicationProviderConfig','Notification',
+    'AiUsageLog','BankTransfer','PayrollItem','PayrollRecord','Expense','FieldVisit','AttendanceSession','LeaveRequest','LeaveType','EmployeeDocument','Employee','Designation','Department',
+    'CallRecording','Call','FollowUp','Task','Note','Activity','StageHistory','CompanyTag','ContactTag','LeadTag','Tag','Deal','Contact','Company','Lead',
+    'EmailVerificationToken','PasswordResetToken','RefreshToken',
+    'TenantFeatureFlag','FeatureFlag','AuditLog','RolePermission','Membership','Subscription','User','Role','Permission','Tenant','ProviderConfig',
   ];
-
-  let totalDeleted = 0;
-
-  for (const model of deleteOrder) {
+  let total = 0;
+  for (const m of models) {
     try {
-      // @ts-expect-error dynamic model access
-      const count = await db[model].count();
-      if (count > 0) {
-        // @ts-expect-error dynamic model access
-        await db[model].deleteMany();
-        console.log(`  ✅ Deleted ${count} rows from ${model}`);
-        totalDeleted += count;
-      } else {
-        console.log(`  ⏭️  ${model}: empty (skipped)`);
+      // @ts-expect-error
+      const c = await db[m].count();
+      if (c > 0) {
+        // @ts-expect-error
+        await db[m].deleteMany();
+        console.log('  Deleted ' + c + ' from ' + m);
+        total += c;
       }
-    } catch (err: any) {
-      console.log(`  ❌ Error on ${model}: ${err.message}`);
-    }
+    } catch (e: any) { console.log('  Skip ' + m + ': ' + e.message?.substring(0, 60)); }
   }
-
-  console.log(`\n🎉 Reset complete! Total records deleted: ${totalDeleted}`);
+  console.log('Total deleted: ' + total);
+  await db.$disconnect();
 }
-
-resetDatabase()
-  .catch(console.error)
-  .finally(() => db.$disconnect());
+reset().catch(e => { console.error(e); process.exit(1); });
