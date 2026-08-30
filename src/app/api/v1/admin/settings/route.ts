@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       throw new AuthenticationError('Tenant context required');
     }
 
-    await requirePermission(payload.roleCode ?? null, 'settings.view', payload.tenantId);
+    await requirePermission(payload.roleCode ?? null, 'settings.view', payload.tenantId, payload.isSuperAdmin);
 
     const tenant = await db.tenant.findUnique({
       where: { id: payload.tenantId },
@@ -63,7 +63,7 @@ export async function PUT(request: NextRequest) {
       throw new AuthenticationError('Tenant context required');
     }
 
-    await requirePermission(payload.roleCode ?? null, 'settings.edit', payload.tenantId);
+    await requirePermission(payload.roleCode ?? null, 'settings.edit', payload.tenantId, payload.isSuperAdmin);
 
     const tenant = await db.tenant.findUnique({
       where: { id: payload.tenantId },

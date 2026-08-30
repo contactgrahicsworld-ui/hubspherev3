@@ -18,7 +18,7 @@ export async function GET(
   try {
     const payload = await getAuthUser(request);
     if (!payload.tenantId) throw new AuthenticationError('Tenant context required');
-    await requirePermission(payload.roleCode ?? null, 'automation.view', payload.tenantId);
+    await requirePermission(payload.roleCode ?? null, 'automation.view', payload.tenantId, payload.isSuperAdmin);
 
     const { id } = await params;
 

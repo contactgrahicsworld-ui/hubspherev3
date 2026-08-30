@@ -94,11 +94,11 @@ export async function PUT(
 
     // Check permissions based on action
     if (data.action === 'APPROVE') {
-      await requirePermission(payload.roleCode ?? null, 'leave.approve', payload.tenantId);
+      await requirePermission(payload.roleCode ?? null, 'leave.approve', payload.tenantId, payload.isSuperAdmin);
     } else if (data.action === 'REJECT') {
-      await requirePermission(payload.roleCode ?? null, 'leave.reject', payload.tenantId);
+      await requirePermission(payload.roleCode ?? null, 'leave.reject', payload.tenantId, payload.isSuperAdmin);
     } else {
-      await requirePermission(payload.roleCode ?? null, 'leave.create', payload.tenantId);
+      await requirePermission(payload.roleCode ?? null, 'leave.create', payload.tenantId, payload.isSuperAdmin);
     }
 
     const { id } = await params;

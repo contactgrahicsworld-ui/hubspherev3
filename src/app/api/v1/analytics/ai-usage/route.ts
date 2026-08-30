@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
       throw new AuthenticationError('Tenant context required');
     }
 
-    await requirePermission(payload.roleCode ?? null, 'ai.view', payload.tenantId);
+    await requirePermission(payload.roleCode ?? null, 'ai.view', payload.tenantId, payload.isSuperAdmin);
 
     const tenantId = payload.tenantId;
 

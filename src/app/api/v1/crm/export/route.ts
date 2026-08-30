@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
       throw new ValidationError('entityType must be leads, contacts, companies, or deals');
     }
 
-    await requirePermission(payload.roleCode ?? null, `${entityType}.view`, payload.tenantId);
+    await requirePermission(payload.roleCode ?? null, `${entityType}.view`, payload.tenantId, payload.isSuperAdmin);
 
     const tenantId = payload.tenantId;
     const status = searchParams.get('status');

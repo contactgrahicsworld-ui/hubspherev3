@@ -108,7 +108,7 @@ export async function GET(
       throw new AuthenticationError('Tenant context required');
     }
 
-    await requirePermission(payload.roleCode ?? null, 'messages.view', payload.tenantId);
+    await requirePermission(payload.roleCode ?? null, 'messages.view', payload.tenantId, payload.isSuperAdmin);
 
     const { id: conversationId } = await params;
 
@@ -180,7 +180,7 @@ export async function POST(
       throw new AuthenticationError('Tenant context required');
     }
 
-    await requirePermission(payload.roleCode ?? null, 'messages.create', payload.tenantId);
+    await requirePermission(payload.roleCode ?? null, 'messages.create', payload.tenantId, payload.isSuperAdmin);
 
     const { id: conversationId } = await params;
 

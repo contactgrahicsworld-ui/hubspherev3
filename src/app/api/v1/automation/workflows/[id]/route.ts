@@ -86,7 +86,7 @@ export async function GET(
   try {
     const payload = await getAuthUser(request);
     if (!payload.tenantId) throw new AuthenticationError('Tenant context required');
-    await requirePermission(payload.roleCode ?? null, 'automation.view', payload.tenantId);
+    await requirePermission(payload.roleCode ?? null, 'automation.view', payload.tenantId, payload.isSuperAdmin);
 
     const { id } = await params;
 
@@ -123,7 +123,7 @@ export async function PATCH(
   try {
     const payload = await getAuthUser(request);
     if (!payload.tenantId) throw new AuthenticationError('Tenant context required');
-    await requirePermission(payload.roleCode ?? null, 'automation.edit', payload.tenantId);
+    await requirePermission(payload.roleCode ?? null, 'automation.edit', payload.tenantId, payload.isSuperAdmin);
 
     const { id } = await params;
     const body = await request.json();
@@ -251,7 +251,7 @@ export async function DELETE(
   try {
     const payload = await getAuthUser(request);
     if (!payload.tenantId) throw new AuthenticationError('Tenant context required');
-    await requirePermission(payload.roleCode ?? null, 'automation.delete', payload.tenantId);
+    await requirePermission(payload.roleCode ?? null, 'automation.delete', payload.tenantId, payload.isSuperAdmin);
 
     const { id } = await params;
 

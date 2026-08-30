@@ -95,7 +95,7 @@ export async function GET(
       throw new AuthenticationError('Tenant context required');
     }
 
-    await requirePermission(payload.roleCode ?? null, 'visits.view', payload.tenantId);
+    await requirePermission(payload.roleCode ?? null, 'visits.view', payload.tenantId, payload.isSuperAdmin);
 
     const { id } = await params;
 
@@ -135,7 +135,7 @@ export async function PUT(
       throw new AuthenticationError('Tenant context required');
     }
 
-    await requirePermission(payload.roleCode ?? null, 'visits.edit', payload.tenantId);
+    await requirePermission(payload.roleCode ?? null, 'visits.edit', payload.tenantId, payload.isSuperAdmin);
 
     const { id } = await params;
 

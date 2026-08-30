@@ -107,7 +107,7 @@ export async function GET(
       throw new AuthenticationError('Tenant context required');
     }
 
-    await requirePermission(payload.roleCode ?? null, 'companies.view', payload.tenantId);
+    await requirePermission(payload.roleCode ?? null, 'companies.view', payload.tenantId, payload.isSuperAdmin);
 
     const { id } = await params;
 
@@ -155,7 +155,7 @@ export async function PUT(
       throw new AuthenticationError('Tenant context required');
     }
 
-    await requirePermission(payload.roleCode ?? null, 'companies.edit', payload.tenantId);
+    await requirePermission(payload.roleCode ?? null, 'companies.edit', payload.tenantId, payload.isSuperAdmin);
 
     const { id } = await params;
 
@@ -233,7 +233,7 @@ export async function DELETE(
       throw new AuthenticationError('Tenant context required');
     }
 
-    await requirePermission(payload.roleCode ?? null, 'companies.delete', payload.tenantId);
+    await requirePermission(payload.roleCode ?? null, 'companies.delete', payload.tenantId, payload.isSuperAdmin);
 
     const { id } = await params;
 

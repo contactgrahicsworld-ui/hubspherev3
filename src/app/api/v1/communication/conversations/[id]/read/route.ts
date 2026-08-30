@@ -24,7 +24,7 @@ export async function POST(
       throw new AuthenticationError('Tenant context required');
     }
 
-    await requirePermission(payload.roleCode ?? null, 'conversations.view', payload.tenantId);
+    await requirePermission(payload.roleCode ?? null, 'conversations.view', payload.tenantId, payload.isSuperAdmin);
 
     const { id } = await params;
 

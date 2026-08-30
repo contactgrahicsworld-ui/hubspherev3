@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
       throw new ValidationError('entityType must be leads, contacts, or companies');
     }
 
-    await requirePermission(payload.roleCode ?? null, `${entityType}.create`, payload.tenantId);
+    await requirePermission(payload.roleCode ?? null, `${entityType}.create`, payload.tenantId, payload.isSuperAdmin);
 
     const text = await file.text();
     const rows = parseCSV(text);

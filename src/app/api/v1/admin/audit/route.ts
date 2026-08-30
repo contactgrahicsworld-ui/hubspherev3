@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
       throw new AuthenticationError('Tenant context required');
     }
 
-    await requirePermission(payload.roleCode ?? null, 'audit.view', payload.tenantId);
+    await requirePermission(payload.roleCode ?? null, 'audit.view', payload.tenantId, payload.isSuperAdmin);
 
     const { searchParams } = new URL(request.url);
     const { page, limit } = validate(paginationSchema, {

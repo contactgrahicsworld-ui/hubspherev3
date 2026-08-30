@@ -16,10 +16,11 @@ import { AuthorizationError } from '@/lib/errors';
 export async function hasPermission(
   roleCode: string | null,
   permission: string,
-  tenantId?: string
+  tenantId?: string,
+  isSuperAdmin?: boolean
 ): Promise<boolean> {
-  // Super admins have all permissions
-  if (roleCode === 'SUPER_ADMIN') {
+  // Super admins have all permissions (via role code OR isSuperAdmin flag)
+  if (roleCode === 'SUPER_ADMIN' || isSuperAdmin) {
     return true;
   }
 
@@ -89,9 +90,10 @@ export async function hasPermission(
 export async function requirePermission(
   roleCode: string | null,
   permission: string,
-  tenantId?: string
+  tenantId?: string,
+  isSuperAdmin?: boolean
 ): Promise<void> {
-  const granted = await hasPermission(roleCode, permission, tenantId);
+  const granted = await hasPermission(roleCode, permission, tenantId, isSuperAdmin);
   if (!granted) {
     throw new AuthorizationError(
       `Permission denied: ${permission}`

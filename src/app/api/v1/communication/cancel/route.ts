@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
       throw new AuthenticationError('Tenant context required');
     }
 
-    await requirePermission(payload.roleCode ?? null, 'messages.update', payload.tenantId);
+    await requirePermission(payload.roleCode ?? null, 'messages.update', payload.tenantId, payload.isSuperAdmin);
 
     const body = await request.json();
     const data = validate(cancelMessagesSchema, body);

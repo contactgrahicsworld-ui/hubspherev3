@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
       throw new AuthenticationError('Tenant context required');
     }
 
-    await requirePermission(payload.roleCode ?? null, 'users.view', payload.tenantId);
+    await requirePermission(payload.roleCode ?? null, 'users.view', payload.tenantId, payload.isSuperAdmin);
 
     const { searchParams } = new URL(request.url);
     const { page, limit } = validate(paginationSchema, {
@@ -75,7 +75,7 @@ export async function PUT(request: NextRequest) {
       throw new AuthenticationError('Tenant context required');
     }
 
-    await requirePermission(payload.roleCode ?? null, 'users.edit', payload.tenantId);
+    await requirePermission(payload.roleCode ?? null, 'users.edit', payload.tenantId, payload.isSuperAdmin);
 
     const body = await request.json();
     const { id, roleCode, status } = body as { id?: string; roleCode?: string; status?: string };

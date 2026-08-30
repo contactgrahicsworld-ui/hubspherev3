@@ -124,7 +124,7 @@ export async function GET(
       throw new AuthenticationError('Tenant context required');
     }
 
-    await requirePermission(payload.roleCode ?? null, 'payroll.view', payload.tenantId);
+    await requirePermission(payload.roleCode ?? null, 'payroll.view', payload.tenantId, payload.isSuperAdmin);
 
     const { id } = await params;
 
@@ -183,10 +183,10 @@ export async function PUT(
       };
       const perm = statusPermissionMap[data.status];
       if (perm) {
-        await requirePermission(payload.roleCode ?? null, perm, payload.tenantId);
+        await requirePermission(payload.roleCode ?? null, perm, payload.tenantId, payload.isSuperAdmin);
       }
     } else {
-      await requirePermission(payload.roleCode ?? null, 'payroll.edit', payload.tenantId);
+      await requirePermission(payload.roleCode ?? null, 'payroll.edit', payload.tenantId, payload.isSuperAdmin);
     }
 
     const updateData: Record<string, unknown> = {};

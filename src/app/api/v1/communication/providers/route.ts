@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
       throw new AuthenticationError('Tenant context required');
     }
 
-    await requirePermission(payload.roleCode ?? null, 'communication_settings.view', payload.tenantId);
+    await requirePermission(payload.roleCode ?? null, 'communication_settings.view', payload.tenantId, payload.isSuperAdmin);
 
     const { searchParams } = new URL(request.url);
     const { page, limit } = validate(paginationSchema, {
@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
       throw new AuthenticationError('Tenant context required');
     }
 
-    await requirePermission(payload.roleCode ?? null, 'communication_settings.manage', payload.tenantId);
+    await requirePermission(payload.roleCode ?? null, 'communication_settings.manage', payload.tenantId, payload.isSuperAdmin);
 
     const body = await request.json();
     const data = validate(createProviderSchema, body);
@@ -234,7 +234,7 @@ export async function PATCH(request: NextRequest) {
       throw new AuthenticationError('Tenant context required');
     }
 
-    await requirePermission(payload.roleCode ?? null, 'communication_settings.manage', payload.tenantId);
+    await requirePermission(payload.roleCode ?? null, 'communication_settings.manage', payload.tenantId, payload.isSuperAdmin);
 
     const body = await request.json();
     const data = validate(updateProviderSchema, body);

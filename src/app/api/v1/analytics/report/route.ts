@@ -124,7 +124,7 @@ export async function GET(request: NextRequest) {
     }
 
     // RBAC check — module-specific export permission
-    await requirePermission(payload.roleCode ?? null, `${reportModule}.export`, payload.tenantId);
+    await requirePermission(payload.roleCode ?? null, `${reportModule}.export`, payload.tenantId, payload.isSuperAdmin);
 
     // Resolve fields — whitelist against allowed module fields only
     const allowedFields = MODULE_DEFAULT_FIELDS[reportModule];

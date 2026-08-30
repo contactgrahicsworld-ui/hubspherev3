@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
       throw new AuthenticationError('Tenant context required');
     }
 
-    await requirePermission(payload.roleCode ?? null, 'tags.view', payload.tenantId);
+    await requirePermission(payload.roleCode ?? null, 'tags.view', payload.tenantId, payload.isSuperAdmin);
 
     const { searchParams } = new URL(request.url);
     const page = Number(searchParams.get('page') ?? '1');
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
       throw new AuthenticationError('Tenant context required');
     }
 
-    await requirePermission(payload.roleCode ?? null, 'tags.create', payload.tenantId);
+    await requirePermission(payload.roleCode ?? null, 'tags.create', payload.tenantId, payload.isSuperAdmin);
 
     const body = await request.json();
     const data = validate(createTagSchema, body);
@@ -152,7 +152,7 @@ export async function DELETE(request: NextRequest) {
       throw new AuthenticationError('Tenant context required');
     }
 
-    await requirePermission(payload.roleCode ?? null, 'tags.delete', payload.tenantId);
+    await requirePermission(payload.roleCode ?? null, 'tags.delete', payload.tenantId, payload.isSuperAdmin);
 
     const { searchParams } = new URL(request.url);
     const tagId = searchParams.get('id');

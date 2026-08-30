@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
       throw new AuthenticationError('Tenant context required');
     }
 
-    await requirePermission(payload.roleCode ?? null, 'tasks.view', payload.tenantId);
+    await requirePermission(payload.roleCode ?? null, 'tasks.view', payload.tenantId, payload.isSuperAdmin);
 
     const { searchParams } = new URL(request.url);
     const { page, limit } = validate(paginationSchema, {
@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
       throw new AuthenticationError('Tenant context required');
     }
 
-    await requirePermission(payload.roleCode ?? null, 'tasks.create', payload.tenantId);
+    await requirePermission(payload.roleCode ?? null, 'tasks.create', payload.tenantId, payload.isSuperAdmin);
 
     const body = await request.json();
     const data = validate(createTaskSchema, body);
