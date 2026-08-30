@@ -7,11 +7,12 @@ import { success } from '@/lib/api-response';
 import { createAuditLog } from '@/lib/audit';
 import { setAuthCookies } from '@/lib/api-auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { verify2FADuringLogin, requires2FA } from '@/lib/two-factor';
 
 export async function POST(request: NextRequest) {
   try {
-    // Rate limit: 10 login attempts per 15 minutes per IP
-    const { limited, retryAfterMs } = rateLimit(getClientIp(request) + ':login', 10, 15 * 60 * 1000);
+    // Rate limit: 10 login attempts per 15 minutes per IP (async DB-backed)
+    const { limited, retryAfterMs } = await rateLimit(getClientIp(request) + ':login', 10, 15 * 60 * 1000);
     if (limited) {
       throw new RateLimitError('Too many login attempts. Please try again later.', Math.ceil(retryAfterMs / 1000));
     }
@@ -37,14 +38,12 @@ export async function POST(request: NextRequest) {
     // Find user by email
     const user = await db.user.findUnique({
       where: { email },
-      include: {
+      select: {
+        id: true, email: true, name: true, isSuperAdmin: true, status: true,
+        avatarUrl: true, passwordHash: true, twoFactorEnabled: true,
         memberships: {
           where: { status: 'ACTIVE' },
-          include: {
-            tenant: {
-              select: { id: true, name: true, status: true },
-            },
-          },
+          include: { tenant: { select: { id: true, name: true, status: true } } },
         },
       },
     });
@@ -68,6 +67,19 @@ export async function POST(request: NextRequest) {
     const membership = user.memberships[0];
     const tenantId = membership?.tenantId;
     const roleCode = membership?.roleCode;
+
+    // 2FA check for privileged accounts
+    if (user.twoFactorEnabled) {
+      // Return a 2FA challenge instead of tokens
+      return NextResponse.json(
+        success({
+          twoFactorRequired: true,
+          userId: user.id,
+          message: 'Two-factor authentication required',
+        }, 'Enter your 2FA code'),
+        { status: 200 }
+      );
+    }
 
     // Generate tokens
     const accessToken = await generateAccessToken({

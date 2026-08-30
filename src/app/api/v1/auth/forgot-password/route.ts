@@ -10,7 +10,7 @@ import { rateLimit, getClientIp } from '@/lib/rate-limit';
 export async function POST(request: NextRequest) {
   try {
     // Rate limit: 3 password reset requests per hour per IP
-    const { limited, retryAfterMs } = rateLimit(getClientIp(request) + ':forgot', 3, 60 * 60 * 1000);
+    const { limited, retryAfterMs } = await rateLimit(getClientIp(request) + ':forgot', 3, 60 * 60 * 1000);
     if (limited) {
       throw new RateLimitError('Too many password reset attempts. Please try again later.', Math.ceil(retryAfterMs / 1000));
     }

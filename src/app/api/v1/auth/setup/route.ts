@@ -43,9 +43,27 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Create SUPER_ADMIN membership (no tenant needed for platform-level role)
-    // The super admin has platform-level access via isSuperAdmin flag
-    // but we still create a membership for consistency
+    // Create default tenant for the super admin
+    const defaultTenant = await db.tenant.create({
+      data: {
+        name: 'HubSphere Enterprise',
+        slug: 'hubsphere-enterprise',
+        status: 'ACTIVE',
+        plan: 'ENTERPRISE',
+        maxUsers: 1000,
+        settings: {},
+      },
+    });
+
+    // Create membership linking super admin to default tenant
+    await db.membership.create({
+      data: {
+        userId: user.id,
+        tenantId: defaultTenant.id,
+        roleCode: 'TENANT_OWNER',
+        status: 'ACTIVE',
+      },
+    });
 
     // Generate tokens
     const accessToken = await generateAccessToken({

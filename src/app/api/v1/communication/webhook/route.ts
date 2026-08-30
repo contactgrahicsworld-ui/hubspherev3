@@ -37,11 +37,10 @@ const EVENT_STATUS_MAP: Record<WebhookEventType, { status: string; timestampFiel
 // ============================================
 
 async function verifyWebhookSignature(
+  rawBody: string,
   request: NextRequest,
   providerName: string
 ): Promise<{ valid: boolean; tenantId: string | null }> {
-  // Get the raw body for signature verification
-  const rawBody = await request.text();
   const signature = request.headers.get('x-hubspot-signature')
     || request.headers.get('x-twilio-signature')
     || request.headers.get('whatsapp-webhook-signature')
@@ -126,11 +125,34 @@ export async function POST(request: NextRequest) {
       return dbUnavailableResponse();
     }
 
-    const body = await request.json();
+    // Read raw body first for signature verification
+    const rawBody = await request.text();
+    let body: unknown;
+    try {
+      body = JSON.parse(rawBody);
+    } catch {
+      throw new ValidationError('Invalid JSON body');
+    }
     const data = validate(webhookEventSchema, body);
 
+    // Idempotency check: prevent duplicate event processing
+    const existingEvent = await db.messageEvent.findFirst({
+      where: {
+        source: 'webhook',
+        eventType: data.eventType,
+        eventData: { path: ['messageId'], equals: data.messageId } as any,
+        createdAt: { gte: new Date(Date.now() - 5 * 60 * 1000) }, // within 5 minutes
+      },
+      select: { id: true },
+    });
+    if (existingEvent) {
+      return NextResponse.json(
+        success({ acknowledged: true, duplicate: true, eventId: existingEvent.id }, 'Event already processed'),
+      );
+    }
+
     // Verify webhook signature
-    const { valid, tenantId } = await verifyWebhookSignature(request, data.provider);
+    const { valid, tenantId } = await verifyWebhookSignature(rawBody, request, data.provider);
     if (!valid) {
       throw new AuthenticationError('Invalid or missing webhook signature. Configure a webhook secret for this provider.');
     }

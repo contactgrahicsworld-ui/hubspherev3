@@ -13,7 +13,9 @@ const PUBLIC_API_PREFIXES = [
   '/api/v1/auth/forgot-password',
   '/api/v1/auth/reset-password',
   '/api/v1/auth/refresh',
+  '/api/v1/auth/two-factor/challenge',
   '/api/v1/system/health',
+  '/api/v1/communication/webhook',
 ];
 
 const PUBLIC_PAGE_PATHS = new Set([
@@ -51,6 +53,27 @@ const SECURITY_HEADERS: Record<string, string> = {
   'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
   'X-Permitted-Cross-Domain-Policies': 'none',
+  // Content Security Policy
+  // script-src: 'self' for app scripts, 'unsafe-inline' required by Next.js styled-jsx and some deps
+  // style-src: 'self' + 'unsafe-inline' required by Tailwind CSS runtime and Next.js
+  // connect-src: 'self' for API calls + Supabase pooler + Vercel analytics
+  // img-src: 'self' + data: for inline images/avatars + blob: for file uploads
+  // font-src: 'self' for local fonts + gstatic for Google Fonts fallback
+  // frame-ancestors: 'none' prevents embedding
+  // object-src: 'none' prevents plugin content
+  'Content-Security-Policy': [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "img-src 'self' data: blob: https: https://*.supabase.co",
+    "font-src 'self' data: https://fonts.gstatic.com",
+    "connect-src 'self' https://*.supabase.co https://*.supabase.com https://vitals.vercel-insights.com https://*.vercel.app wss://*.supabase.co",
+    "frame-ancestors 'none'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "upgrade-insecure-requests",
+  ].join('; '),
 };
 
 function applyHeaders(response: NextResponse, isApi: boolean, req: NextRequest): void {
