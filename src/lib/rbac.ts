@@ -19,8 +19,8 @@ export async function hasPermission(
   tenantId?: string,
   isSuperAdmin?: boolean
 ): Promise<boolean> {
-  // Super admins have all permissions (via role code OR isSuperAdmin flag)
-  if (roleCode === 'SUPER_ADMIN' || isSuperAdmin) {
+  // Super admins and tenant owners have all permissions within their tenant
+  if (roleCode === 'SUPER_ADMIN' || roleCode === 'TENANT_OWNER' || isSuperAdmin) {
     return true;
   }
 
@@ -153,4 +153,3 @@ export function isSystemRole(roleCode: string): boolean {
   ];
   return systemRoles.includes(roleCode);
 }
-// trigger deploy
