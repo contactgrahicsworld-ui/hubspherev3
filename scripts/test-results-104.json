@@ -1,11 +1,9 @@
 {
   "results": {
     "AUTH": {
-      "p": 11,
-      "f": 1,
-      "e": [
-        "T09 Token refresh: s=500"
-      ]
+      "p": 12,
+      "f": 0,
+      "e": []
     },
     "SUPER_ADMIN": {
       "p": 10,
@@ -54,21 +52,20 @@
     }
   },
   "summary": {
-    "pass": 109,
-    "fail": 1,
+    "pass": 110,
+    "fail": 0,
     "total": 110,
-    "percent": "99.1",
-    "time": "250.8",
-    "gate": "BLOCKED"
+    "percent": "100.0",
+    "time": "258.1",
+    "gate": "CLEARED"
   },
   "lines": [
     "HUBSPHERE V3 - 104-TEST PRODUCTION RESULTS",
     "Target: https://hubspherev3.vercel.app",
-    "Time: 250.8s",
-    "Timestamp: 2026-08-31T09:46:43.039Z",
+    "Time: 258.1s",
+    "Timestamp: 2026-08-31T10:17:18.964Z",
     "",
-    "FAIL | AUTH | 11 pass / 1 fail",
-    "  FAIL: T09 Token refresh: s=500",
+    "PASS | AUTH | 12 pass / 0 fail",
     "PASS | SUPER_ADMIN | 10 pass / 0 fail",
     "PASS | CRM | 22 pass / 0 fail",
     "PASS | HRMS | 14 pass / 0 fail",
@@ -79,8 +76,8 @@
     "PASS | AI | 4 pass / 0 fail",
     "PASS | SECURITY | 17 pass / 0 fail",
     "",
-    "TOTAL: 109/110 (99.1%)",
-    "RELEASE GATE: BLOCKED"
+    "TOTAL: 110/110 (100.0%)",
+    "RELEASE GATE: CLEARED"
   ],
-  "timestamp": "2026-08-31T09:46:43.041Z"
+  "timestamp": "2026-08-31T10:17:18.965Z"
 }

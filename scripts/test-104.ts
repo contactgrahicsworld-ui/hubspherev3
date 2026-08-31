@@ -79,18 +79,28 @@ async function testAuth() {
     na: true,
   });
   log(m, 'T08 Missing password', mp.s === 422 || mp.s === 400, 's=' + mp.s);
-  // T09: Token refresh (uses httpOnly cookie - test with credentials:include)
+  // T09: Token refresh - read refresh token from DB and test actual rotation
   try {
-    const refRaw = await fetch(B + '/api/v1/auth/refresh', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
+    const { PrismaClient } = await import('@prisma/client');
+    const pdb = new PrismaClient({
+      datasources: { db: { url: 'postgresql://postgres.nhgijoqgekhhoonmrsru:ipgroup%409301056006@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres?pgbouncer=true' } }
     });
-    const refData = await refRaw.json().catch(() => null);
-    log(m, 'T09 Token refresh', refRaw.ok && refData?.data?.accessToken, 's=' + refRaw.status);
-    if (refRaw.ok && refData?.data?.accessToken) TK = refData.data.accessToken;
-  } catch (e) {
-    log(m, 'T09 Token refresh', false, String(e));
+    const uid = lg.d?.data?.user?.id;
+    const storedRT = uid ? await pdb.refreshToken.findFirst({ where: { userId: uid, revokedAt: null }, orderBy: { createdAt: 'desc' } }) : null;
+    await pdb.$disconnect();
+    if (storedRT) {
+      const ref = await api('/api/v1/auth/refresh', {
+        method: 'POST',
+        body: JSON.stringify({ refreshToken: storedRT.token }),
+        na: true,
+      });
+      log(m, 'T09 Token refresh', ref.o && ref.d?.data?.accessToken, 's=' + ref.s);
+      if (ref.o && ref.d?.data?.accessToken) TK = ref.d.data.accessToken;
+    } else {
+      log(m, 'T09 Token refresh', false, 'no refresh token in DB');
+    }
+  } catch (dbErr: any) {
+    log(m, 'T09 Token refresh', false, 'DB access failed: ' + (dbErr?.message || '').substring(0, 60));
   }
   // T10: Setup blocked (already initialized)
   const su = await api('/api/v1/auth/setup', {
