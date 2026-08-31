@@ -18,7 +18,7 @@ interface MobileNavProps {
   userRole: string
 }
 
-function NavSectionItems({ section }: { section: NavSection }) {
+function NavSectionItems({ section, onClose }: { section: NavSection; onClose: () => void }) {
   const pathname = usePathname()
 
   return (
@@ -33,7 +33,7 @@ function NavSectionItems({ section }: { section: NavSection }) {
           <Link
             key={item.href}
             href={item.href}
-            onClick={() => window.innerWidth < 768 && undefined}
+            onClick={() => window.innerWidth < 768 && onClose()}
             className={`flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors min-h-[44px] ${
               isActive
                 ? 'bg-accent text-accent-foreground font-medium'
@@ -69,7 +69,7 @@ export function MobileNav({ open, onOpenChange, userRole }: MobileNavProps) {
         <nav className='flex flex-col gap-2 overflow-y-auto p-3' aria-label='Mobile navigation'>
           {sections.map((section, idx) => (
             <div key={section.label}>
-              <NavSectionItems section={section} />
+              <NavSectionItems section={section} onClose={() => onOpenChange(false)} />
               {idx < sections.length - 1 && <Separator className='my-2' />}
             </div>
           ))}
