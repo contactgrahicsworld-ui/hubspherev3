@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { handleApiError, AuthenticationError } from '@/lib/errors';
 import { success } from '@/lib/api-response';
 import { getAuthUser } from '@/lib/api-auth';
+import { requirePermission } from '@/lib/rbac';
 import { createAuditLog } from '@/lib/audit';
 import { validate } from '@/lib/validators';
 import { z } from 'zod';
@@ -197,7 +198,7 @@ export async function POST(request: NextRequest) {
   try {
     const payload = await getAuthUser(request);
     if (!payload.tenantId) throw new AuthenticationError('Tenant context required');
-    // No specific permission check — internal event endpoint
+    await requirePermission(payload.roleCode ?? null, 'automation.execute', payload.tenantId, payload.isSuperAdmin);
 
     const body = await request.json();
     const { eventType, entityId, entityType, data } = validate(eventSchema, body);

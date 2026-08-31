@@ -167,6 +167,13 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const data = validate(createPayrollSchema, body);
 
+    if (data.employeeId) {
+      const employee = await db.employee.findFirst({ where: { id: data.employeeId, tenantId: payload.tenantId, archived: false } });
+      if (!employee) {
+        throw new NotFoundError('Employee not found');
+      }
+    }
+
     // Calculate net salary
     const netSalary =
       data.basicSalary +

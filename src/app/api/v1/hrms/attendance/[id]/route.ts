@@ -10,6 +10,7 @@ import { success } from '@/lib/api-response';
 import { getAuthUser } from '@/lib/api-auth';
 import { requirePermission } from '@/lib/rbac';
 import { createAuditLog } from '@/lib/audit';
+import { validate } from '@/lib/validators';
 import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 
@@ -106,8 +107,7 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const data = checkOutSchema.safeParse(body);
-    const parsed = data.success ? data.data : {};
+    const parsed = validate(checkOutSchema, body);
 
     const now = new Date();
     const checkInTime = session.checkInTime ?? now;

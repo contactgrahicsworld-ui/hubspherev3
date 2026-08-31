@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { hashPassword, generateAccessToken, generateRefreshToken, getRefreshTokenExpiry } from '@/lib/auth';
 import { signupSchema, validate } from '@/lib/validators';
-import { handleApiError, ConflictError } from '@/lib/errors';
+import { handleApiError } from '@/lib/errors';
 import { success } from '@/lib/api-response';
 import { createAuditLog } from '@/lib/audit';
 import { setAuthCookies } from '@/lib/api-auth';
@@ -28,48 +28,53 @@ export async function POST(request: NextRequest) {
     // Hash password
     const passwordHash = await hashPassword(password);
 
-    // Seed permissions and roles first
+    // Seed permissions and roles (idempotent)
     const seedResults = await runSeed();
 
-    // Create the super admin user
-    const user = await db.user.create({
-      data: {
-        email,
-        passwordHash,
-        name: name || 'Super Admin',
-        isSuperAdmin: true,
-        emailVerified: true,
-        status: 'ACTIVE',
-      },
+    // Create super admin + tenant + membership in a transaction
+    const result = await db.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          email,
+          passwordHash,
+          name: name || 'Super Admin',
+          isSuperAdmin: true,
+          emailVerified: true,
+          status: 'ACTIVE',
+        },
+      });
+
+      const defaultTenant = await tx.tenant.create({
+        data: {
+          name: 'HubSphere Enterprise',
+          slug: 'hubsphere-enterprise',
+          status: 'ACTIVE',
+          plan: 'ENTERPRISE',
+          maxUsers: 1000,
+          settings: {},
+        },
+      });
+
+      await tx.membership.create({
+        data: {
+          userId: user.id,
+          tenantId: defaultTenant.id,
+          roleCode: 'TENANT_OWNER',
+          status: 'ACTIVE',
+        },
+      });
+
+      return { user, tenant: defaultTenant };
     });
 
-    // Create default tenant for the super admin
-    const defaultTenant = await db.tenant.create({
-      data: {
-        name: 'HubSphere Enterprise',
-        slug: 'hubsphere-enterprise',
-        status: 'ACTIVE',
-        plan: 'ENTERPRISE',
-        maxUsers: 1000,
-        settings: {},
-      },
-    });
-
-    // Create membership linking super admin to default tenant
-    await db.membership.create({
-      data: {
-        userId: user.id,
-        tenantId: defaultTenant.id,
-        roleCode: 'TENANT_OWNER',
-        status: 'ACTIVE',
-      },
-    });
+    const { user, tenant } = result;
 
     // Generate tokens
     const accessToken = await generateAccessToken({
       userId: user.id,
       email: user.email,
       isSuperAdmin: true,
+      tenantId: tenant.id,
       roleCode: 'SUPER_ADMIN',
     });
 
@@ -78,6 +83,7 @@ export async function POST(request: NextRequest) {
       data: {
         token: refreshToken,
         userId: user.id,
+        tenantId: tenant.id,
         expiresAt: getRefreshTokenExpiry(),
       },
     });
@@ -85,6 +91,7 @@ export async function POST(request: NextRequest) {
     // Audit log
     await createAuditLog({
       actorId: user.id,
+      tenantId: tenant.id,
       action: 'auth.setup',
       targetType: 'User',
       targetId: user.id,

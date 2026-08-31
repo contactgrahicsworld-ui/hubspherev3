@@ -4,6 +4,7 @@ import { paginationSchema, validate } from '@/lib/validators';
 import {
   handleApiError,
   AuthenticationError,
+  ValidationError,
 } from '@/lib/errors';
 import { success, paginated } from '@/lib/api-response';
 import { getAuthUser } from '@/lib/api-auth';
@@ -185,6 +186,13 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const data = validate(createCompanySchema, body);
+
+    if (data.ownerId) {
+      const ownerMember = await db.membership.findFirst({ where: { userId: data.ownerId, tenantId: payload.tenantId, status: 'ACTIVE' } });
+      if (!ownerMember) {
+        throw new ValidationError('Selected owner is not a member of this tenant');
+      }
+    }
 
     const company = await db.company.create({
       data: {

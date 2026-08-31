@@ -33,6 +33,8 @@ export async function GET(request: NextRequest) {
           },
         },
         orderBy: { code: 'asc' },
+        skip: (page - 1) * limit,
+        take: limit,
       }),
       db.role.findMany({
         where: { tenantId: payload.tenantId },
@@ -42,6 +44,8 @@ export async function GET(request: NextRequest) {
           },
         },
         orderBy: { code: 'asc' },
+        skip: (page - 1) * limit,
+        take: limit,
       }),
       db.role.count({
         where: {

@@ -171,6 +171,27 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const data = validate(createFieldVisitSchema, body);
 
+    if (data.employeeId) {
+      const employee = await db.employee.findFirst({ where: { id: data.employeeId, tenantId: payload.tenantId, archived: false } });
+      if (!employee) {
+        throw new NotFoundError('Employee not found');
+      }
+    }
+
+    if (data.leadId) {
+      const lead = await db.lead.findFirst({ where: { id: data.leadId, tenantId: payload.tenantId, archived: false } });
+      if (!lead) {
+        throw new NotFoundError('Lead not found');
+      }
+    }
+
+    if (data.contactId) {
+      const contact = await db.contact.findFirst({ where: { id: data.contactId, tenantId: payload.tenantId, archived: false } });
+      if (!contact) {
+        throw new NotFoundError('Contact not found');
+      }
+    }
+
     const visit = await db.fieldVisit.create({
       data: {
         tenantId: payload.tenantId,

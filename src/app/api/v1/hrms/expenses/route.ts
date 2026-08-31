@@ -161,6 +161,13 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const data = validate(createExpenseSchema, body);
 
+    if (data.employeeId) {
+      const employee = await db.employee.findFirst({ where: { id: data.employeeId, tenantId: payload.tenantId, archived: false } });
+      if (!employee) {
+        throw new NotFoundError('Employee not found');
+      }
+    }
+
     const expense = await db.expense.create({
       data: {
         tenantId: payload.tenantId,
