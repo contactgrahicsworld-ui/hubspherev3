@@ -160,7 +160,7 @@ export async function GET(request: NextRequest) {
 
     } else if (entityType === 'deals') {
       const where: Record<string, unknown> = { tenantId, archived: false };
-      if (status) where.status = status;
+      if (status) where.stage = status;
       if (search) {
         where.title = { contains: search, mode: 'insensitive' };
       }

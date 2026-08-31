@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
       db.fieldVisit.count({
         where: {
           tenantId,
-          status: { in: ['PLANNED', 'STARTED'] },
+          status: { in: ['PLANNED', 'IN_PROGRESS'] },
         },
       }),
 
@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
         where: {
           tenantId,
           date: { lt: todayStart },
-          status: { in: ['PLANNED', 'STARTED'] },
+          status: { in: ['PLANNED', 'IN_PROGRESS'] },
         },
       }),
 
