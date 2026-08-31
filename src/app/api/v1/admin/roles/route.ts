@@ -121,12 +121,12 @@ export async function POST(request: NextRequest) {
         where: { code: { in: data.permissions } },
       });
 
-      for (const perm of permissions) {
-        await db.rolePermission.create({
-          data: {
+      if (permissions.length > 0) {
+        await db.rolePermission.createMany({
+          data: permissions.map((perm) => ({
             roleCode: role.code,
             permissionId: perm.id,
-          },
+          })),
         });
       }
     }
