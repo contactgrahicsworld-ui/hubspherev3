@@ -23,21 +23,15 @@ export async function GET(request: NextRequest) {
       limit: searchParams.get('limit') ?? '50',
     });
 
-    // Get platform roles + tenant-specific roles
-    const [platformRoles, tenantRoles, total] = await Promise.all([
+    // Get platform roles + tenant-specific roles with unified pagination
+    const [allRoles, total] = await Promise.all([
       db.role.findMany({
-        where: { tenantId: null },
-        include: {
-          permissions: {
-            include: { permission: { select: { code: true } } },
-          },
+        where: {
+          OR: [
+            { tenantId: null },
+            { tenantId: payload.tenantId },
+          ],
         },
-        orderBy: { code: 'asc' },
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
-      db.role.findMany({
-        where: { tenantId: payload.tenantId },
         include: {
           permissions: {
             include: { permission: { select: { code: true } } },
@@ -56,8 +50,6 @@ export async function GET(request: NextRequest) {
         },
       }),
     ]);
-
-    const allRoles = [...platformRoles, ...tenantRoles];
 
     const data = allRoles.map((r) => ({
       id: r.id,

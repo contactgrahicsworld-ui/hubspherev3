@@ -47,28 +47,41 @@ interface PaginatedResponse {
 
 function TableSkeleton() {
   return (
-    <Card>
-      <CardContent className='p-0'>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {Array.from({ length: 6 }).map((_, i) => (
-                <TableHead key={i}><Skeleton className='h-4 w-24' /></TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {Array.from({ length: 5 }).map((_, i) => (
-              <TableRow key={i}>
-                {Array.from({ length: 6 }).map((_, j) => (
-                  <TableCell key={j}><Skeleton className='h-4 w-full' /></TableCell>
+    <>
+      {/* Mobile skeleton */}
+      <div className='flex flex-col gap-3 md:hidden'>
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Card key={i}><CardContent className='p-4 space-y-3'>
+            <Skeleton className='h-4 w-32' />
+            <Skeleton className='h-3 w-48' />
+            <div className='flex gap-2'><Skeleton className='h-5 w-16' /><Skeleton className='h-5 w-16' /></div>
+          </CardContent></Card>
+        ))}
+      </div>
+      {/* Desktop skeleton */}
+      <Card className='hidden md:block'>
+        <CardContent className='p-0'>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <TableHead key={i}><Skeleton className='h-4 w-24' /></TableHead>
                 ))}
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
+            </TableHeader>
+            <TableBody>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <TableRow key={i}>
+                  {Array.from({ length: 6 }).map((_, j) => (
+                    <TableCell key={j}><Skeleton className='h-4 w-full' /></TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </>
   )
 }
 
@@ -221,7 +234,31 @@ export default function UserOverview() {
 
       {!loading && !error && users.length > 0 && (
         <>
-          <Card>
+          {/* Mobile card view */}
+          <div className='flex flex-col gap-3 md:hidden'>
+            {users.map((user) => (
+              <Card key={user.id} className='overflow-hidden'>
+                <CardContent className='p-4 space-y-2'>
+                  <div className='flex items-start justify-between gap-2'>
+                    <div className='min-w-0'>
+                      <p className='font-medium text-sm truncate'>{user.name || '-'}</p>
+                      <p className='text-xs text-muted-foreground truncate'>{user.email}</p>
+                    </div>
+                    <div className='flex items-center gap-1.5 shrink-0'>
+                      {user.isSuperAdmin && <Badge variant='default' className='text-[10px] px-1.5'>SA</Badge>}
+                      <Badge variant={statusVariant(user.status)} className='text-[10px] px-1.5'>{user.status}</Badge>
+                    </div>
+                  </div>
+                  <div className='flex items-center justify-between text-xs text-muted-foreground'>
+                    <span>Login: {formatDateTime(user.lastLoginAt)}</span>
+                    <span>Created: {formatDate(user.createdAt)}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          {/* Desktop table view */}
+          <Card className='hidden md:block'>
             <CardContent className='p-0'>
               <Table>
                 <TableHeader>

@@ -1,0 +1,707 @@
+     1→'use client'
+     2→
+     3→import { useEffect, useState, useCallback, useRef } from 'react'
+     4→import { useRouter } from 'next/navigation'
+     5→import { apiFetch } from '@/lib/auth-client'
+     6→import { toast } from 'sonner'
+     7→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+     8→import { Skeleton } from '@/components/ui/skeleton'
+     9→import { Input } from '@/components/ui/input'
+    10→import { Button } from '@/components/ui/button'
+    11→import { Badge } from '@/components/ui/badge'
+    12→import {
+    13→  Table,
+    14→  TableBody,
+    15→  TableCell,
+    16→  TableHead,
+    17→  TableHeader,
+    18→  TableRow,
+    19→} from '@/components/ui/table'
+    20→import {
+    21→  Pagination,
+    22→  PaginationContent,
+    23→  PaginationItem,
+    24→  PaginationLink,
+    25→  PaginationNext,
+    26→  PaginationPrevious,
+    27→} from '@/components/ui/pagination'
+    28→import {
+    29→  Select,
+    30→  SelectContent,
+    31→  SelectItem,
+    32→  SelectTrigger,
+    33→  SelectValue,
+    34→} from '@/components/ui/select'
+    35→import { DealFormDialog } from '@/components/crm/deal-form'
+    36→import { DEAL_STAGES } from '@/lib/constants'
+    37→import {
+    38→  Plus,
+    39→  Search,
+    40→  Filter,
+    41→  AlertCircle,
+    42→  DollarSign,
+    43→  RotateCcw,
+    44→  LayoutGrid,
+    45→  List,
+    46→  Mail,
+    47→  Building2,
+    48→  User,
+    49→  CalendarDays,
+    50→} from 'lucide-react'
+    51→
+    52→// ============================================
+    53→// Types
+    54→// ============================================
+    55→
+    56→interface DealOwner {
+    57→  id: string
+    58→  name: string | null
+    59→  email: string | null
+    60→}
+    61→
+    62→interface DealContact {
+    63→  id: string
+    64→  firstName: string
+    65→  lastName: string | null
+    66→  email: string | null
+    67→}
+    68→
+    69→interface DealCompany {
+    70→  id: string
+    71→  name: string
+    72→  industry: string | null
+    73→}
+    74→
+    75→interface Deal {
+    76→  id: string
+    77→  title: string
+    78→  value: number
+    79→  currency: string | null
+    80→  stage: string
+    81→  probability: number | null
+    82→  expectedCloseDate: string | null
+    83→  contactId: string | null
+    84→  contact: DealContact | null
+    85→  companyId: string | null
+    86→  company: DealCompany | null
+    87→  ownerId: string | null
+    88→  owner: DealOwner | null
+    89→  lostReason: string | null
+    90→  archived: boolean
+    91→  createdAt: string
+    92→  updatedAt: string
+    93→}
+    94→
+    95→interface UserOption {
+    96→  id: string
+    97→  name: string
+    98→  email: string
+    99→}
+   100→
+   101→interface ContactOption {
+   102→  id: string
+   103→  firstName: string
+   104→  lastName: string | null
+   105→  email: string | null
+   106→}
+   107→
+   108→interface CompanyOption {
+   109→  id: string
+   110→  name: string
+   111→}
+   112→
+   113→interface PaginatedResponse {
+   114→  success: boolean
+   115→  data: Deal[]
+   116→  pagination: {
+   117→    page: number
+   118→    limit: number
+   119→    total: number
+   120→    totalPages: number
+   121→  }
+   122→}
+   123→
+   124→// ============================================
+   125→// Constants
+   126→// ============================================
+   127→
+   128→const STAGE_BADGE_STYLES: Record<string, string> = {
+   129→  NEW: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400',
+   130→  QUALIFIED: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+   131→  PROPOSAL: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+   132→  NEGOTIATION: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+   133→  WON: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+   134→  LOST: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+   135→}
+   136→
+   137→const STAGE_BORDER_STYLES: Record<string, string> = {
+   138→  NEW: 'border-t-indigo-500',
+   139→  QUALIFIED: 'border-t-blue-500',
+   140→  PROPOSAL: 'border-t-amber-500',
+   141→  NEGOTIATION: 'border-t-orange-500',
+   142→  WON: 'border-t-green-500',
+   143→  LOST: 'border-t-red-500',
+   144→}
+   145→
+   146→const SORT_OPTIONS = [
+   147→  { value: 'createdAt-desc', label: 'Newest First' },
+   148→  { value: 'createdAt-asc', label: 'Oldest First' },
+   149→  { value: 'updatedAt-desc', label: 'Recently Updated' },
+   150→  { value: 'title-asc', label: 'Title A-Z' },
+   151→  { value: 'value-desc', label: 'Highest Value' },
+   152→  { value: 'value-asc', label: 'Lowest Value' },
+   153→  { value: 'expectedCloseDate-asc', label: 'Close Date Soonest' },
+   154→]
+   155→
+   156→// ============================================
+   157→// Helpers
+   158→// ============================================
+   159→
+   160→function formatDate(dateStr: string) {
+   161→  if (!dateStr) return '-'
+   162→  try {
+   163→    return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+   164→  } catch { return '-' }
+   165→}
+   166→
+   167→function formatCurrency(val: number, currency?: string | null): string {
+   168→  if (val == null) return '-'
+   169→  return new Intl.NumberFormat('en-US', {
+   170→    style: 'currency', currency: currency || 'INR', minimumFractionDigits: 0, maximumFractionDigits: 0,
+   171→  }).format(val)
+   172→}
+   173→
+   174→function stageBadge(stage: string) {
+   175→  return <Badge variant='outline' className={STAGE_BADGE_STYLES[stage] || ''}>{stage}</Badge>
+   176→}
+   177→
+   178→// ============================================
+   179→// Table Skeleton
+   180→// ============================================
+   181→
+   182→function TableSkeleton() {
+   183→  return (
+   184→    <Card>
+   185→      <CardContent className='p-0'>
+   186→        <Table>
+   187→          <TableHeader>
+   188→            <TableRow>
+   189→              {Array.from({ length: 9 }).map((_, i) => (
+   190→                <TableHead key={i}><Skeleton className='h-4 w-20' /></TableHead>
+   191→              ))}
+   192→            </TableRow>
+   193→          </TableHeader>
+   194→          <TableBody>
+   195→            {Array.from({ length: 8 }).map((_, i) => (
+   196→              <TableRow key={i}>
+   197→                {Array.from({ length: 9 }).map((_, j) => (
+   198→                  <TableCell key={j}><Skeleton className='h-4 w-full' /></TableCell>
+   199→                ))}
+   200→              </TableRow>
+   201→            ))}
+   202→          </TableBody>
+   203→        </Table>
+   204→      </CardContent>
+   205→    </Card>
+   206→  )
+   207→}
+   208→
+   209→// ============================================
+   210→// Kanban Skeleton
+   211→// ============================================
+   212→
+   213→function KanbanSkeleton() {
+   214→  return (
+   215→    <div className='grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-6'>
+   216→      {DEAL_STAGES.map((stage) => (
+   217→        <div key={stage.key} className='space-y-3'>
+   218→          <Skeleton className='h-6 w-24' />
+   219→          <div className='space-y-2'>
+   220→            {Array.from({ length: 2 }).map((_, i) => (
+   221→              <Skeleton key={i} className='h-24 rounded-lg' />
+   222→            ))}
+   223→          </div>
+   224→        </div>
+   225→      ))}
+   226→    </div>
+   227→  )
+   228→}
+   229→
+   230→// ============================================
+   231→// Mobile Deal Card
+   232→// ============================================
+   233→
+   234→function MobileDealCard({ deal, onClick }: { deal: Deal; onClick: () => void }) {
+   235→  return (
+   236→    <Card
+   237→      className='cursor-pointer transition-shadow hover:shadow-md'
+   238→      onClick={onClick}
+   239→      role='button'
+   240→      tabIndex={0}
+   241→      onKeyDown={(e) => { if (e.key === 'Enter') onClick() }}
+   242→    >
+   243→      <CardContent className='p-4'>
+   244→        <div className='flex items-start justify-between gap-2'>
+   245→          <div className='min-w-0 flex-1'>
+   246→            <p className='truncate font-medium'>{deal.title}</p>
+   247→            <p className='mt-0.5 text-sm font-medium'>{formatCurrency(deal.value, deal.currency)}</p>
+   248→          </div>
+   249→          {stageBadge(deal.stage)}
+   250→        </div>
+   251→        <div className='mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground'>
+   252→          {deal.contact && (
+   253→            <span className='flex items-center gap-1 truncate'>
+   254→              <User className='size-3 shrink-0' />{[deal.contact.firstName, deal.contact.lastName].filter(Boolean).join(' ')}
+   255→            </span>
+   256→          )}
+   257→          {deal.company && (
+   258→            <span className='flex items-center gap-1 truncate'>
+   259→              <Building2 className='size-3 shrink-0' />{deal.company.name}
+   260→            </span>
+   261→          )}
+   262→        </div>
+   263→        <div className='mt-2 flex items-center justify-between text-xs text-muted-foreground'>
+   264→          <span>{deal.owner?.name || 'Unassigned'}</span>
+   265→          {deal.probability != null && <span>{deal.probability}%</span>}
+   266→        </div>
+   267→      </CardContent>
+   268→    </Card>
+   269→  )
+   270→}
+   271→
+   272→// ============================================
+   273→// Kanban Card
+   274→// ============================================
+   275→
+   276→function KanbanDealCard({ deal, onClick }: { deal: Deal; onClick: () => void }) {
+   277→  return (
+   278→    <div
+   279→      className='cursor-pointer rounded-lg border p-3 transition-shadow hover:shadow-md'
+   280→      onClick={onClick}
+   281→      role='button'
+   282→      tabIndex={0}
+   283→      onKeyDown={(e) => { if (e.key === 'Enter') onClick() }}
+   284→    >
+   285→      <p className='truncate text-sm font-medium'>{deal.title}</p>
+   286→      <p className='mt-1 text-sm font-medium'>{formatCurrency(deal.value, deal.currency)}</p>
+   287→      <div className='mt-2 flex items-center justify-between text-xs text-muted-foreground'>
+   288→        <span className='truncate'>{deal.contact ? [deal.contact.firstName, deal.contact.lastName].filter(Boolean).join(' ') : deal.company?.name || '-'}</span>
+   289→        {deal.probability != null && <span className='shrink-0'>{deal.probability}%</span>}
+   290→      </div>
+   291→      {deal.expectedCloseDate && (
+   292→        <p className='mt-1 flex items-center gap-1 text-xs text-muted-foreground'>
+   293→          <CalendarDays className='size-3' />{formatDate(deal.expectedCloseDate)}
+   294→        </p>
+   295→      )}
+   296→    </div>
+   297→  )
+   298→}
+   299→
+   300→// ============================================
+   301→// Main Page
+   302→// ============================================
+   303→
+   304→export default function DealsListPage() {
+   305→  const router = useRouter()
+   306→
+   307→  const [deals, setDeals] = useState<Deal[]>([])
+   308→  const [page, setPage] = useState(1)
+   309→  const [totalPages, setTotalPages] = useState(1)
+   310→  const [total, setTotal] = useState(0)
+   311→  const [loading, setLoading] = useState(true)
+   312→  const [error, setError] = useState<string | null>(null)
+   313→
+   314→  const [search, setSearch] = useState('')
+   315→  const [debouncedSearch, setDebouncedSearch] = useState('')
+   316→  const [stage, setStage] = useState('')
+   317→  const [contactId, setContactId] = useState('')
+   318→  const [companyId, setCompanyId] = useState('')
+   319→  const [ownerId, setOwnerId] = useState('')
+   320→  const [sort, setSort] = useState('createdAt-desc')
+   321→
+   322→  const [viewMode, setViewMode] = useState<'table' | 'kanban'>('table')
+   323→  const [formOpen, setFormOpen] = useState(false)
+   324→
+   325→  // Filter options
+   326→  const [users, setUsers] = useState<UserOption[]>([])
+   327→  const [contacts, setContacts] = useState<ContactOption[]>([])
+   328→  const [companies, setCompanies] = useState<CompanyOption[]>([])
+   329→
+   330→  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+   331→  useEffect(() => {
+   332→    debounceRef.current = setTimeout(() => { setDebouncedSearch(search) }, 300)
+   333→    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
+   334→  }, [search])
+   335→
+   336→  // Fetch filter options
+   337→  useEffect(() => {
+   338→    const fetchOptions = async () => {
+   339→      try {
+   340→        const [usersRes, contactsRes, companiesRes] = await Promise.all([
+   341→          apiFetch<{ success: boolean; data: UserOption[] }>('/api/v1/admin/users?limit=100'),
+   342→          apiFetch<{ success: boolean; data: ContactOption[] }>('/api/v1/crm/contacts?limit=100'),
+   343→          apiFetch<{ success: boolean; data: CompanyOption[] }>('/api/v1/crm/companies?limit=100'),
+   344→        ])
+   345→        setUsers(usersRes.data ?? [])
+   346→        setContacts(contactsRes.data ?? [])
+   347→        setCompanies(companiesRes.data ?? [])
+   348→      } catch { /* silent */ }
+   349→    }
+   350→    fetchOptions()
+   351→  }, [])
+   352→
+   353→  // For Kanban view, fetch all deals (limit=200)
+   354→  const [allDeals, setAllDeals] = useState<Deal[]>([])
+   355→  const [loadingKanban, setLoadingKanban] = useState(false)
+   356→
+   357→  const fetchDeals = useCallback(async () => {
+   358→    try {
+   359→      setLoading(true)
+   360→      setError(null)
+   361→
+   362→      const [sortBy, sortOrder] = sort.split('-')
+   363→      const params = new URLSearchParams({ page: String(page), limit: '20', sortBy, sortOrder })
+   364→
+   365→      if (debouncedSearch) params.set('search', debouncedSearch)
+   366→      if (stage) params.set('stage', stage)
+   367→      if (contactId) params.set('contactId', contactId)
+   368→      if (companyId) params.set('companyId', companyId)
+   369→      if (ownerId) params.set('ownerId', ownerId)
+   370→
+   371→      const data = await apiFetch<PaginatedResponse>(`/api/v1/crm/deals?${params}`)
+   372→      setDeals(data.data)
+   373→      setTotalPages(data.pagination.totalPages)
+   374→      setTotal(data.pagination.total)
+   375→    } catch (err) {
+   376→      const message = err instanceof Error ? err.message : 'Failed to load deals'
+   377→      setError(message)
+   378→      toast.error(message)
+   379→    } finally {
+   380→      setLoading(false)
+   381→    }
+   382→  }, [page, debouncedSearch, stage, contactId, companyId, ownerId, sort])
+   383→
+   384→  const fetchAllDeals = useCallback(async () => {
+   385→    setLoadingKanban(true)
+   386→    try {
+   387→      const params = new URLSearchParams({ limit: '200' })
+   388→      if (debouncedSearch) params.set('search', debouncedSearch)
+   389→      if (contactId) params.set('contactId', contactId)
+   390→      if (companyId) params.set('companyId', companyId)
+   391→      if (ownerId) params.set('ownerId', ownerId)
+   392→      const data = await apiFetch<PaginatedResponse>(`/api/v1/crm/deals?${params}`)
+   393→      setAllDeals(data.data)
+   394→    } catch { /* silent */ } finally {
+   395→      setLoadingKanban(false)
+   396→    }
+   397→  }, [debouncedSearch, contactId, companyId, ownerId])
+   398→
+   399→  useEffect(() => { fetchDeals() }, [fetchDeals])
+   400→  useEffect(() => {
+   401→    if (viewMode === 'kanban') fetchAllDeals()
+   402→  }, [viewMode, fetchAllDeals])
+   403→
+   404→  useEffect(() => { setPage(1) }, [debouncedSearch, stage, contactId, companyId, ownerId, sort])
+   405→
+   406→  const renderPageNumbers = () => {
+   407→    const pages: number[] = []
+   408→    const maxVisible = 5
+   409→    let start = Math.max(1, page - Math.floor(maxVisible / 2))
+   410→    const end = Math.min(totalPages, start + maxVisible - 1)
+   411→    if (end - start + 1 < maxVisible) start = Math.max(1, end - maxVisible + 1)
+   412→    for (let i = start; i <= end; i++) pages.push(i)
+   413→    return pages
+   414→  }
+   415→
+   416→  const hasActiveFilters = search || stage || contactId || companyId || ownerId
+   417→  const clearFilters = () => {
+   418→    setSearch(''); setStage(''); setContactId(''); setCompanyId(''); setOwnerId(''); setSort('createdAt-desc')
+   419→  }
+   420→
+   421→  // Group deals by stage for Kanban
+   422→  const dealsByStage = DEAL_STAGES.map((s) => ({
+   423→    ...s,
+   424→    deals: allDeals.filter((d) => d.stage === s.key),
+   425→  }))
+   426→
+   427→  return (
+   428→    <div className='space-y-6'>
+   429→      {/* Header */}
+   430→      <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
+   431→        <div>
+   432→          <h1 className='text-2xl font-bold tracking-tight'>Deals</h1>
+   433→          <p className='text-muted-foreground mt-1'>Manage your sales pipeline</p>
+   434→        </div>
+   435→        <div className='flex items-center gap-2'>
+   436→          <Button
+   437→            variant={viewMode === 'table' ? 'default' : 'outline'}
+   438→            size='icon'
+   439→            onClick={() => setViewMode('table')}
+   440→            aria-label='Table view'
+   441→          >
+   442→            <List className='size-4' />
+   443→          </Button>
+   444→          <Button
+   445→            variant={viewMode === 'kanban' ? 'default' : 'outline'}
+   446→            size='icon'
+   447→            onClick={() => setViewMode('kanban')}
+   448→            aria-label='Kanban view'
+   449→          >
+   450→            <LayoutGrid className='size-4' />
+   451→          </Button>
+   452→          <Button className='min-w-[130px]' onClick={() => setFormOpen(true)}>
+   453→            <Plus className='size-4' /> Create Deal
+   454→          </Button>
+   455→        </div>
+   456→      </div>
+   457→
+   458→      {/* Search and Filters */}
+   459→      <div className='flex flex-col gap-3'>
+   460→        <div className='relative'>
+   461→          <Search className='absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground' />
+   462→          <Input
+   463→            placeholder='Search deals...'
+   464→            value={search}
+   465→            onChange={(e) => setSearch(e.target.value)}
+   466→            className='pl-9'
+   467→            aria-label='Search deals'
+   468→          />
+   469→        </div>
+   470→
+   471→        <div className='flex flex-wrap items-center gap-2'>
+   472→          <div className='flex items-center gap-1.5 text-sm text-muted-foreground'>
+   473→            <Filter className='size-4' />
+   474→            <span className='hidden sm:inline'>Filters:</span>
+   475→          </div>
+   476→
+   477→          <Select value={stage} onValueChange={(v) => setStage(v === '_all' ? '' : v)}>
+   478→            <SelectTrigger className='w-[140px]' aria-label='Filter by stage'>
+   479→              <SelectValue placeholder='All Stages' />
+   480→            </SelectTrigger>
+   481→            <SelectContent>
+   482→              <SelectItem value='_all'>All Stages</SelectItem>
+   483→              {DEAL_STAGES.map((s) => (
+   484→                <SelectItem key={s.key} value={s.key}>{s.label}</SelectItem>
+   485→              ))}
+   486→            </SelectContent>
+   487→          </Select>
+   488→
+   489→          <Select value={contactId} onValueChange={(v) => setContactId(v === '_all' ? '' : v)}>
+   490→            <SelectTrigger className='w-[150px]' aria-label='Filter by contact'>
+   491→              <SelectValue placeholder='All Contacts' />
+   492→            </SelectTrigger>
+   493→            <SelectContent>
+   494→              <SelectItem value='_all'>All Contacts</SelectItem>
+   495→              {contacts.map((c) => (
+   496→                <SelectItem key={c.id} value={c.id}>{[c.firstName, c.lastName].filter(Boolean).join(' ')}</SelectItem>
+   497→              ))}
+   498→            </SelectContent>
+   499→          </Select>
+   500→
+   501→          <Select value={companyId} onValueChange={(v) => setCompanyId(v === '_all' ? '' : v)}>
+   502→            <SelectTrigger className='w-[150px]' aria-label='Filter by company'>
+   503→              <SelectValue placeholder='All Companies' />
+   504→            </SelectTrigger>
+   505→            <SelectContent>
+   506→              <SelectItem value='_all'>All Companies</SelectItem>
+   507→              {companies.map((c) => (
+   508→                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+   509→              ))}
+   510→            </SelectContent>
+   511→          </Select>
+   512→
+   513→          {viewMode === 'table' && (
+   514→            <Select value={sort} onValueChange={setSort}>
+   515→              <SelectTrigger className='w-[160px]' aria-label='Sort by'>
+   516→                <SelectValue placeholder='Sort by' />
+   517→              </SelectTrigger>
+   518→              <SelectContent>
+   519→                {SORT_OPTIONS.map((opt) => (
+   520→                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+   521→                ))}
+   522→              </SelectContent>
+   523→            </Select>
+   524→          )}
+   525→
+   526→          {hasActiveFilters && (
+   527→            <Button variant='ghost' size='sm' onClick={clearFilters}>
+   528→              <RotateCcw className='size-3' /> Clear
+   529→            </Button>
+   530→          )}
+   531→        </div>
+   532→      </div>
+   533→
+   534→      {/* ============================================
+   535→          TABLE VIEW
+   536→      ============================================ */}
+   537→      {viewMode === 'table' && (
+   538→        <>
+   539→          {loading && <TableSkeleton />}
+   540→
+   541→          {error && !loading && (
+   542→            <Card className='border-destructive/50'>
+   543→              <CardContent className='flex items-center gap-3 py-6'>
+   544→                <AlertCircle className='size-5 shrink-0 text-destructive' />
+   545→                <p className='text-sm text-destructive'>{error}</p>
+   546→                <Button variant='outline' size='sm' className='ml-auto shrink-0' onClick={fetchDeals}>Retry</Button>
+   547→              </CardContent>
+   548→            </Card>
+   549→          )}
+   550→
+   551→          {!loading && !error && deals.length === 0 && (
+   552→            <Card>
+   553→              <CardContent className='flex flex-col items-center justify-center py-12 text-center'>
+   554→                <DollarSign className='mb-3 size-10 text-muted-foreground/50' />
+   555→                <p className='text-sm font-medium text-muted-foreground'>No deals yet</p>
+   556→                <p className='mt-1 text-xs text-muted-foreground'>
+   557→                  {hasActiveFilters ? 'Try adjusting your filters.' : 'Create your first deal to get started.'}
+   558→                </p>
+   559→                {!hasActiveFilters && (
+   560→                  <Button className='mt-4' size='sm' onClick={() => setFormOpen(true)}>
+   561→                    <Plus className='size-4' /> Create Deal
+   562→                  </Button>
+   563→                )}
+   564→              </CardContent>
+   565→            </Card>
+   566→          )}
+   567→
+   568→          {!loading && !error && deals.length > 0 && (
+   569→            <>
+   570→              <Card className='hidden md:block'>
+   571→                <CardContent className='p-0'>
+   572→                  <Table>
+   573→                    <TableHeader>
+   574→                      <TableRow>
+   575→                        <TableHead className='min-w-[180px]'>Title</TableHead>
+   576→                        <TableHead className='text-right'>Value</TableHead>
+   577→                        <TableHead>Stage</TableHead>
+   578→                        <TableHead>Contact</TableHead>
+   579→                        <TableHead>Company</TableHead>
+   580→                        <TableHead>Owner</TableHead>
+   581→                        <TableHead className='text-center'>Prob %</TableHead>
+   582→                        <TableHead>Expected Close</TableHead>
+   583→                        <TableHead>Created</TableHead>
+   584→                      </TableRow>
+   585→                    </TableHeader>
+   586→                    <TableBody>
+   587→                      {deals.map((deal) => (
+   588→                        <TableRow
+   589→                          key={deal.id}
+   590→                          className='cursor-pointer'
+   591→                          onClick={() => router.push(`/crm/deals/${deal.id}`)}
+   592→                        >
+   593→                          <TableCell className='font-medium'>{deal.title}</TableCell>
+   594→                          <TableCell className='text-right font-medium'>{formatCurrency(deal.value, deal.currency)}</TableCell>
+   595→                          <TableCell>{stageBadge(deal.stage)}</TableCell>
+   596→                          <TableCell className='max-w-[150px] truncate text-muted-foreground'>
+   597→                            {deal.contact ? [deal.contact.firstName, deal.contact.lastName].filter(Boolean).join(' ') : '-'}
+   598→                          </TableCell>
+   599→                          <TableCell className='max-w-[150px] truncate text-muted-foreground'>
+   600→                            {deal.company?.name || '-'}
+   601→                          </TableCell>
+   602→                          <TableCell className='text-muted-foreground'>{deal.owner?.name || '-'}</TableCell>
+   603→                          <TableCell className='text-center'>{deal.probability != null ? `${deal.probability}%` : '-'}</TableCell>
+   604→                          <TableCell className='whitespace-nowrap text-xs text-muted-foreground'>{formatDate(deal.expectedCloseDate ?? '')}</TableCell>
+   605→                          <TableCell className='whitespace-nowrap text-xs text-muted-foreground'>{formatDate(deal.createdAt)}</TableCell>
+   606→                        </TableRow>
+   607→                      ))}
+   608→                    </TableBody>
+   609→                  </Table>
+   610→                </CardContent>
+   611→              </Card>
+   612→
+   613→              {/* Mobile Cards */}
+   614→              <div className='flex flex-col gap-3 md:hidden'>
+   615→                {deals.map((deal) => (
+   616→                  <MobileDealCard key={deal.id} deal={deal} onClick={() => router.push(`/crm/deals/${deal.id}`)} />
+   617→                ))}
+   618→              </div>
+   619→
+   620→              {/* Pagination */}
+   621→              {totalPages > 1 && (
+   622→                <div className='flex flex-col items-center gap-2'>
+   623→                  <p className='text-xs text-muted-foreground'>Showing {deals.length} of {total} deals</p>
+   624→                  <Pagination>
+   625→                    <PaginationContent>
+   626→                      <PaginationItem>
+   627→                        <PaginationPrevious
+   628→                          href='#' onClick={(e) => { e.preventDefault(); if (page > 1) setPage(page - 1) }}
+   629→                          aria-disabled={page <= 1} className={page <= 1 ? 'pointer-events-none opacity-50' : ''}
+   630→                        />
+   631→                      </PaginationItem>
+   632→                      {renderPageNumbers().map((p) => (
+   633→                        <PaginationItem key={p}>
+   634→                          <PaginationLink href='#' isActive={p === page} onClick={(e) => { e.preventDefault(); setPage(p) }}>{p}</PaginationLink>
+   635→                        </PaginationItem>
+   636→                      ))}
+   637→                      <PaginationItem>
+   638→                        <PaginationNext
+   639→                          href='#' onClick={(e) => { e.preventDefault(); if (page < totalPages) setPage(page + 1) }}
+   640→                          aria-disabled={page >= totalPages} className={page >= totalPages ? 'pointer-events-none opacity-50' : ''}
+   641→                        />
+   642→                      </PaginationItem>
+   643→                    </PaginationContent>
+   644→                  </Pagination>
+   645→                </div>
+   646→              )}
+   647→            </>
+   648→          )}
+   649→        </>
+   650→      )}
+   651→
+   652→      {/* ============================================
+   653→          KANBAN VIEW
+   654→      ============================================ */}
+   655→      {viewMode === 'kanban' && (
+   656→        <>
+   657→          {loadingKanban && <KanbanSkeleton />}
+   658→
+   659→          {!loadingKanban && allDeals.length === 0 && (
+   660→            <Card>
+   661→              <CardContent className='flex flex-col items-center justify-center py-12 text-center'>
+   662→                <DollarSign className='mb-3 size-10 text-muted-foreground/50' />
+   663→                <p className='text-sm font-medium text-muted-foreground'>No deals yet</p>
+   664→                <p className='mt-1 text-xs text-muted-foreground'>
+   665→                  {hasActiveFilters ? 'Try adjusting your filters.' : 'Create your first deal to get started.'}
+   666→                </p>
+   667→                {!hasActiveFilters && (
+   668→                  <Button className='mt-4' size='sm' onClick={() => setFormOpen(true)}>
+   669→                    <Plus className='size-4' /> Create Deal
+   670→                  </Button>
+   671→                )}
+   672→              </CardContent>
+   673→            </Card>
+   674→          )}
+   675→
+   676→          {!loadingKanban && allDeals.length > 0 && (
+   677→            <div className='grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-6'>
+   678→              {dealsByStage.map((col) => (
+   679→                <div key={col.key} className='space-y-3'>
+   680→                  <div className='flex items-center justify-between'>
+   681→                    <div className='flex items-center gap-2'>
+   682→                      <div className='size-2 rounded-full' style={{ backgroundColor: col.color }} />
+   683→                      <span className='text-sm font-medium'>{col.label}</span>
+   684→                    </div>
+   685→                    <span className='text-xs text-muted-foreground'>{col.deals.length}</span>
+   686→                  </div>
+   687→                  <div className={`max-h-[60vh] space-y-2 overflow-y-auto border-t-2 pt-2 ${STAGE_BORDER_STYLES[col.key] || ''}`}>
+   688→                    {col.deals.length === 0 ? (
+   689→                      <p className='py-4 text-center text-xs text-muted-foreground'>No deals</p>
+   690→                    ) : (
+   691→                      col.deals.map((deal) => (
+   692→                        <KanbanDealCard key={deal.id} deal={deal} onClick={() => router.push(`/crm/deals/${deal.id}`)} />
+   693→                      ))
+   694→                    )}
+   695→                  </div>
+   696→                </div>
+   697→              ))}
+   698→            </div>
+   699→          )}
+   700→        </>
+   701→      )}
+   702→
+   703→      <DealFormDialog open={formOpen} onOpenChange={setFormOpen} onSuccess={() => { fetchDeals(); fetchAllDeals() }} />
+   704→    </div>
+   705→  )
+   706→}
+   707→

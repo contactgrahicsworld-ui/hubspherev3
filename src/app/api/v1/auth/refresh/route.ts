@@ -8,12 +8,16 @@ import { setAuthCookies } from '@/lib/api-auth';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const parsed = z.object({ refreshToken: z.string().optional() }).safeParse(body);
-    if (!parsed.success) {
-      throw new AuthenticationError('Invalid request body');
+    let incomingToken: string | undefined;
+    try {
+      const body = await request.json();
+      const parsed = z.object({ refreshToken: z.string().optional() }).safeParse(body);
+      if (parsed.success) {
+        incomingToken = parsed.data.refreshToken;
+      }
+    } catch {
+      // No body or invalid JSON — will try cookie-only refresh
     }
-    const incomingToken = parsed.data.refreshToken;
 
     // Accept token from body or cookie
     const tokenValue = incomingToken || request.cookies.get('hs-refresh-token')?.value;

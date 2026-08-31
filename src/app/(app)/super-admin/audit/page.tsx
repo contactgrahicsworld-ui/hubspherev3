@@ -54,28 +54,39 @@ interface PaginatedResponse {
 
 function TableSkeleton() {
   return (
-    <Card>
-      <CardContent className='p-0'>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {Array.from({ length: 5 }).map((_, i) => (
-                <TableHead key={i}><Skeleton className='h-4 w-24' /></TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {Array.from({ length: 5 }).map((_, i) => (
-              <TableRow key={i}>
-                {Array.from({ length: 5 }).map((_, j) => (
-                  <TableCell key={j}><Skeleton className='h-4 w-full' /></TableCell>
+    <>
+      <div className='flex flex-col gap-3 md:hidden'>
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Card key={i}><CardContent className='p-4 space-y-3'>
+            <Skeleton className='h-4 w-28' />
+            <Skeleton className='h-5 w-20' />
+            <Skeleton className='h-3 w-40' />
+          </CardContent></Card>
+        ))}
+      </div>
+      <Card className='hidden md:block'>
+        <CardContent className='p-0'>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <TableHead key={i}><Skeleton className='h-4 w-24' /></TableHead>
                 ))}
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
+            </TableHeader>
+            <TableBody>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <TableRow key={i}>
+                  {Array.from({ length: 5 }).map((_, j) => (
+                    <TableCell key={j}><Skeleton className='h-4 w-full' /></TableCell>
+                  ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </>
   )
 }
 
@@ -212,7 +223,39 @@ export default function AuditLogs() {
 
       {!loading && !error && logs.length > 0 && (
         <>
-          <Card>
+          {/* Mobile card view */}
+          <div className='flex flex-col gap-3 md:hidden'>
+            {logs.map((log) => (
+              <Card key={log.id} className='overflow-hidden'>
+                <CardContent className='p-4 space-y-2'>
+                  <div className='flex items-start justify-between gap-2'>
+                    <div className='min-w-0'>
+                      <p className='font-medium text-sm truncate'>
+                        {log.actorName || log.actorEmail || 'System'}
+                      </p>
+                      {log.actorEmail && log.actorName && (
+                        <p className='text-xs text-muted-foreground truncate'>{log.actorEmail}</p>
+                      )}
+                    </div>
+                    <Badge variant={actionVariant(log.action)} className='font-mono text-[10px] px-1.5 shrink-0'>
+                      {log.action}
+                    </Badge>
+                  </div>
+                  <div className='text-xs text-muted-foreground space-y-0.5'>
+                    {log.targetType && (
+                      <p>{log.targetType}{log.targetId ? `:${log.targetId.slice(0, 8)}` : ''}</p>
+                    )}
+                    <div className='flex items-center justify-between'>
+                      <span className='font-mono'>{log.ipAddress || '-'}</span>
+                      <span>{formatTimestamp(log.createdAt)}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          {/* Desktop table view */}
+          <Card className='hidden md:block'>
             <CardContent className='p-0'>
               <Table>
                 <TableHeader>
