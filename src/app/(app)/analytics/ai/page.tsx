@@ -269,7 +269,37 @@ export default function AIUsageAnalyticsPage() {
           </CardHeader>
           <CardContent>
             {byAgent.length > 0 ? (
-              <div className='max-h-96 overflow-y-auto'>
+              <>
+                {/* Mobile card view */}
+                <div className='space-y-3 md:hidden'>
+                  {byAgent.map((agent) => (
+                    <div key={agent.agentName} className='rounded-lg border p-3 space-y-2'>
+                      <p className='font-medium text-sm'>{agent.agentName}</p>
+                      <div className='flex items-center justify-between text-sm'>
+                        <span className='text-muted-foreground'>Requests</span>
+                        <span className='font-medium'>{agent.requests}</span>
+                      </div>
+                      <div className='flex gap-3 text-sm'>
+                        <div className='flex items-center gap-1.5'>
+                          <Badge className='bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-xs'>
+                            {agent.successful} success
+                          </Badge>
+                        </div>
+                        <div className='flex items-center gap-1.5'>
+                          {agent.failed > 0 ? (
+                            <Badge className='bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 text-xs'>
+                              {agent.failed} failed
+                            </Badge>
+                          ) : (
+                            <span className='text-xs text-muted-foreground'>0 failed</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {/* Desktop table view */}
+                <div className='hidden md:block max-h-96 overflow-y-auto'>
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -302,7 +332,7 @@ export default function AIUsageAnalyticsPage() {
                     ))}
                   </TableBody>
                 </Table>
-              </div>
+              </div></>
             ) : (
               <div className='flex flex-col items-center justify-center py-8 text-center'>
                 <Bot className='mb-3 size-10 text-muted-foreground/40' />
@@ -320,7 +350,31 @@ export default function AIUsageAnalyticsPage() {
           </CardHeader>
           <CardContent>
             {byModel.length > 0 ? (
-              <div className='max-h-96 overflow-y-auto'>
+              <>
+                {/* Mobile card view */}
+                <div className='space-y-3 md:hidden'>
+                  {byModel.map((model) => (
+                    <div key={model.modelName} className='rounded-lg border p-3 space-y-2'>
+                      <p className='font-medium text-sm'>{model.modelName}</p>
+                      <div className='flex items-center justify-between text-sm'>
+                        <span className='text-muted-foreground'>Requests</span>
+                        <span className='font-medium'>{model.requests}</span>
+                      </div>
+                      <div className='flex items-center justify-between text-sm'>
+                        <span className='text-muted-foreground'>Success</span>
+                        <Badge className='bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-xs'>
+                          {model.successful}
+                        </Badge>
+                      </div>
+                      <div className='flex items-center justify-between text-sm'>
+                        <span className='text-muted-foreground'>Avg Latency</span>
+                        <span className='font-medium'>{formatLatency(model.avgLatency)}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {/* Desktop table view */}
+                <div className='hidden md:block max-h-96 overflow-y-auto'>
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -345,7 +399,7 @@ export default function AIUsageAnalyticsPage() {
                     ))}
                   </TableBody>
                 </Table>
-              </div>
+              </div></>
             ) : (
               <div className='flex flex-col items-center justify-center py-8 text-center'>
                 <Brain className='mb-3 size-10 text-muted-foreground/40' />

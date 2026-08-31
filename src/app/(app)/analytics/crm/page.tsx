@@ -430,7 +430,42 @@ export default function CRMAnalyticsPage() {
         </CardHeader>
         <CardContent>
           {sources.length > 0 ? (
-            <div className='max-h-96 overflow-y-auto'>
+            <>
+              {/* Mobile card view */}
+              <div className='space-y-3 md:hidden'>
+                {sources.map((s) => (
+                  <div key={s.source} className='rounded-lg border p-3 space-y-2'>
+                    <p className='font-medium text-sm'>{s.source}</p>
+                    <div className='grid grid-cols-3 gap-2 text-sm'>
+                      <div>
+                        <p className='text-xs text-muted-foreground'>Leads</p>
+                        <p className='font-medium'>{s.leads}</p>
+                      </div>
+                      <div>
+                        <p className='text-xs text-muted-foreground'>Converted</p>
+                        <p className='font-medium'>{s.converted}</p>
+                      </div>
+                      <div>
+                        <p className='text-xs text-muted-foreground'>Conversion</p>
+                        <Badge
+                          variant='outline'
+                          className={
+                            s.conversionRate >= 30
+                              ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-xs'
+                              : s.conversionRate >= 15
+                                ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-xs'
+                                : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 text-xs'
+                          }
+                        >
+                          {s.conversionRate}%
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* Desktop table view */}
+              <div className='hidden md:block max-h-96 overflow-y-auto'>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -464,7 +499,8 @@ export default function CRMAnalyticsPage() {
                   ))}
                 </TableBody>
               </Table>
-            </div>
+              </div>
+            </>
           ) : (
             <div className='flex flex-col items-center justify-center py-8 text-center'>
               <BarChart3 className='mb-3 size-10 text-muted-foreground/40' />

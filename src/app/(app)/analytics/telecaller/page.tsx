@@ -280,7 +280,41 @@ export default function TelecallerAnalyticsPage() {
         </CardHeader>
         <CardContent>
           {agents.length > 0 ? (
-            <div className='max-h-96 overflow-y-auto'>
+            <>
+              {/* Mobile card view */}
+              <div className='space-y-3 md:hidden'>
+                {agents.map((agent) => (
+                  <div key={agent.agentName} className='rounded-lg border p-3 space-y-2'>
+                    <p className='font-medium text-sm'>{agent.agentName}</p>
+                    <div className='grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm'>
+                      <div className='flex items-center justify-between'>
+                        <span className='text-muted-foreground'>Total</span>
+                        <span className='font-medium'>{agent.totalCalls}</span>
+                      </div>
+                      <div className='flex items-center justify-between'>
+                        <span className='text-muted-foreground'>Answered</span>
+                        <span className='font-medium text-emerald-600 dark:text-emerald-400'>{agent.answeredCalls}</span>
+                      </div>
+                      <div className='flex items-center justify-between'>
+                        <span className='text-muted-foreground'>Missed</span>
+                        {agent.missedCalls > 0 ? (
+                          <Badge className='bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 text-xs'>
+                            {agent.missedCalls}
+                          </Badge>
+                        ) : (
+                          <span className='text-xs text-muted-foreground'>0</span>
+                        )}
+                      </div>
+                      <div className='flex items-center justify-between'>
+                        <span className='text-muted-foreground'>Avg Duration</span>
+                        <span className='font-medium'>{formatDuration(agent.avgDuration)}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* Desktop table view */}
+              <div className='hidden md:block max-h-96 overflow-y-auto'>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -311,7 +345,8 @@ export default function TelecallerAnalyticsPage() {
                   ))}
                 </TableBody>
               </Table>
-            </div>
+              </div>
+            </>
           ) : (
             <div className='flex flex-col items-center justify-center py-8 text-center'>
               <Phone className='mb-3 size-10 text-muted-foreground/40' />
