@@ -60,6 +60,10 @@ export const PERMISSION_MODULES = [
   'subscriptions',
   'features',
   'settings',
+  'activities',
+  'dashboard',
+  'notes',
+  'tags',
 ] as const;
 
 export type PermissionModule = (typeof PERMISSION_MODULES)[number];
@@ -76,6 +80,10 @@ export const PERMISSION_ACTIONS = [
   'manage',
   'export',
   'import',
+  'execute',
+  'approve',
+  'reject',
+  'update',
 ] as const;
 
 export type PermissionAction = (typeof PERMISSION_ACTIONS)[number];
