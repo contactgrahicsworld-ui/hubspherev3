@@ -43,6 +43,7 @@ import {
   PhoneCall,
   Clock,
 } from 'lucide-react'
+import { TableSkeleton } from '@/components/skeletons'
 
 // ============================================
 // Types
@@ -170,36 +171,6 @@ function DirectionIcon({ direction }: { direction: string | null }) {
   return <Phone className='size-4 text-muted-foreground' />
 }
 
-// ============================================
-// Table Skeleton
-// ============================================
-
-function TableSkeleton() {
-  return (
-    <Card>
-      <CardContent className='p-0'>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {Array.from({ length: 9 }).map((_, i) => (
-                <TableHead key={i}><Skeleton className='h-4 w-20' /></TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {Array.from({ length: 8 }).map((_, i) => (
-              <TableRow key={i}>
-                {Array.from({ length: 9 }).map((_, j) => (
-                  <TableCell key={j}><Skeleton className='h-4 w-full' /></TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
-  )
-}
 
 // ============================================
 // Mobile Card
@@ -418,7 +389,7 @@ export default function CallsPage() {
       </div>
 
       {/* Loading State */}
-      {loading && <TableSkeleton />}
+      {loading && <TableSkeleton columns={9} />}
 
       {/* Error State */}
       {error && !loading && (

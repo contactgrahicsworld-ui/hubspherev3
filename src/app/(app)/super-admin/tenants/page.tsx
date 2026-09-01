@@ -35,6 +35,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { Plus, Eye, Pencil, Building2, AlertCircle, Globe, Hash } from 'lucide-react'
+import { TableSkeleton } from '@/components/skeletons'
 
 interface Tenant {
   id: string
@@ -55,49 +56,6 @@ interface PaginatedResponse {
     total: number
     totalPages: number
   }
-}
-
-function TableSkeleton() {
-  return (
-    <div className='space-y-4'>
-      <div className='flex justify-end'>
-        <Skeleton className='h-9 w-32' />
-      </div>
-      <Card>
-        <CardContent className='p-0'>
-          <div className='hidden md:block'>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead><Skeleton className='h-4 w-20' /></TableHead>
-                  <TableHead><Skeleton className='h-4 w-20' /></TableHead>
-                  <TableHead><Skeleton className='h-4 w-16' /></TableHead>
-                  <TableHead><Skeleton className='h-4 w-16' /></TableHead>
-                  <TableHead><Skeleton className='h-4 w-12' /></TableHead>
-                  <TableHead><Skeleton className='h-4 w-24' /></TableHead>
-                  <TableHead><Skeleton className='h-4 w-20' /></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <TableRow key={i}>
-                    {Array.from({ length: 7 }).map((_, j) => (
-                      <TableCell key={j}><Skeleton className='h-4 w-full' /></TableCell>
-                    ))}
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-          <div className='block md:hidden space-y-3 p-4'>
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className='h-24 w-full rounded-lg' />
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  )
 }
 
 function statusVariant(status: string) {
@@ -256,7 +214,7 @@ export default function TenantManagement() {
         </Dialog>
       </div>
 
-      {loading && <TableSkeleton />}
+      {loading && <TableSkeleton columns={5} />}
 
       {error && !loading && (
         <Card className='border-destructive/50'>

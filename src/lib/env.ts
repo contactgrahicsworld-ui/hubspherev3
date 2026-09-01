@@ -79,13 +79,34 @@ function loadEnv(): EnvironmentConfig {
   if (dbUrl && !dbUrl.startsWith('postgresql://') && !dbUrl.startsWith('postgres://')) {
     if (isDev || isBuildTime) {
       console.warn(
-        `[HubSphere] DATABASE_URL should be PostgreSQL (postgresql://...). Got: ${dbUrl.substring(0, 15)}...`
+        `[HubSphere] DATABASE_URL should be PostgreSQL (postgresql://...). Got: ${dbUrl.substring(0, 12)}...`
       );
     } else {
       throw new Error(
-        'DATABASE_URL must be a PostgreSQL connection string. '
-        + `Got: ${dbUrl.substring(0, 30)}...`
+        'DATABASE_URL must be a PostgreSQL connection string.'
       );
+    }
+  }
+
+  // Validate JWT secret minimum strength
+  const jwtSecret = process.env.JWT_SECRET || '';
+  if (jwtSecret.length > 0 && jwtSecret.length < 32) {
+    const msg = 'JWT_SECRET must be at least 32 characters for HMAC-SHA256 security.';
+    if (isDev || isBuildTime) {
+      console.warn(`[HubSphere] ${msg} Current length: ${jwtSecret.length}. Set a stronger secret.`);
+    } else {
+      throw new Error(msg);
+    }
+  }
+
+  // Validate REFRESH_TOKEN_SECRET minimum strength
+  const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET || '';
+  if (refreshTokenSecret.length > 0 && refreshTokenSecret.length < 32) {
+    const msg = 'REFRESH_TOKEN_SECRET must be at least 32 characters.';
+    if (isDev || isBuildTime) {
+      console.warn(`[HubSphere] ${msg} Current length: ${refreshTokenSecret.length}. Set a stronger secret.`);
+    } else {
+      throw new Error(msg);
     }
   }
 

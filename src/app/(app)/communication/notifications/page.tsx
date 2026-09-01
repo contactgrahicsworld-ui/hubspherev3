@@ -8,6 +8,16 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -232,6 +242,8 @@ export default function NotificationsPage() {
   const [dbUnavailable, setDbUnavailable] = useState(false)
   const [filter, setFilter] = useState<'all' | 'unread'>('all')
   const [markingAll, setMarkingAll] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -274,6 +286,18 @@ export default function NotificationsPage() {
       const msg = err instanceof Error ? err.message : 'Failed to mark as read'
       toast.error(msg)
     }
+  }
+
+  const requestDelete = (id: string) => {
+    setPendingDeleteId(id)
+    setShowDeleteConfirm(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!pendingDeleteId) return
+    setShowDeleteConfirm(false)
+    await deleteNotification(pendingDeleteId)
+    setPendingDeleteId(null)
   }
 
   const deleteNotification = async (id: string) => {
@@ -408,13 +432,31 @@ export default function NotificationsPage() {
                   key={notif.id}
                   notification={notif}
                   onMarkRead={markAsRead}
-                  onDelete={deleteNotification}
+                  onDelete={requestDelete}
                 />
               ))}
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Notification</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className='bg-destructive text-destructive-foreground'>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Count */}
       {!loading && notifications.length > 0 && (

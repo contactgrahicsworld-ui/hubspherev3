@@ -2,12 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db } from '@/lib/db';
 import { generateAccessToken, generateRefreshToken, getRefreshTokenExpiry } from '@/lib/auth';
-import { handleApiError, AuthenticationError } from '@/lib/errors';
+import { handleApiError, AuthenticationError, RateLimitError } from '@/lib/errors';
 import { success } from '@/lib/api-response';
 import { setAuthCookies } from '@/lib/api-auth';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { logger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit: 30 refresh attempts per 15 minutes per IP
+    const { limited, retryAfterMs } = await rateLimit(getClientIp(request) + ':refresh', 30, 15 * 60 * 1000);
+    if (limited) {
+      throw new RateLimitError('Too many refresh attempts. Please try again later.', Math.ceil(retryAfterMs / 1000));
+    }
+
     let incomingToken: string | undefined;
     try {
       const body = await request.json();
@@ -33,14 +41,17 @@ export async function POST(request: NextRequest) {
     });
 
     if (!storedToken) {
+      try { logger.security('token_refresh_failure', { module: 'auth', reason: 'token_not_found' }); } catch {}
       throw new AuthenticationError('Invalid refresh token');
     }
 
     if (storedToken.revokedAt) {
+      try { logger.security('token_refresh_failure', { module: 'auth', userId: storedToken.userId, reason: 'token_revoked' }); } catch {}
       throw new AuthenticationError('Refresh token has been revoked');
     }
 
     if (storedToken.expiresAt < new Date()) {
+      try { logger.security('token_refresh_failure', { module: 'auth', userId: storedToken.userId, reason: 'token_expired' }); } catch {}
       throw new AuthenticationError('Refresh token has expired');
     }
 
@@ -97,6 +108,7 @@ export async function POST(request: NextRequest) {
     );
 
     setAuthCookies(response, accessToken, newRefreshToken);
+    try { logger.info('Token refreshed', { module: 'auth', userId: storedToken.user.id, tenantId }); } catch {}
     return response;
   } catch (error) {
     const { statusCode, body } = handleApiError(error);

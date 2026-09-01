@@ -138,6 +138,7 @@ export async function GET(request: NextRequest) {
         topTriggers,
         topActions,
       }),
+      { headers: { 'Cache-Control': 'private, no-store' } },
     );
   } catch (error) {
     if (isDbError(error)) return dbUnavailableResponse();

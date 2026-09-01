@@ -70,6 +70,7 @@ import {
   Trash2,
   Archive,
 } from 'lucide-react'
+import { TableSkeleton } from '@/components/skeletons'
 
 // ============================================
 // Types
@@ -160,36 +161,6 @@ function employeeFullName(emp: Employee) {
   return [emp.firstName, emp.lastName].filter(Boolean).join(' ') || '-'
 }
 
-// ============================================
-// Sub-Components
-// ============================================
-
-function TableSkeleton() {
-  return (
-    <Card>
-      <CardContent className='p-0'>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {Array.from({ length: 6 }).map((_, i) => (
-                <TableHead key={i}><Skeleton className='h-4 w-24' /></TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {Array.from({ length: 5 }).map((_, i) => (
-              <TableRow key={i}>
-                {Array.from({ length: 6 }).map((_, j) => (
-                  <TableCell key={j}><Skeleton className='h-4 w-full' /></TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
-  )
-}
 
 function MobileEmployeeCard({ emp }: { emp: Employee }) {
   return (
@@ -519,7 +490,7 @@ export default function EmployeesPage() {
       </div>
 
       {/* Loading */}
-      {loading && <TableSkeleton />}
+      {loading && <TableSkeleton columns={6} />}
 
       {/* Error */}
       {error && !loading && (

@@ -19,6 +19,7 @@ import {
   Radio,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { MetricCardSkeleton, ProviderCardSkeleton } from '@/components/skeletons'
 
 // ============================================
 // Types
@@ -123,25 +124,6 @@ function formatTime(dateStr: string | null): string {
   }
 }
 
-// ============================================
-// Sub-Components
-// ============================================
-
-function MetricCardSkeleton() {
-  return (
-    <Card>
-      <CardContent className='p-4'>
-        <div className='flex items-center gap-3'>
-          <Skeleton className='size-9 rounded-lg' />
-          <div className='flex-1 space-y-1'>
-            <Skeleton className='h-3 w-24' />
-            <Skeleton className='h-6 w-16' />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
 
 function MetricCardDisplay({ card }: { card: MetricCard }) {
   const variantClasses: Record<string, string> = {
@@ -184,25 +166,6 @@ function ConversationRowSkeleton() {
       </div>
       <Skeleton className='h-3 w-16' />
     </div>
-  )
-}
-
-function ProviderCardSkeleton() {
-  return (
-    <Card>
-      <CardContent className='p-4'>
-        <div className='flex items-center justify-between'>
-          <div className='flex items-center gap-3'>
-            <Skeleton className='size-8 rounded-lg' />
-            <div className='space-y-1.5'>
-              <Skeleton className='h-4 w-28' />
-              <Skeleton className='h-3 w-20' />
-            </div>
-          </div>
-          <Skeleton className='h-6 w-28' />
-        </div>
-      </CardContent>
-    </Card>
   )
 }
 

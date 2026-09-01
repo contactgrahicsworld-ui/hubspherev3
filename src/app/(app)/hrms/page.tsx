@@ -18,6 +18,7 @@ import {
   AlertCircle,
   Briefcase,
 } from 'lucide-react'
+import { MetricCardSkeleton } from '@/components/skeletons'
 
 // ============================================
 // Types
@@ -64,25 +65,6 @@ const PAYROLL_STATUS_CONFIG: Record<string, { label: string; color: string }> = 
   CANCELLED: { label: 'Cancelled', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
 }
 
-// ============================================
-// Sub-Components
-// ============================================
-
-function MetricCardSkeleton() {
-  return (
-    <Card>
-      <CardContent className='p-4'>
-        <div className='flex items-center gap-3'>
-          <Skeleton className='size-9 rounded-lg' />
-          <div className='flex-1 space-y-1'>
-            <Skeleton className='h-3 w-24' />
-            <Skeleton className='h-6 w-16' />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
 
 function MetricCardDisplay({ card }: { card: MetricCard }) {
   const variantClasses: Record<string, string> = {

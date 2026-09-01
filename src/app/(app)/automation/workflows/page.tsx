@@ -54,6 +54,7 @@ import {
   Pause,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { TableSkeleton } from '@/components/skeletons'
 
 // ============================================
 // Types
@@ -139,36 +140,6 @@ function formatDate(dateStr: string) {
   }
 }
 
-// ============================================
-// Sub-Components
-// ============================================
-
-function TableSkeleton() {
-  return (
-    <Card>
-      <CardContent className='p-0'>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {Array.from({ length: 6 }).map((_, i) => (
-                <TableHead key={i}><Skeleton className='h-4 w-20' /></TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {Array.from({ length: 6 }).map((_, i) => (
-              <TableRow key={i}>
-                {Array.from({ length: 6 }).map((_, j) => (
-                  <TableCell key={j}><Skeleton className='h-4 w-full' /></TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
-  )
-}
 
 function MobileWorkflowCard({ wf, onClick, onToggle }: { wf: Workflow; onClick: () => void; onToggle: () => void }) {
   return (
@@ -520,7 +491,7 @@ export default function WorkflowsListPage() {
       </div>
 
       {/* Loading State */}
-      {loading && <TableSkeleton />}
+      {loading && <TableSkeleton columns={6} />}
 
       {/* Error State */}
       {error && !loading && (

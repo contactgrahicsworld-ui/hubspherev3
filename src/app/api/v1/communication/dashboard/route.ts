@@ -179,6 +179,7 @@ export async function GET(request: NextRequest) {
           sender: m.sender,
         })),
       }),
+      { headers: { 'Cache-Control': 'private, no-store' } },
     );
   } catch (error) {
     if (

@@ -8,6 +8,7 @@ import { createAuditLog } from '@/lib/audit';
 import { setAuthCookies } from '@/lib/api-auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { verify2FADuringLogin, requires2FA } from '@/lib/two-factor';
+import { logger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {
@@ -49,17 +50,20 @@ export async function POST(request: NextRequest) {
     });
 
     if (!user) {
+      try { logger.security('auth_failure', { module: 'auth', email, reason: 'user_not_found' }); } catch {}
       throw new AuthenticationError('Invalid email or password');
     }
 
     // Check user status
     if (user.status === 'SUSPENDED') {
+      try { logger.security('auth_failure', { module: 'auth', email, userId: user.id, reason: 'account_suspended' }); } catch {}
       throw new AuthenticationError('Account has been suspended');
     }
 
     // Verify password
     const validPassword = await verifyPassword(password, user.passwordHash);
     if (!validPassword) {
+      try { logger.security('auth_failure', { module: 'auth', email, userId: user.id, reason: 'invalid_password' }); } catch {}
       throw new AuthenticationError('Invalid email or password');
     }
 
@@ -139,6 +143,7 @@ export async function POST(request: NextRequest) {
     );
 
     setAuthCookies(response, accessToken, refreshToken);
+    try { logger.info('User login', { module: 'auth', userId: user.id, email: user.email, tenantId, roleCode }); } catch {}
     return response;
   } catch (error) {
     const { statusCode, body } = handleApiError(error);

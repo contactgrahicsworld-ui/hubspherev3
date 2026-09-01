@@ -1,0 +1,745 @@
+     1→'use client'
+     2→
+     3→import { useEffect, useState, useCallback } from 'react'
+     4→import { apiFetch } from '@/lib/auth-client'
+     5→import { toast } from 'sonner'
+     6→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+     7→import { Skeleton } from '@/components/ui/skeleton'
+     8→import { Badge } from '@/components/ui/badge'
+     9→import { Button } from '@/components/ui/button'
+    10→import { Input } from '@/components/ui/input'
+    11→import {
+    12→  CalendarCheck,
+    13→  CalendarX,
+    14→  Clock,
+    15→  Users,
+    16→  MapPin,
+    17→  Receipt,
+    18→  Banknote,
+    19→  AlertTriangle,
+    20→  Filter,
+    21→  RefreshCw,
+    22→  Building2,
+    23→  UserCheck,
+    24→} from 'lucide-react'
+    25→import { MetricCardSkeleton } from '@/components/skeletons'
+    26→
+    27→// ============================================
+    28→// Types
+    29→// ============================================
+    30→
+    31→interface AttendanceTrends {
+    32→  present: number
+    33→  absent: number
+    34→  late: number
+    35→  halfDay: number
+    36→  onLeave: number
+    37→  holiday: number
+    38→  weekOff: number
+    39→  total: number
+    40→}
+    41→
+    42→interface LeaveTrends {
+    43→  approved: number
+    44→  rejected: number
+    45→  pending: number
+    46→  cancelled: number
+    47→  total: number
+    48→}
+    49→
+    50→interface DepartmentItem {
+    51→  departmentId: string | null
+    52→  departmentName: string
+    53→  employeeCount: number
+    54→}
+    55→
+    56→interface EmployeeStatusItem {
+    57→  status: string
+    58→  count: number
+    59→}
+    60→
+    61→interface ExpenseStatusDetail {
+    62→  count: number
+    63→  amount: number
+    64→}
+    65→
+    66→interface ExpenseTrends {
+    67→  totalAmount: number
+    68→  totalCount: number
+    69→  approved: ExpenseStatusDetail
+    70→  pending: ExpenseStatusDetail
+    71→  rejected: ExpenseStatusDetail
+    72→  paid: ExpenseStatusDetail
+    73→}
+    74→
+    75→interface PayrollStatus {
+    76→  draft: number
+    77→  processing: number
+    78→  finalized: number
+    79→  paid: number
+    80→  cancelled: number
+    81→  total: number
+    82→}
+    83→
+    84→interface HRAnalyticsData {
+    85→  attendanceTrends: AttendanceTrends
+    86→  leaveTrends: LeaveTrends
+    87→  departmentDistribution: DepartmentItem[]
+    88→  employeeStatus: EmployeeStatusItem[]
+    89→  fieldVisitActivity: Record<string, number>
+    90→  expenseTrends: ExpenseTrends
+    91→  payrollStatus: PayrollStatus
+    92→}
+    93→
+    94→// ============================================
+    95→// Constants
+    96→// ============================================
+    97→
+    98→const STATUS_LABELS: Record<string, string> = {
+    99→  ACTIVE: 'Active',
+   100→  INACTIVE: 'Inactive',
+   101→  ON_LEAVE: 'On Leave',
+   102→  RESIGNED: 'Resigned',
+   103→  TERMINATED: 'Terminated',
+   104→}
+   105→
+   106→const STATUS_COLORS: Record<string, string> = {
+   107→  ACTIVE: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+   108→  INACTIVE: 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400',
+   109→  ON_LEAVE: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+   110→  RESIGNED: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+   111→  TERMINATED: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+   112→}
+   113→
+   114→const FIELD_VISIT_LABELS: Record<string, string> = {
+   115→  PLANNED: 'Planned',
+   116→  STARTED: 'Started',
+   117→  COMPLETED: 'Completed',
+   118→  MISSED: 'Missed',
+   119→  CANCELLED: 'Cancelled',
+   120→}
+   121→
+   122→const FIELD_VISIT_COLORS: Record<string, string> = {
+   123→  PLANNED: 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400',
+   124→  STARTED: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+   125→  COMPLETED: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+   126→  MISSED: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+   127→  CANCELLED: 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400',
+   128→}
+   129→
+   130→// ============================================
+   131→// Helpers
+   132→// ============================================
+   133→
+   134→function formatCurrency(val: number): string {
+   135→  if (val >= 1_000_000) return `$${(val / 1_000_000).toFixed(1)}M`
+   136→  if (val >= 1_000) return `$${(val / 1_000).toFixed(1)}K`
+   137→  return `$${val.toLocaleString()}`
+   138→}
+   139→
+   140→
+   141→function KPICard({
+   142→  label,
+   143→  value,
+   144→  icon,
+   145→  sub,
+   146→  iconBg,
+   147→}: {
+   148→  label: string
+   149→  value: string | number
+   150→  icon: React.ReactNode
+   151→  sub?: string
+   152→  iconBg?: string
+   153→}) {
+   154→  return (
+   155→    <Card>
+   156→      <CardContent className='p-4'>
+   157→        <div className='flex items-center gap-3'>
+   158→          <div
+   159→            className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${iconBg ?? 'bg-primary/10 text-primary'}`}
+   160→          >
+   161→            {icon}
+   162→          </div>
+   163→          <div className='min-w-0 flex-1'>
+   164→            <p className='truncate text-xs text-muted-foreground'>{label}</p>
+   165→            <p className='text-xl font-semibold leading-tight'>{value}</p>
+   166→            {sub && (
+   167→              <p className='truncate text-[10px] text-muted-foreground'>{sub}</p>
+   168→            )}
+   169→          </div>
+   170→        </div>
+   171→      </CardContent>
+   172→    </Card>
+   173→  )
+   174→}
+   175→
+   176→function StatBlock({ label, value }: { label: string; value: number | string }) {
+   177→  return (
+   178→    <div className='rounded-lg border p-3 text-center'>
+   179→      <p className='text-lg font-semibold'>{value}</p>
+   180→      <p className='text-[10px] text-muted-foreground'>{label}</p>
+   181→    </div>
+   182→  )
+   183→}
+   184→
+   185→// ============================================
+   186→// Main Page
+   187→// ============================================
+   188→
+   189→export default function HRAnalyticsPage() {
+   190→  const [data, setData] = useState<HRAnalyticsData | null>(null)
+   191→  const [loading, setLoading] = useState(true)
+   192→  const [error, setError] = useState<string | null>(null)
+   193→  const [dateFrom, setDateFrom] = useState('')
+   194→  const [dateTo, setDateTo] = useState('')
+   195→
+   196→  const fetchAnalytics = useCallback(async () => {
+   197→    try {
+   198→      setLoading(true)
+   199→      setError(null)
+   200→      const params = new URLSearchParams()
+   201→      if (dateFrom) params.set('dateFrom', dateFrom)
+   202→      if (dateTo) params.set('dateTo', dateTo)
+   203→      const qs = params.toString()
+   204→      const res = await apiFetch<{ success: boolean; data: HRAnalyticsData }>(
+   205→        `/api/v1/analytics/hr${qs ? `?${qs}` : ''}`,
+   206→      )
+   207→      setData(res.data)
+   208→    } catch (err) {
+   209→      const message = err instanceof Error ? err.message : 'Failed to load HR analytics'
+   210→      setError(message)
+   211→      toast.error(message)
+   212→    } finally {
+   213→      setLoading(false)
+   214→    }
+   215→  }, [dateFrom, dateTo])
+   216→
+   217→  useEffect(() => {
+   218→    fetchAnalytics()
+   219→  }, [fetchAnalytics])
+   220→
+   221→  // ---- Loading State ----
+   222→  if (loading) {
+   223→    return (
+   224→      <div className='space-y-6'>
+   225→        <div>
+   226→          <Skeleton className='h-8 w-36' />
+   227→          <Skeleton className='mt-1 h-4 w-64' />
+   228→        </div>
+   229→        <div className='flex flex-col gap-3 sm:flex-row sm:items-end'>
+   230→          <Skeleton className='h-9 w-40' />
+   231→          <Skeleton className='h-9 w-40' />
+   232→          <Skeleton className='h-9 w-24' />
+   233→        </div>
+   234→        <div className='grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6'>
+   235→          {Array.from({ length: 6 }).map((_, i) => (
+   236→            <MetricCardSkeleton key={i} />
+   237→          ))}
+   238→        </div>
+   239→        <div className='grid grid-cols-1 gap-6 lg:grid-cols-2'>
+   240→          <Card>
+   241→            <CardHeader className='pb-2'>
+   242→              <Skeleton className='h-5 w-40' />
+   243→            </CardHeader>
+   244→            <CardContent>
+   245→              <div className='grid grid-cols-2 gap-4 sm:grid-cols-4'>
+   246→                {Array.from({ length: 4 }).map((_, i) => (
+   247→                  <Skeleton key={i} className='h-20 w-full rounded-lg' />
+   248→                ))}
+   249→              </div>
+   250→            </CardContent>
+   251→          </Card>
+   252→          <Card>
+   253→            <CardHeader className='pb-2'>
+   254→              <Skeleton className='h-5 w-40' />
+   255→            </CardHeader>
+   256→            <CardContent>
+   257→              <div className='grid grid-cols-2 gap-4 sm:grid-cols-4'>
+   258→                {Array.from({ length: 4 }).map((_, i) => (
+   259→                  <Skeleton key={i} className='h-20 w-full rounded-lg' />
+   260→                ))}
+   261→              </div>
+   262→            </CardContent>
+   263→          </Card>
+   264→        </div>
+   265→      </div>
+   266→    )
+   267→  }
+   268→
+   269→  // ---- Error State ----
+   270→  if (error || !data) {
+   271→    return (
+   272→      <div className='space-y-6'>
+   273→        <div>
+   274→          <h1 className='text-2xl font-bold tracking-tight'>HR Analytics</h1>
+   275→          <p className='text-muted-foreground mt-1'>
+   276→            Attendance, leave, expenses, and workforce insights
+   277→          </p>
+   278→        </div>
+   279→        <Card className='border-destructive/50'>
+   280→          <CardContent className='flex flex-col items-center justify-center gap-3 py-12 text-center'>
+   281→            <AlertTriangle className='size-10 text-destructive' />
+   282→            <p className='text-sm font-medium text-destructive'>
+   283→              {error || 'Failed to load HR analytics data'}
+   284→            </p>
+   285→            <button
+   286→              onClick={fetchAnalytics}
+   287→              className='mt-2 text-sm text-primary underline-offset-4 hover:underline'
+   288→            >
+   289→              Try again
+   290→            </button>
+   291→          </CardContent>
+   292→        </Card>
+   293→      </div>
+   294→    )
+   295→  }
+   296→
+   297→  // ---- Computed ----
+   298→  const att = data.attendanceTrends
+   299→  const leave = data.leaveTrends
+   300→  const exp = data.expenseTrends
+   301→  const pr = data.payrollStatus
+   302→  const deptMax =
+   303→    data.departmentDistribution.length > 0
+   304→      ? Math.max(...data.departmentDistribution.map((d) => d.employeeCount))
+   305→      : 1
+   306→  const totalEmployees = data.employeeStatus.reduce((s, e) => s + e.count, 0)
+   307→
+   308→  return (
+   309→    <div className='space-y-6'>
+   310→      {/* Header */}
+   311→      <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
+   312→        <div>
+   313→          <h1 className='text-2xl font-bold tracking-tight'>HR Analytics</h1>
+   314→          <p className='text-muted-foreground mt-1'>
+   315→            Attendance, leave, expenses, and workforce insights
+   316→          </p>
+   317→        </div>
+   318→        <Button variant='outline' size='sm' onClick={fetchAnalytics}>
+   319→          <RefreshCw className='size-4' />
+   320→          Refresh
+   321→        </Button>
+   322→      </div>
+   323→
+   324→      {/* Date Range Filter */}
+   325→      <div className='flex flex-col gap-3 sm:flex-row sm:items-end'>
+   326→        <div className='space-y-1'>
+   327→          <label className='text-xs font-medium text-muted-foreground'>From</label>
+   328→          <Input
+   329→            type='date'
+   330→            value={dateFrom}
+   331→            onChange={(e) => setDateFrom(e.target.value)}
+   332→            className='w-full sm:w-44'
+   333→          />
+   334→        </div>
+   335→        <div className='space-y-1'>
+   336→          <label className='text-xs font-medium text-muted-foreground'>To</label>
+   337→          <Input
+   338→            type='date'
+   339→            value={dateTo}
+   340→            onChange={(e) => setDateTo(e.target.value)}
+   341→            className='w-full sm:w-44'
+   342→          />
+   343→        </div>
+   344→        <Button variant='outline' size='sm' onClick={fetchAnalytics}>
+   345→          <Filter className='size-4' />
+   346→          Apply
+   347→        </Button>
+   348→      </div>
+   349→
+   350→      {/* KPI Cards */}
+   351→      <div className='grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6'>
+   352→        <KPICard
+   353→          label='Present Today'
+   354→          value={att.present.toLocaleString()}
+   355→          icon={<CalendarCheck className='size-4' />}
+   356→          sub={`${att.total} total records`}
+   357→          iconBg='bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400'
+   358→        />
+   359→        <KPICard
+   360→          label='Absent'
+   361→          value={att.absent.toLocaleString()}
+   362→          icon={<CalendarX className='size-4' />}
+   363→          sub={`${att.late} late`}
+   364→          iconBg='bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
+   365→        />
+   366→        <KPICard
+   367→          label='Leave Pending'
+   368→          value={leave.pending.toLocaleString()}
+   369→          icon={<Clock className='size-4' />}
+   370→          sub={`${leave.total} total requests`}
+   371→          iconBg='bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400'
+   372→        />
+   373→        <KPICard
+   374→          label='Total Employees'
+   375→          value={totalEmployees.toLocaleString()}
+   376→          icon={<Users className='size-4' />}
+   377→          sub={`${data.departmentDistribution.length} departments`}
+   378→          iconBg='bg-sky-100 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400'
+   379→        />
+   380→        <KPICard
+   381→          label='Expenses'
+   382→          value={formatCurrency(exp.totalAmount)}
+   383→          icon={<Receipt className='size-4' />}
+   384→          sub={`${exp.totalCount} claims`}
+   385→          iconBg='bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400'
+   386→        />
+   387→        <KPICard
+   388→          label='Payroll Paid'
+   389→          value={pr.paid.toLocaleString()}
+   390→          icon={<Banknote className='size-4' />}
+   391→          sub={`${pr.total} total records`}
+   392→          iconBg='bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400'
+   393→        />
+   394→      </div>
+   395→
+   396→      {/* Row: Attendance + Leave Trends */}
+   397→      <div className='grid grid-cols-1 gap-6 lg:grid-cols-2'>
+   398→        {/* Attendance Breakdown */}
+   399→        <Card>
+   400→          <CardHeader className='pb-2'>
+   401→            <CardTitle className='flex items-center gap-2 text-base'>
+   402→              <CalendarCheck className='size-4' />
+   403→              Attendance Trends
+   404→            </CardTitle>
+   405→          </CardHeader>
+   406→          <CardContent>
+   407→            <div className='grid grid-cols-2 gap-4 sm:grid-cols-4'>
+   408→              <StatBlock label='Present' value={att.present} />
+   409→              <StatBlock label='Absent' value={att.absent} />
+   410→              <StatBlock label='Late' value={att.late} />
+   411→              <StatBlock label='Half Day' value={att.halfDay} />
+   412→              <StatBlock label='On Leave' value={att.onLeave} />
+   413→              <StatBlock label='Holiday' value={att.holiday} />
+   414→              <StatBlock label='Week Off' value={att.weekOff} />
+   415→              <StatBlock label='Total' value={att.total} />
+   416→            </div>
+   417→          </CardContent>
+   418→        </Card>
+   419→
+   420→        {/* Leave Trends */}
+   421→        <Card>
+   422→          <CardHeader className='pb-2'>
+   423→            <CardTitle className='flex items-center gap-2 text-base'>
+   424→              <Clock className='size-4' />
+   425→              Leave Trends
+   426→            </CardTitle>
+   427→          </CardHeader>
+   428→          <CardContent>
+   429→            <div className='grid grid-cols-2 gap-4 sm:grid-cols-4'>
+   430→              <StatBlock label='Approved' value={leave.approved} />
+   431→              <StatBlock label='Rejected' value={leave.rejected} />
+   432→              <StatBlock label='Pending' value={leave.pending} />
+   433→              <StatBlock label='Cancelled' value={leave.cancelled} />
+   434→            </div>
+   435→            {leave.total > 0 && (
+   436→              <div className='mt-4'>
+   437→                <div className='h-3 w-full overflow-hidden rounded-full bg-secondary'>
+   438→                  <div className='flex h-full'>
+   439→                    <div
+   440→                      className='h-full bg-emerald-500 transition-all'
+   441→                      style={{
+   442→                        width: `${((leave.approved / leave.total) * 100).toFixed(1)}%`,
+   443→                      }}
+   444→                    />
+   445→                    <div
+   446→                      className='h-full bg-red-500 transition-all'
+   447→                      style={{
+   448→                        width: `${((leave.rejected / leave.total) * 100).toFixed(1)}%`,
+   449→                      }}
+   450→                    />
+   451→                    <div
+   452→                      className='h-full bg-amber-500 transition-all'
+   453→                      style={{
+   454→                        width: `${((leave.pending / leave.total) * 100).toFixed(1)}%`,
+   455→                      }}
+   456→                    />
+   457→                  </div>
+   458→                </div>
+   459→                <div className='mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground'>
+   460→                  <span className='flex items-center gap-1'>
+   461→                    <span className='inline-block size-2 rounded-full bg-emerald-500' />
+   462→                    Approved {leave.approved}
+   463→                  </span>
+   464→                  <span className='flex items-center gap-1'>
+   465→                    <span className='inline-block size-2 rounded-full bg-red-500' />
+   466→                    Rejected {leave.rejected}
+   467→                  </span>
+   468→                  <span className='flex items-center gap-1'>
+   469→                    <span className='inline-block size-2 rounded-full bg-amber-500' />
+   470→                    Pending {leave.pending}
+   471→                  </span>
+   472→                </div>
+   473→              </div>
+   474→            )}
+   475→          </CardContent>
+   476→        </Card>
+   477→      </div>
+   478→
+   479→      {/* Row: Department Distribution + Employee Status */}
+   480→      <div className='grid grid-cols-1 gap-6 lg:grid-cols-2'>
+   481→        {/* Department Distribution */}
+   482→        <Card>
+   483→          <CardHeader className='pb-2'>
+   484→            <CardTitle className='flex items-center gap-2 text-base'>
+   485→              <Building2 className='size-4' />
+   486→              Department Distribution
+   487→            </CardTitle>
+   488→          </CardHeader>
+   489→          <CardContent>
+   490→            {data.departmentDistribution.length > 0 ? (
+   491→              <div className='max-h-72 space-y-3 overflow-y-auto'>
+   492→                {data.departmentDistribution.map((dept) => {
+   493→                  const pct =
+   494→                    deptMax > 0
+   495→                      ? ((dept.employeeCount / deptMax) * 100).toFixed(0)
+   496→                      : 0
+   497→                  return (
+   498→                    <div key={dept.departmentId ?? 'unassigned'} className='space-y-1'>
+   499→                      <div className='flex items-center justify-between text-sm'>
+   500→                        <span className='truncate text-muted-foreground'>
+   501→                          {dept.departmentName}
+   502→                        </span>
+   503→                        <span className='ml-2 shrink-0 font-medium'>
+   504→                          {dept.employeeCount}
+   505→                        </span>
+   506→                      </div>
+   507→                      <div className='h-2 w-full overflow-hidden rounded-full bg-secondary'>
+   508→                        <div
+   509→                          className='h-full rounded-full bg-primary transition-all'
+   510→                          style={{ width: `${pct}%` }}
+   511→                        />
+   512→                      </div>
+   513→                    </div>
+   514→                  )
+   515→                })}
+   516→              </div>
+   517→            ) : (
+   518→              <div className='flex h-32 items-center justify-center text-sm text-muted-foreground'>
+   519→                No department data available yet.
+   520→              </div>
+   521→            )}
+   522→          </CardContent>
+   523→        </Card>
+   524→
+   525→        {/* Employee Status */}
+   526→        <Card>
+   527→          <CardHeader className='pb-2'>
+   528→            <CardTitle className='flex items-center gap-2 text-base'>
+   529→              <UserCheck className='size-4' />
+   530→              Employee Status
+   531→            </CardTitle>
+   532→          </CardHeader>
+   533→          <CardContent>
+   534→            {data.employeeStatus.length > 0 ? (
+   535→              <div className='space-y-3'>
+   536→                {data.employeeStatus.map((es) => (
+   537→                  <div
+   538→                    key={es.status}
+   539→                    className='flex items-center justify-between'
+   540→                  >
+   541→                    <span className='text-sm text-muted-foreground'>
+   542→                      {STATUS_LABELS[es.status] || es.status}
+   543→                    </span>
+   544→                    <Badge className={STATUS_COLORS[es.status] ?? ''}>
+   545→                      {es.count}
+   546→                    </Badge>
+   547→                  </div>
+   548→                ))}
+   549→                {totalEmployees > 0 && (
+   550→                  <div className='h-3 w-full overflow-hidden rounded-full bg-secondary'>
+   551→                    <div className='flex h-full'>
+   552→                      {data.employeeStatus.map((es) => {
+   553→                        const width = ((es.count / totalEmployees) * 100).toFixed(1)
+   554→                        const colorMap: Record<string, string> = {
+   555→                          ACTIVE: 'bg-emerald-500',
+   556→                          INACTIVE: 'bg-gray-400',
+   557→                          ON_LEAVE: 'bg-amber-500',
+   558→                          RESIGNED: 'bg-red-500',
+   559→                          TERMINATED: 'bg-red-700',
+   560→                        }
+   561→                        return (
+   562→                          <div
+   563→                            key={es.status}
+   564→                            className={`h-full transition-all ${colorMap[es.status] ?? 'bg-gray-500'}`}
+   565→                            style={{ width: `${width}%` }}
+   566→                          />
+   567→                        )
+   568→                      })}
+   569→                    </div>
+   570→                  </div>
+   571→                )}
+   572→              </div>
+   573→            ) : (
+   574→              <div className='flex h-32 items-center justify-center text-sm text-muted-foreground'>
+   575→                No employee status data available yet.
+   576→              </div>
+   577→            )}
+   578→          </CardContent>
+   579→        </Card>
+   580→      </div>
+   581→
+   582→      {/* Row: Field Visit Activity + Expense Summary */}
+   583→      <div className='grid grid-cols-1 gap-6 lg:grid-cols-2'>
+   584→        {/* Field Visit Activity */}
+   585→        <Card>
+   586→          <CardHeader className='pb-2'>
+   587→            <CardTitle className='flex items-center gap-2 text-base'>
+   588→              <MapPin className='size-4' />
+   589→              Field Visit Activity
+   590→            </CardTitle>
+   591→          </CardHeader>
+   592→          <CardContent>
+   593→            {Object.keys(data.fieldVisitActivity).length > 0 ? (
+   594→              <div className='space-y-3'>
+   595→                {Object.entries(data.fieldVisitActivity).map(([status, count]) => (
+   596→                  <div
+   597→                    key={status}
+   598→                    className='flex items-center justify-between'
+   599→                  >
+   600→                    <span className='text-sm text-muted-foreground'>
+   601→                      {FIELD_VISIT_LABELS[status] || status}
+   602→                    </span>
+   603→                    <Badge className={FIELD_VISIT_COLORS[status] ?? ''}>
+   604→                      {count}
+   605→                    </Badge>
+   606→                  </div>
+   607→                ))}
+   608→              </div>
+   609→            ) : (
+   610→              <div className='flex h-32 items-center justify-center text-sm text-muted-foreground'>
+   611→                No field visit data available yet.
+   612→              </div>
+   613→            )}
+   614→          </CardContent>
+   615→        </Card>
+   616→
+   617→        {/* Expense Summary */}
+   618→        <Card>
+   619→          <CardHeader className='pb-2'>
+   620→            <CardTitle className='flex items-center gap-2 text-base'>
+   621→              <Receipt className='size-4' />
+   622→              Expense Summary
+   623→            </CardTitle>
+   624→          </CardHeader>
+   625→          <CardContent>
+   626→            <div className='mb-4 flex items-center justify-between'>
+   627→              <span className='text-sm font-medium'>Total Amount</span>
+   628→              <span className='text-lg font-semibold'>
+   629→                {formatCurrency(exp.totalAmount)}
+   630→              </span>
+   631→            </div>
+   632→            <div className='space-y-3'>
+   633→              <div className='flex items-center justify-between'>
+   634→                <span className='text-sm text-muted-foreground'>Approved</span>
+   635→                <div className='text-right'>
+   636→                  <span className='text-sm font-semibold'>
+   637→                    {formatCurrency(exp.approved.amount)}
+   638→                  </span>
+   639→                  <span className='ml-2 text-xs text-muted-foreground'>
+   640→                    ({exp.approved.count})
+   641→                  </span>
+   642→                </div>
+   643→              </div>
+   644→              <div className='flex items-center justify-between'>
+   645→                <span className='text-sm text-muted-foreground'>Pending</span>
+   646→                <div className='text-right'>
+   647→                  <span className='text-sm font-semibold'>
+   648→                    {formatCurrency(exp.pending.amount)}
+   649→                  </span>
+   650→                  <span className='ml-2 text-xs text-muted-foreground'>
+   651→                    ({exp.pending.count})
+   652→                  </span>
+   653→                </div>
+   654→              </div>
+   655→              <div className='flex items-center justify-between'>
+   656→                <span className='text-sm text-muted-foreground'>Rejected</span>
+   657→                <div className='text-right'>
+   658→                  <span className='text-sm font-semibold'>
+   659→                    {formatCurrency(exp.rejected.amount)}
+   660→                  </span>
+   661→                  <span className='ml-2 text-xs text-muted-foreground'>
+   662→                    ({exp.rejected.count})
+   663→                  </span>
+   664→                </div>
+   665→              </div>
+   666→              <div className='flex items-center justify-between'>
+   667→                <span className='text-sm text-muted-foreground'>Paid</span>
+   668→                <div className='text-right'>
+   669→                  <span className='text-sm font-semibold'>
+   670→                    {formatCurrency(exp.paid.amount)}
+   671→                  </span>
+   672→                  <span className='ml-2 text-xs text-muted-foreground'>
+   673→                    ({exp.paid.count})
+   674→                  </span>
+   675→                </div>
+   676→              </div>
+   677→            </div>
+   678→          </CardContent>
+   679→        </Card>
+   680→      </div>
+   681→
+   682→      {/* Payroll Status */}
+   683→      <Card>
+   684→        <CardHeader className='pb-2'>
+   685→          <CardTitle className='flex items-center gap-2 text-base'>
+   686→            <Banknote className='size-4' />
+   687→            Payroll Status
+   688→          </CardTitle>
+   689→        </CardHeader>
+   690→        <CardContent>
+   691→          <div className='grid grid-cols-2 gap-4 sm:grid-cols-5'>
+   692→            <StatBlock label='Draft' value={pr.draft} />
+   693→            <StatBlock label='Processing' value={pr.processing} />
+   694→            <StatBlock label='Finalized' value={pr.finalized} />
+   695→            <StatBlock label='Paid' value={pr.paid} />
+   696→            <StatBlock label='Cancelled' value={pr.cancelled} />
+   697→          </div>
+   698→          {pr.total > 0 && (
+   699→            <div className='mt-4'>
+   700→              <div className='h-3 w-full overflow-hidden rounded-full bg-secondary'>
+   701→                <div className='flex h-full'>
+   702→                  <div
+   703→                    className='h-full bg-gray-400 transition-all'
+   704→                    style={{ width: `${((pr.draft / pr.total) * 100).toFixed(1)}%` }}
+   705→                  />
+   706→                  <div
+   707→                    className='h-full bg-amber-500 transition-all'
+   708→                    style={{ width: `${((pr.processing / pr.total) * 100).toFixed(1)}%` }}
+   709→                  />
+   710→                  <div
+   711→                    className='h-full bg-sky-500 transition-all'
+   712→                    style={{ width: `${((pr.finalized / pr.total) * 100).toFixed(1)}%` }}
+   713→                  />
+   714→                  <div
+   715→                    className='h-full bg-emerald-500 transition-all'
+   716→                    style={{ width: `${((pr.paid / pr.total) * 100).toFixed(1)}%` }}
+   717→                  />
+   718→                </div>
+   719→              </div>
+   720→              <div className='mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground'>
+   721→                <span className='flex items-center gap-1'>
+   722→                  <span className='inline-block size-2 rounded-full bg-gray-400' />
+   723→                  Draft {pr.draft}
+   724→                </span>
+   725→                <span className='flex items-center gap-1'>
+   726→                  <span className='inline-block size-2 rounded-full bg-amber-500' />
+   727→                  Processing {pr.processing}
+   728→                </span>
+   729→                <span className='flex items-center gap-1'>
+   730→                  <span className='inline-block size-2 rounded-full bg-sky-500' />
+   731→                  Finalized {pr.finalized}
+   732→                </span>
+   733→                <span className='flex items-center gap-1'>
+   734→                  <span className='inline-block size-2 rounded-full bg-emerald-500' />
+   735→                  Paid {pr.paid}
+   736→                </span>
+   737→              </div>
+   738→            </div>
+   739→          )}
+   740→        </CardContent>
+   741→      </Card>
+   742→    </div>
+   743→  )
+   744→}
+   745→

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { apiFetch } from '@/lib/auth-client'
 import { toast } from 'sonner'
@@ -104,48 +104,37 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    let cancelled = false
-
-    async function fetchMe() {
-      try {
-        setLoading(true)
-        setError(null)
-        const res = await apiFetch<{ success: boolean; data: { user: { id: string; email: string; name: string }; currentTenant: { id: string; name: string; slug: string; status: string; role: string } | null; permissions: unknown[] } }>('/api/v1/auth/me')
-        const { user, currentTenant, permissions } = res.data
-        const me: MeResponse = {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: currentTenant?.role ?? '',
-          tenantId: currentTenant?.id ?? '',
-          tenantName: currentTenant?.name ?? '',
-          tenantPlan: '',
-          memberCount: 0,
-          permissionsCount: permissions.length,
-        }
-        if (!cancelled) {
-          setData(me)
-        }
-      } catch (err) {
-        if (!cancelled) {
-          const message =
-            err instanceof Error ? err.message : 'Failed to load organization info'
-          setError(message)
-          toast.error(message)
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
-        }
+  const fetchMe = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const res = await apiFetch<{ success: boolean; data: { user: { id: string; email: string; name: string }; currentTenant: { id: string; name: string; slug: string; status: string; role: string } | null; permissions: unknown[] } }>('/api/v1/auth/me')
+      const { user, currentTenant, permissions } = res.data
+      const me: MeResponse = {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: currentTenant?.role ?? '',
+        tenantId: currentTenant?.id ?? '',
+        tenantName: currentTenant?.name ?? '',
+        tenantPlan: '',
+        memberCount: 0,
+        permissionsCount: permissions.length,
       }
-    }
-
-    fetchMe()
-    return () => {
-      cancelled = true
+      setData(me)
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Failed to load organization info'
+      setError(message)
+      toast.error(message)
+    } finally {
+      setLoading(false)
     }
   }, [])
+
+  useEffect(() => {
+    fetchMe()
+  }, [fetchMe])
 
   const firstName = data?.name?.split(' ')[0] || 'Admin'
 
@@ -173,9 +162,15 @@ export default function AdminDashboard() {
 
       {error && !loading && (
         <Card className='border-destructive/50'>
-          <CardContent className='flex items-center gap-3 py-6'>
+          <CardContent className='flex flex-col items-center justify-center gap-3 py-6 text-center'>
             <AlertCircle className='size-5 text-destructive shrink-0' />
             <p className='text-sm text-destructive'>{error}</p>
+            <button
+              onClick={fetchMe}
+              className='mt-2 text-sm text-primary underline-offset-4 hover:underline'
+            >
+              Try again
+            </button>
           </CardContent>
         </Card>
       )}
@@ -190,6 +185,12 @@ export default function AdminDashboard() {
             <p className='text-xs text-muted-foreground mt-1'>
               Unable to load your organization information. Please try again later.
             </p>
+            <button
+              onClick={fetchMe}
+              className='mt-2 text-sm text-primary underline-offset-4 hover:underline'
+            >
+              Try again
+            </button>
           </CardContent>
         </Card>
       )}

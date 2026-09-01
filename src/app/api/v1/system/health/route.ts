@@ -30,7 +30,8 @@ export async function GET() {
         timestamp: new Date().toISOString(),
         uptime: Math.floor(uptime),
         database: 'connected',
-      })
+      }),
+      { headers: { 'Cache-Control': 'public, max-age=10, s-maxage=10' } },
     );
   } catch {
     return NextResponse.json(

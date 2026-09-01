@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { apiFetch } from '@/lib/auth-client'
 import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -64,42 +64,31 @@ export default function SuperAdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    let cancelled = false
-
-    async function fetchStats() {
-      try {
-        setLoading(true)
-        setError(null)
-        const res = await apiFetch<{ success: boolean; data: { tenants: { total: number; suspended: number }; users: { total: number; active: number }; auditLogs: number } }>('/api/v1/super-admin/stats')
-        const raw = res.data
-        const stats: Stats = {
-          totalTenants: raw.tenants.total,
-          totalUsers: raw.users.total,
-          activeSubscriptions: 0,
-          auditEvents: raw.auditLogs,
-        }
-        if (!cancelled) {
-          setStats(stats)
-        }
-      } catch (err) {
-        if (!cancelled) {
-          const message = err instanceof Error ? err.message : 'Failed to load stats'
-          setError(message)
-          toast.error(message)
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false)
-        }
+  const fetchStats = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const res = await apiFetch<{ success: boolean; data: { tenants: { total: number; suspended: number }; users: { total: number; active: number }; auditLogs: number } }>('/api/v1/super-admin/stats')
+      const raw = res.data
+      const stats: Stats = {
+        totalTenants: raw.tenants.total,
+        totalUsers: raw.users.total,
+        activeSubscriptions: 0,
+        auditEvents: raw.auditLogs,
       }
-    }
-
-    fetchStats()
-    return () => {
-      cancelled = true
+      setStats(stats)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load stats'
+      setError(message)
+      toast.error(message)
+    } finally {
+      setLoading(false)
     }
   }, [])
+
+  useEffect(() => {
+    fetchStats()
+  }, [fetchStats])
 
   const hasData = stats && (stats.totalTenants > 0 || stats.totalUsers > 0 || stats.activeSubscriptions > 0 || stats.auditEvents > 0)
 
@@ -116,9 +105,15 @@ export default function SuperAdminDashboard() {
 
       {error && !loading && (
         <Card className='border-destructive/50'>
-          <CardContent className='flex items-center gap-3 py-6'>
+          <CardContent className='flex flex-col items-center justify-center gap-3 py-6 text-center'>
             <AlertCircle className='size-5 text-destructive shrink-0' />
             <p className='text-sm text-destructive'>{error}</p>
+            <button
+              onClick={fetchStats}
+              className='mt-2 text-sm text-primary underline-offset-4 hover:underline'
+            >
+              Try again
+            </button>
           </CardContent>
         </Card>
       )}

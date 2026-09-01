@@ -26,6 +26,7 @@ import { Textarea } from '@/components/ui/textarea'
 import {
   MapPin, AlertCircle, Plus, Loader2, ClipboardList, Users, CalendarCheck, Clock, Receipt, Eye,
 } from 'lucide-react'
+import { TableSkeleton, MetricCardSkeleton } from '@/components/skeletons'
 
 // ============================================
 // Types
@@ -121,15 +122,6 @@ function renderPageNumbers(page: number, totalPages: number) {
   return pages
 }
 
-// ============================================
-// Sub-Components
-// ============================================
-
-function MetricCardSkeleton() {
-  return (
-    <Card><CardContent className='p-4'><div className='flex items-center gap-3'><Skeleton className='size-9 rounded-lg' /><div className='flex-1 space-y-1'><Skeleton className='h-3 w-24' /><Skeleton className='h-6 w-16' /></div></div></CardContent></Card>
-  )
-}
 
 function MetricCardDisplay({ card }: { card: MetricCard }) {
   const vc: Record<string, string> = {
@@ -143,13 +135,6 @@ function MetricCardDisplay({ card }: { card: MetricCard }) {
       <div className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${vc[card.variant ?? 'default']}`}>{card.icon}</div>
       <div className='min-w-0 flex-1'><p className='truncate text-xs text-muted-foreground'>{card.label}</p><p className='text-xl font-semibold leading-tight'>{card.value.toLocaleString()}</p></div>
     </div></CardContent></Card>
-  )
-}
-
-function TableSkeleton() {
-  return (
-    <Card><CardContent className='p-0'><Table><TableHeader><TableRow>{Array.from({ length: 5 }).map((_, i) => <TableHead key={i}><Skeleton className='h-4 w-24' /></TableHead>)}</TableRow></TableHeader>
-    <TableBody>{Array.from({ length: 5 }).map((_, i) => <TableRow key={i}>{Array.from({ length: 5 }).map((_, j) => <TableCell key={j}><Skeleton className='h-4 w-full' /></TableCell>)}</TableRow>)}</TableBody></Table></CardContent></Card>
   )
 }
 
@@ -415,7 +400,7 @@ export default function FieldSalesPage() {
             </Select>
           </div>
 
-          {vLoading && <TableSkeleton />}
+          {vLoading && <TableSkeleton columns={5} />}
           {vError && !vLoading && <Card className='border-destructive/50'><CardContent className='flex items-center gap-3 py-6'><AlertCircle className='size-5 text-destructive shrink-0' /><p className='text-sm text-destructive'>{vError}</p></CardContent></Card>}
           {!vLoading && !vError && visits.length === 0 && (
             <Card><CardContent className='flex flex-col items-center justify-center py-12 text-center'><MapPin className='size-10 text-muted-foreground/50 mb-3' /><p className='text-sm font-medium text-muted-foreground'>No field visits</p><p className='text-xs text-muted-foreground mt-1'>Schedule a new field visit to get started.</p></CardContent></Card>

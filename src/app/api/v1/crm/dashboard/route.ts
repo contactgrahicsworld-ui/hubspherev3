@@ -45,11 +45,10 @@ export async function GET(request: NextRequest) {
     // Run all queries in parallel
     const [
       leadCounts,
-      dealMetrics,
+      dealsByStage,
       followUpMetrics,
       todayCallsCount,
       tasksByStatus,
-      dealsByStage,
     ] = await Promise.all([
       // Lead counts by status
       db.lead.groupBy({
@@ -58,28 +57,31 @@ export async function GET(request: NextRequest) {
         _count: true,
       }),
 
-      // Deal value metrics
-      db.deal.findMany({
+      // Deals by stage (count and value sum) — used for ALL deal metrics
+      db.deal.groupBy({
+        by: ['stage'],
         where: { tenantId, archived: false },
-        select: { stage: true, value: true },
+        _count: true,
+        _sum: { value: true },
       }),
 
-      // Follow-up metrics
-      db.followUp.count({
-        where: {
-          tenantId,
-          status: 'PENDING',
-          followUpAt: { gte: todayStart, lt: new Date(todayStart.getTime() + 86400000) },
-        },
-      }).then((today) =>
+      // Follow-up metrics (parallel instead of chained .then)
+      Promise.all([
+        db.followUp.count({
+          where: {
+            tenantId,
+            status: 'PENDING',
+            followUpAt: { gte: todayStart, lt: new Date(todayStart.getTime() + 86400000) },
+          },
+        }),
         db.followUp.count({
           where: {
             tenantId,
             status: 'PENDING',
             followUpAt: { lt: todayStart },
           },
-        }).then((overdue) => ({ today, overdue }))
-      ),
+        }),
+      ]).then(([today, overdue]) => ({ today, overdue })),
 
       // Today's calls
       db.call.count({
@@ -95,14 +97,6 @@ export async function GET(request: NextRequest) {
         where: { tenantId, status: { not: 'CANCELLED' } },
         _count: true,
       }),
-
-      // Deals by stage (count and value sum)
-      db.deal.groupBy({
-        by: ['stage'],
-        where: { tenantId, archived: false },
-        _count: true,
-        _sum: { value: true },
-      }),
     ]);
 
     // Compute lead metrics
@@ -112,21 +106,21 @@ export async function GET(request: NextRequest) {
     }
     const totalLeads = Object.values(leadMap).reduce((a, b) => a + b, 0);
 
-    // Compute deal metrics
+    // Compute deal metrics from grouped data (no unbounded findMany)
     let openDeals = 0;
     let pipelineValue = 0;
     let wonDealsValue = 0;
     let lostDealsValue = 0;
     const wonLeads = leadMap['CONVERTED'] ?? 0;
 
-    for (const deal of dealMetrics) {
-      if (deal.stage === 'WON') {
-        wonDealsValue += deal.value;
-      } else if (deal.stage === 'LOST') {
-        lostDealsValue += deal.value;
+    for (const ds of dealsByStage) {
+      if (ds.stage === 'WON') {
+        wonDealsValue = ds._sum.value ?? 0;
+      } else if (ds.stage === 'LOST') {
+        lostDealsValue = ds._sum.value ?? 0;
       } else {
-        openDeals++;
-        pipelineValue += deal.value;
+        openDeals += ds._count;
+        pipelineValue += ds._sum.value ?? 0;
       }
     }
 
@@ -170,6 +164,7 @@ export async function GET(request: NextRequest) {
         tasksByStatus: taskStatusMap,
         dealsByStage: stageMap,
       }),
+      { headers: { 'Cache-Control': 'private, no-store' } },
     );
   } catch (error) {
     if (isDbError(error)) return dbUnavailableResponse();

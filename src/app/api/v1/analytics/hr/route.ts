@@ -218,6 +218,7 @@ export async function GET(request: NextRequest) {
           total: payrollStatusAgg.reduce((sum, item) => sum + item._count, 0),
         },
       }),
+      { headers: { 'Cache-Control': 'private, no-store' } },
     );
   } catch (error) {
     if (isDbError(error)) return dbUnavailableResponse();

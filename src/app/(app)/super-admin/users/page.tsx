@@ -24,6 +24,7 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination'
 import { Users, AlertCircle, Search } from 'lucide-react'
+import { TableSkeleton } from '@/components/skeletons'
 
 interface User {
   id: string
@@ -43,46 +44,6 @@ interface PaginatedResponse {
     total: number
     totalPages: number
   }
-}
-
-function TableSkeleton() {
-  return (
-    <>
-      {/* Mobile skeleton */}
-      <div className='flex flex-col gap-3 md:hidden'>
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Card key={i}><CardContent className='p-4 space-y-3'>
-            <Skeleton className='h-4 w-32' />
-            <Skeleton className='h-3 w-48' />
-            <div className='flex gap-2'><Skeleton className='h-5 w-16' /><Skeleton className='h-5 w-16' /></div>
-          </CardContent></Card>
-        ))}
-      </div>
-      {/* Desktop skeleton */}
-      <Card className='hidden md:block'>
-        <CardContent className='p-0'>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <TableHead key={i}><Skeleton className='h-4 w-24' /></TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  {Array.from({ length: 6 }).map((_, j) => (
-                    <TableCell key={j}><Skeleton className='h-4 w-full' /></TableCell>
-                  ))}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    </>
-  )
 }
 
 function statusVariant(status: string) {
@@ -207,7 +168,7 @@ export default function UserOverview() {
         </div>
       </div>
 
-      {loading && <TableSkeleton />}
+      {loading && <TableSkeleton columns={4} />}
 
       {error && !loading && (
         <Card className='border-destructive/50'>

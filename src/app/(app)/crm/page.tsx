@@ -19,16 +19,16 @@ import {
   Activity,
   ArrowUpRight,
 } from 'lucide-react'
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-} from 'recharts'
+import dynamic from 'next/dynamic'
+import { MetricCardSkeleton, ChartSkeleton } from '@/components/skeletons'
+
+const DealsStageChart = dynamic(
+  () => import('@/components/deals-stage-chart'),
+  {
+    ssr: false,
+    loading: () => <div className='flex h-[260px] items-center justify-center animate-pulse rounded-lg bg-muted' />,
+  }
+)
 
 // ============================================
 // Types
@@ -77,24 +77,6 @@ function formatCurrency(val: number): string {
   return `$${val.toLocaleString()}`
 }
 
-const STAGE_COLORS: Record<string, string> = {
-  NEW: '#6366f1',
-  QUALIFIED: '#3b82f6',
-  PROPOSAL: '#f59e0b',
-  NEGOTIATION: '#f97316',
-  WON: '#22c55e',
-  LOST: '#ef4444',
-}
-
-const STAGE_LABELS: Record<string, string> = {
-  NEW: 'New',
-  QUALIFIED: 'Qualified',
-  PROPOSAL: 'Proposal',
-  NEGOTIATION: 'Negotiation',
-  WON: 'Won',
-  LOST: 'Lost',
-}
-
 const TASK_STATUS_LABELS: Record<string, string> = {
   TODO: 'To Do',
   IN_PROGRESS: 'In Progress',
@@ -112,22 +94,6 @@ const TASK_STATUS_COLORS: Record<string, string> = {
 // ============================================
 // Sub-Components
 // ============================================
-
-function MetricCardSkeleton() {
-  return (
-    <Card>
-      <CardContent className='p-4'>
-        <div className='flex items-center gap-3'>
-          <Skeleton className='size-9 rounded-lg' />
-          <div className='flex-1 space-y-1'>
-            <Skeleton className='h-3 w-24' />
-            <Skeleton className='h-6 w-16' />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
 
 function MetricCardDisplay({ card }: { card: MetricCard }) {
   const displayValue =
@@ -157,19 +123,6 @@ function MetricCardDisplay({ card }: { card: MetricCard }) {
             <p className='text-xl font-semibold leading-tight'>{displayValue}</p>
           </div>
         </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-function ChartSkeleton() {
-  return (
-    <Card>
-      <CardHeader className='pb-2'>
-        <Skeleton className='h-5 w-36' />
-      </CardHeader>
-      <CardContent>
-        <Skeleton className='h-64 w-full rounded-lg' />
       </CardContent>
     </Card>
   )
@@ -309,14 +262,6 @@ export default function CRMDashboardPage() {
     },
   ]
 
-  // ---- Chart Data ----
-  const chartData = (data.dealsByStage ?? []).map((d) => ({
-    name: STAGE_LABELS[d.stage] || d.stage,
-    count: d.count,
-    value: d.value,
-    stage: d.stage,
-  }))
-
   // ---- Tasks by Status ----
   const taskEntries = Object.entries(data.tasksByStatus ?? {}).filter(
     ([status]) => status !== 'CANCELLED'
@@ -351,39 +296,8 @@ export default function CRMDashboardPage() {
             </div>
           </CardHeader>
           <CardContent>
-            {chartData.length > 0 ? (
-              <div className='overflow-x-auto'>
-                <div className='min-w-[320px]'>
-                  <ResponsiveContainer width='100%' height={260}>
-                    <BarChart data={chartData} margin={{ top: 8, right: 8, bottom: 8, left: 0 }}>
-                      <CartesianGrid strokeDasharray='3 3' className='stroke-border' />
-                      <XAxis
-                        dataKey='name'
-                        tick={{ fontSize: 12 }}
-                        className='text-muted-foreground'
-                      />
-                      <YAxis tick={{ fontSize: 12 }} className='text-muted-foreground' />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: 'hsl(var(--popover))',
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: '8px',
-                          fontSize: '12px',
-                        }}
-                        formatter={(value: number, name: string) => {
-                          if (name === 'value') return [formatCurrency(value), 'Value']
-                          return [value, 'Deals']
-                        }}
-                      />
-                      <Bar dataKey='count' radius={[4, 4, 0, 0]}>
-                        {chartData.map((entry, index) => (
-                          <Cell key={index} fill={STAGE_COLORS[entry.stage] || '#6b7280'} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
+            {(data.dealsByStage?.length ?? 0) > 0 ? (
+              <DealsStageChart data={data.dealsByStage ?? []} />
             ) : (
               <div className='flex h-64 items-center justify-center text-sm text-muted-foreground'>
                 No deal data available yet.

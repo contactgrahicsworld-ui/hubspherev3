@@ -117,6 +117,7 @@ export async function GET(request: NextRequest) {
         openTasks,
         todaysAttendance: todayAttendance,
       }),
+      { headers: { 'Cache-Control': 'private, no-store' } },
     );
   } catch (error) {
     if (isDbError(error)) return dbUnavailableResponse();

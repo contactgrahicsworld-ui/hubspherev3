@@ -30,6 +30,7 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination'
 import { ScrollText, AlertCircle } from 'lucide-react'
+import { TableSkeleton } from '@/components/skeletons'
 
 interface AuditLog {
   id: string
@@ -50,44 +51,6 @@ interface PaginatedResponse {
     total: number
     totalPages: number
   }
-}
-
-function TableSkeleton() {
-  return (
-    <>
-      <div className='flex flex-col gap-3 md:hidden'>
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Card key={i}><CardContent className='p-4 space-y-3'>
-            <Skeleton className='h-4 w-28' />
-            <Skeleton className='h-5 w-20' />
-            <Skeleton className='h-3 w-40' />
-          </CardContent></Card>
-        ))}
-      </div>
-      <Card className='hidden md:block'>
-        <CardContent className='p-0'>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <TableHead key={i}><Skeleton className='h-4 w-24' /></TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {Array.from({ length: 5 }).map((_, i) => (
-                <TableRow key={i}>
-                  {Array.from({ length: 5 }).map((_, j) => (
-                    <TableCell key={j}><Skeleton className='h-4 w-full' /></TableCell>
-                  ))}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    </>
-  )
 }
 
 function actionVariant(action: string) {
@@ -196,7 +159,7 @@ export default function AuditLogs() {
         </Select>
       </div>
 
-      {loading && <TableSkeleton />}
+      {loading && <TableSkeleton columns={4} />}
 
       {error && !loading && (
         <Card className='border-destructive/50'>

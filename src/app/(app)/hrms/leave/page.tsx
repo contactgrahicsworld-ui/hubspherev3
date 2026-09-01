@@ -26,6 +26,7 @@ import { Textarea } from '@/components/ui/textarea'
 import {
   CalendarOff, AlertCircle, Plus, Loader2, CheckCircle2, XCircle, Ban,
 } from 'lucide-react'
+import { TableSkeleton } from '@/components/skeletons'
 
 // ============================================
 // Types
@@ -121,28 +122,6 @@ function renderPageNumbers(page: number, totalPages: number) {
   return pages
 }
 
-// ============================================
-// Sub-Components
-// ============================================
-
-function TableSkeleton() {
-  return (
-    <Card>
-      <CardContent className='p-0'>
-        <Table>
-          <TableHeader>
-            <TableRow>{Array.from({ length: 5 }).map((_, i) => <TableHead key={i}><Skeleton className='h-4 w-24' /></TableHead>)}</TableRow>
-          </TableHeader>
-          <TableBody>
-            {Array.from({ length: 5 }).map((_, i) => (
-              <TableRow key={i}>{Array.from({ length: 5 }).map((_, j) => <TableCell key={j}><Skeleton className='h-4 w-full' /></TableCell>)}</TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
-  )
-}
 
 function MobileLeaveCard({ req }: { req: LeaveRequest }) {
   return (
@@ -442,7 +421,7 @@ export default function LeavePage() {
             </Dialog>
           </div>
 
-          {lrLoading && <TableSkeleton />}
+          {lrLoading && <TableSkeleton columns={5} />}
           {lrError && !lrLoading && (
             <Card className='border-destructive/50'>
               <CardContent className='flex items-center gap-3 py-6'>
@@ -593,7 +572,7 @@ export default function LeavePage() {
             </Dialog>
           </div>
 
-          {ltLoading && <TableSkeleton />}
+          {ltLoading && <TableSkeleton columns={5} />}
           {ltError && !ltLoading && (
             <Card className='border-destructive/50'>
               <CardContent className='flex items-center gap-3 py-6'>

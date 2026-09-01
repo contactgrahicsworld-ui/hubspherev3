@@ -135,6 +135,12 @@ export async function POST(request: NextRequest) {
     }
     const data = validate(webhookEventSchema, body);
 
+    // Verify webhook signature BEFORE any DB operations
+    const { valid, tenantId } = await verifyWebhookSignature(rawBody, request, data.provider);
+    if (!valid) {
+      throw new AuthenticationError('Invalid or missing webhook signature. Configure a webhook secret for this provider.');
+    }
+
     // Idempotency check: prevent duplicate event processing
     const existingEvent = await db.messageEvent.findFirst({
       where: {
@@ -149,12 +155,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         success({ acknowledged: true, duplicate: true, eventId: existingEvent.id }, 'Event already processed'),
       );
-    }
-
-    // Verify webhook signature
-    const { valid, tenantId } = await verifyWebhookSignature(rawBody, request, data.provider);
-    if (!valid) {
-      throw new AuthenticationError('Invalid or missing webhook signature. Configure a webhook secret for this provider.');
     }
 
     // Look up the message by externalMessageId or by id

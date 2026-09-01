@@ -24,6 +24,7 @@ import {
 import {
   CalendarCheck, AlertCircle, LogIn, LogOut, Loader2, Search,
 } from 'lucide-react'
+import { TableSkeleton } from '@/components/skeletons'
 
 // ============================================
 // Types
@@ -125,36 +126,6 @@ function renderPageNumbers(page: number, totalPages: number) {
   return pages
 }
 
-// ============================================
-// Sub-Components
-// ============================================
-
-function TableSkeleton() {
-  return (
-    <Card>
-      <CardContent className='p-0'>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {Array.from({ length: 6 }).map((_, i) => (
-                <TableHead key={i}><Skeleton className='h-4 w-24' /></TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {Array.from({ length: 5 }).map((_, i) => (
-              <TableRow key={i}>
-                {Array.from({ length: 6 }).map((_, j) => (
-                  <TableCell key={j}><Skeleton className='h-4 w-full' /></TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
-  )
-}
 
 function MobileAttendanceCard({ session }: { session: AttendanceSession }) {
   return (
@@ -347,7 +318,7 @@ export default function AttendancePage() {
         </Select>
       </div>
 
-      {loading && <TableSkeleton />}
+      {loading && <TableSkeleton columns={6} />}
 
       {error && !loading && (
         <Card className='border-destructive/50'>

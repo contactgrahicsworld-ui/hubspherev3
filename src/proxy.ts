@@ -100,10 +100,10 @@ function applyHeaders(response: NextResponse, isApi: boolean, req: NextRequest):
 }
 
 // ============================================
-// MIDDLEWARE
+// PROXY (Next.js 16 — replaces deprecated middleware.ts)
 // ============================================
 
-export function middleware(request: NextRequest): NextResponse {
+export function proxy(request: NextRequest): NextResponse {
   const { pathname } = request.nextUrl;
   const isApi = pathname.startsWith('/api/');
 

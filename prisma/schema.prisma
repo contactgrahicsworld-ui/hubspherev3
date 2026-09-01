@@ -383,6 +383,9 @@ model Call {
 
   @@index([tenantId])
   @@index([agentId])
+  @@index([leadId])
+  @@index([contactId])
+  @@index([dealId])
   @@index([callStatus])
   @@index([createdAt])
   @@map("calls")
@@ -471,6 +474,8 @@ model Lead {
   @@unique([convertedToContactId])
 
   @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([tenantId, createdAt])
   @@index([ownerId])
   @@index([status])
   @@index([source])
@@ -513,6 +518,7 @@ model Contact {
 
   @@unique([tenantId, email])
   @@index([tenantId])
+  @@index([tenantId, createdAt])
   @@index([companyId])
   @@index([ownerId])
   @@index([createdAt])
@@ -587,6 +593,8 @@ model Deal {
   stageHistory StageHistory[]
 
   @@index([tenantId])
+  @@index([tenantId, stage])
+  @@index([tenantId, createdAt])
   @@index([stage])
   @@index([ownerId])
   @@index([contactId])
@@ -697,6 +705,7 @@ model Activity {
   deal    Deal?    @relation("DealActivities", fields: [dealId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
+  @@index([tenantId, createdAt])
   @@index([userId])
   @@index([type])
   @@index([leadId])
@@ -731,6 +740,7 @@ model Note {
   deal    Deal?    @relation("DealNotes", fields: [dealId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
+  @@index([tenantId, createdAt])
   @@index([userId])
   @@index([leadId])
   @@index([contactId])
@@ -762,6 +772,7 @@ model Task {
   owner  User?  @relation("TaskOwner", fields: [ownerId], references: [id], onDelete: SetNull)
 
   @@index([tenantId])
+  @@index([tenantId, status])
   @@index([ownerId])
   @@index([status])
   @@index([dueDate])
@@ -795,6 +806,7 @@ model FollowUp {
   deal    Deal?    @relation("DealFollowUps", fields: [dealId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
+  @@index([tenantId, status, followUpAt])
   @@index([userId])
   @@index([status])
   @@index([followUpAt])
@@ -922,6 +934,8 @@ model Employee {
   bankTransfers     BankTransfer[]
 
   @@index([tenantId])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, employmentStatus])
   @@index([userId])
   @@index([departmentId])
   @@index([designationId])
@@ -1006,6 +1020,8 @@ model LeaveRequest {
   approver   User?      @relation("LeaveApprover", fields: [approvedBy], references: [id], onDelete: SetNull)
 
   @@index([tenantId])
+  @@index([tenantId, employeeId])
+  @@index([tenantId, status])
   @@index([employeeId])
   @@index([leaveTypeId])
   @@index([status])
@@ -1043,6 +1059,7 @@ model AttendanceSession {
 
   @@unique([employeeId, date])
   @@index([tenantId])
+  @@index([tenantId, date])
   @@index([employeeId])
   @@index([date])
   @@index([status])
@@ -1078,6 +1095,8 @@ model FieldVisit {
 
   @@index([tenantId])
   @@index([employeeId])
+  @@index([leadId])
+  @@index([contactId])
   @@index([date])
   @@index([status])
   @@map("field_visits")
@@ -1109,6 +1128,8 @@ model Expense {
   approver User?    @relation("ExpenseApprover", fields: [approvedBy], references: [id], onDelete: SetNull)
 
   @@index([tenantId])
+  @@index([tenantId, employeeId])
+  @@index([tenantId, status])
   @@index([employeeId])
   @@index([status])
   @@index([category])
@@ -1150,6 +1171,8 @@ model PayrollRecord {
 
   @@unique([employeeId, periodStart, periodEnd])
   @@index([tenantId])
+  @@index([tenantId, employeeId])
+  @@index([tenantId, status])
   @@index([employeeId])
   @@index([status])
   @@index([periodStart])
@@ -1261,6 +1284,7 @@ model Conversation {
   messages    Message[]
 
   @@index([tenantId])
+  @@index([tenantId, lastMessageAt])
   @@index([channel])
   @@index([assignedToId])
   @@index([status])
@@ -1429,6 +1453,8 @@ model Notification {
 
   @@index([tenantId])
   @@index([recipientId])
+  @@index([recipientId, isRead])
+  @@index([recipientId, createdAt])
   @@index([isRead])
   @@index([createdAt])
   @@map("notifications")
@@ -1466,6 +1492,7 @@ model AutomationWorkflow {
   @@index([tenantId])
   @@index([status])
   @@index([triggerType])
+  @@index([createdBy])
   @@map("automation_workflows")
 }
 
@@ -1577,6 +1604,7 @@ model AutomationExecutionLog {
 
   @@index([tenantId])
   @@index([executionId])
+  @@index([actionId])
   @@index([level])
   @@map("automation_execution_logs")
 }

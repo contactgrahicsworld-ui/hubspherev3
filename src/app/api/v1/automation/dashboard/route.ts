@@ -107,7 +107,8 @@ export async function GET(request: NextRequest) {
         triggers: {
           distribution: triggerDistributionFormatted,
         },
-      })
+      }),
+      { headers: { 'Cache-Control': 'private, no-store' } },
     );
   } catch (error) {
     if (error instanceof Error && (error.message?.includes('connect') || error.message?.includes('ECONNREFUSED'))) {

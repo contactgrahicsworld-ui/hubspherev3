@@ -1,10 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { handleApiError, AuthenticationError, ValidationError } from '@/lib/errors';
+import { handleApiError, AuthenticationError, ValidationError, RateLimitError } from '@/lib/errors';
 import { success } from '@/lib/api-response';
 import { getAuthUser } from '@/lib/api-auth';
 import { requirePermission } from '@/lib/rbac';
 import { createAuditLog } from '@/lib/audit';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
+
+// ============================================
+// CONSTANTS
+// ============================================
+
+const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB
+const MAX_CSV_ROWS = 10_000;
+const ALLOWED_CONTENT_TYPES = [
+  'text/csv',
+  'text/plain',
+  'application/vnd.ms-excel',
+  'application/csv',
+];
 
 // ============================================
 // HELPERS
@@ -88,8 +102,24 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File | null;
     const entityType = (formData.get('entityType') as string)?.toLowerCase();
 
+    // Rate limit: 5 imports per 15 minutes per user
+    const { limited, retryAfterMs } = await rateLimit(`${payload.userId}:import`, 5, 15 * 60 * 1000);
+    if (limited) {
+      throw new RateLimitError('Too many import requests. Please try again later.', Math.ceil(retryAfterMs / 1000));
+    }
+
     if (!file) {
       throw new ValidationError('File is required');
+    }
+
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      throw new ValidationError(`File too large. Maximum size is ${MAX_FILE_SIZE_BYTES / (1024 * 1024)} MB`);
+    }
+
+    // Validate content type
+    if (!ALLOWED_CONTENT_TYPES.includes(file.type) && !file.name.toLowerCase().endsWith('.csv')) {
+      throw new ValidationError('Only CSV files are accepted');
     }
 
     if (!['leads', 'contacts', 'companies'].includes(entityType ?? '')) {
@@ -103,6 +133,10 @@ export async function POST(request: NextRequest) {
 
     if (rows.length < 2) {
       throw new ValidationError('CSV must contain a header row and at least one data row');
+    }
+
+    if (rows.length > MAX_CSV_ROWS) {
+      throw new ValidationError(`CSV has too many rows (${rows.length - 1} data rows). Maximum is ${MAX_CSV_ROWS}.`);
     }
 
     const headers = rows[0].map((h) => h.toLowerCase());

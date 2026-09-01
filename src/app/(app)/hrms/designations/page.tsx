@@ -25,6 +25,7 @@ import { Textarea } from '@/components/ui/textarea'
 import {
   IdCard, AlertCircle, Plus, Loader2, Search,
 } from 'lucide-react'
+import { TableSkeleton } from '@/components/skeletons'
 
 // ============================================
 // Types
@@ -72,36 +73,6 @@ function renderPageNumbers(page: number, totalPages: number) {
   return pages
 }
 
-// ============================================
-// Sub-Components
-// ============================================
-
-function TableSkeleton() {
-  return (
-    <Card>
-      <CardContent className='p-0'>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {Array.from({ length: 4 }).map((_, i) => (
-                <TableHead key={i}><Skeleton className='h-4 w-24' /></TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {Array.from({ length: 5 }).map((_, i) => (
-              <TableRow key={i}>
-                {Array.from({ length: 4 }).map((_, j) => (
-                  <TableCell key={j}><Skeleton className='h-4 w-full' /></TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
-  )
-}
 
 function MobileDesigCard({ desig }: { desig: Designation }) {
   return (
@@ -275,7 +246,7 @@ export default function DesignationsPage() {
         <Input placeholder='Search designations...' value={searchInput} onChange={(e) => setSearchInput(e.target.value)} className='pl-9' />
       </form>
 
-      {loading && <TableSkeleton />}
+      {loading && <TableSkeleton columns={4} />}
 
       {error && !loading && (
         <Card className='border-destructive/50'>

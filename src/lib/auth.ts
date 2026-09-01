@@ -4,6 +4,7 @@
  */
 
 import { env } from '@/lib/env';
+import { logger } from '@/lib/logger';
 
 // ============================================
 // TYPES
@@ -131,6 +132,7 @@ async function verifyJWT(token: string, secret: string): Promise<JWTPayload | nu
   try {
     const parts = token.split('.');
     if (parts.length !== 3) {
+      try { logger.security('jwt_verification_failed', { module: 'auth', reason: 'malformed_token' }); } catch {}
       return null;
     }
 
@@ -140,12 +142,14 @@ async function verifyJWT(token: string, secret: string): Promise<JWTPayload | nu
     // Verify signature
     const valid = await hmacVerify(secret, signingInput, signature);
     if (!valid) {
+      try { logger.security('jwt_verification_failed', { module: 'auth', reason: 'invalid_signature' }); } catch {}
       return null;
     }
 
     // Decode header and verify algorithm
     const header = JSON.parse(new TextDecoder().decode(base64UrlDecode(encodedHeader)));
     if (header.alg !== 'HS256') {
+      try { logger.security('jwt_verification_failed', { module: 'auth', reason: 'algorithm_mismatch', algorithm: header.alg }); } catch {}
       return null;
     }
 
@@ -155,11 +159,13 @@ async function verifyJWT(token: string, secret: string): Promise<JWTPayload | nu
     // Check expiration
     const now = Math.floor(Date.now() / 1000);
     if (payload.exp && payload.exp < now) {
+      try { logger.security('jwt_verification_failed', { module: 'auth', reason: 'token_expired', userId: payload.userId }); } catch {}
       return null;
     }
 
     return payload;
   } catch {
+    try { logger.warn('JWT verification threw unexpected error', { module: 'auth' }); } catch {}
     return null;
   }
 }

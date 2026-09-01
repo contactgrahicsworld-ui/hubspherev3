@@ -144,6 +144,7 @@ export async function GET(request: NextRequest) {
           p95: p95Latency,
         },
       }),
+      { headers: { 'Cache-Control': 'private, no-store' } },
     );
   } catch (error) {
     if (isDbError(error)) return dbUnavailableResponse();

@@ -34,6 +34,7 @@ import {
   RefreshCw,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { ProviderCardSkeleton } from '@/components/skeletons'
 
 // ============================================
 // Types
@@ -138,36 +139,6 @@ function maskValue(value: string): string {
   return value.substring(0, 3) + '*'.repeat(Math.min(value.length - 3, 12))
 }
 
-// ============================================
-// Skeletons
-// ============================================
-
-function ProviderCardSkeleton() {
-  return (
-    <Card>
-      <CardContent className='p-6'>
-        <div className='flex items-start justify-between gap-4'>
-          <div className='flex items-center gap-3'>
-            <Skeleton className='size-10 rounded-lg' />
-            <div className='space-y-1.5'>
-              <Skeleton className='h-5 w-32' />
-              <Skeleton className='h-3 w-20' />
-            </div>
-          </div>
-          <Skeleton className='h-6 w-28' />
-        </div>
-        <div className='mt-4 space-y-2'>
-          <Skeleton className='h-3 w-full' />
-          <Skeleton className='h-3 w-3/4' />
-        </div>
-        <div className='mt-4 flex justify-end gap-2'>
-          <Skeleton className='h-9 w-24' />
-          <Skeleton className='h-9 w-24' />
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
 
 // ============================================
 // Configure Dialog

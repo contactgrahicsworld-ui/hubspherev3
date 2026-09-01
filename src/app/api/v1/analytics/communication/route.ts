@@ -100,6 +100,7 @@ export async function GET(request: NextRequest) {
         channelDistribution,
         automationGenerated: automationGeneratedCount,
       }),
+      { headers: { 'Cache-Control': 'private, no-store' } },
     );
   } catch (error) {
     if (isDbError(error)) return dbUnavailableResponse();

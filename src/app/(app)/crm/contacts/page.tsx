@@ -43,6 +43,7 @@ import {
   Building2,
   RotateCcw,
 } from 'lucide-react'
+import { TableSkeleton } from '@/components/skeletons'
 
 // ============================================
 // Types
@@ -133,36 +134,6 @@ function getContactName(c: Contact): string {
   return [c.firstName, c.lastName].filter(Boolean).join(' ') || '-'
 }
 
-// ============================================
-// Table Skeleton
-// ============================================
-
-function TableSkeleton() {
-  return (
-    <Card>
-      <CardContent className='p-0'>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {Array.from({ length: 8 }).map((_, i) => (
-                <TableHead key={i}><Skeleton className='h-4 w-20' /></TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {Array.from({ length: 8 }).map((_, i) => (
-              <TableRow key={i}>
-                {Array.from({ length: 8 }).map((_, j) => (
-                  <TableCell key={j}><Skeleton className='h-4 w-full' /></TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
-  )
-}
 
 // ============================================
 // Mobile Card

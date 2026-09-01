@@ -182,12 +182,30 @@ export async function POST(request: NextRequest) {
 
     // Validate assignee belongs to tenant if provided
     if (data.assignedToId) {
-      const user = await db.user.findFirst({
-        where: { id: data.assignedToId },
+      const membership = await db.membership.findFirst({
+        where: {
+          userId: data.assignedToId,
+          tenantId: payload.tenantId,
+          status: 'ACTIVE',
+        },
         select: { id: true },
       });
-      if (!user) {
-        throw new ValidationError('Assigned user not found');
+      if (!membership) {
+        throw new ValidationError('Assigned user not found or not a member of this tenant');
+      }
+    }
+
+    // Validate participant IDs belong to tenant if provided
+    if (data.participantIds && data.participantIds.length > 0) {
+      const memberCount = await db.membership.count({
+        where: {
+          userId: { in: data.participantIds },
+          tenantId: payload.tenantId,
+          status: 'ACTIVE',
+        },
+      });
+      if (memberCount !== data.participantIds.length) {
+        throw new ValidationError('One or more participants are not members of this tenant');
       }
     }
 

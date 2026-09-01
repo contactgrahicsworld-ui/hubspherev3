@@ -1,0 +1,770 @@
+     1→'use client'
+     2→
+     3→import { useEffect, useState, useCallback } from 'react'
+     4→import { apiFetch } from '@/lib/auth-client'
+     5→import { toast } from 'sonner'
+     6→import { Card, CardContent } from '@/components/ui/card'
+     7→import { Skeleton } from '@/components/ui/skeleton'
+     8→import { Button } from '@/components/ui/button'
+     9→import { Badge } from '@/components/ui/badge'
+    10→import { Input } from '@/components/ui/input'
+    11→import { Textarea } from '@/components/ui/textarea'
+    12→import { Label } from '@/components/ui/label'
+    13→import {
+    14→  Select,
+    15→  SelectContent,
+    16→  SelectItem,
+    17→  SelectTrigger,
+    18→  SelectValue,
+    19→} from '@/components/ui/select'
+    20→import {
+    21→  Dialog,
+    22→  DialogContent,
+    23→  DialogHeader,
+    24→  DialogTitle,
+    25→  DialogFooter,
+    26→  DialogDescription,
+    27→} from '@/components/ui/dialog'
+    28→import {
+    29→  AlertDialog,
+    30→  AlertDialogAction,
+    31→  AlertDialogCancel,
+    32→  AlertDialogContent,
+    33→  AlertDialogDescription,
+    34→  AlertDialogFooter,
+    35→  AlertDialogHeader,
+    36→  AlertDialogTitle,
+    37→} from '@/components/ui/alert-dialog'
+    38→import {
+    39→  Search,
+    40→  AlertCircle,
+    41→  Plus,
+    42→  Pencil,
+    43→  Trash2,
+    44→  FileText,
+    45→  RotateCcw,
+    46→  Filter,
+    47→  Code2,
+    48→  Eye,
+    49→} from 'lucide-react'
+    50→import { cn } from '@/lib/utils'
+    51→
+    52→// ============================================
+    53→// Types
+    54→// ============================================
+    55→
+    56→interface Template {
+    57→  id: string
+    58→  name: string
+    59→  channel: string
+    60→  category: string
+    61→  status: string
+    62→  subject: string | null
+    63→  body: string
+    64→  variables: string[]
+    65→  createdAt: string
+    66→  updatedAt: string
+    67→}
+    68→
+    69→interface TemplatesResponse {
+    70→  success: boolean
+    71→  data: Template[]
+    72→}
+    73→
+    74→// ============================================
+    75→// Constants
+    76→// ============================================
+    77→
+    78→const CHANNEL_TABS = [
+    79→  { value: '', label: 'All' },
+    80→  { value: 'WHATSAPP', label: 'WhatsApp' },
+    81→  { value: 'EMAIL', label: 'Email' },
+    82→  { value: 'SMS', label: 'SMS' },
+    83→  { value: 'IN_APP', label: 'In-App' },
+    84→  { value: 'PUSH', label: 'Push' },
+    85→]
+    86→
+    87→const CATEGORY_OPTIONS = [
+    88→  { value: '', label: 'All Categories' },
+    89→  { value: 'TRANSACTIONAL', label: 'Transactional' },
+    90→  { value: 'MARKETING', label: 'Marketing' },
+    91→  { value: 'NOTIFICATION', label: 'Notification' },
+    92→  { value: 'ALERT', label: 'Alert' },
+    93→]
+    94→
+    95→const STATUS_OPTIONS = [
+    96→  { value: '', label: 'All Statuses' },
+    97→  { value: 'DRAFT', label: 'Draft' },
+    98→  { value: 'ACTIVE', label: 'Active' },
+    99→  { value: 'ARCHIVED', label: 'Archived' },
+   100→]
+   101→
+   102→const CHANNEL_BADGE_STYLES: Record<string, string> = {
+   103→  WHATSAPP: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+   104→  EMAIL: 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400',
+   105→  SMS: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+   106→  IN_APP: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400',
+   107→  PUSH: 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400',
+   108→}
+   109→
+   110→const STATUS_BADGE_STYLES: Record<string, string> = {
+   111→  DRAFT: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+   112→  ACTIVE: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+   113→  ARCHIVED: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+   114→}
+   115→
+   116→const CATEGORY_BADGE_STYLES: Record<string, string> = {
+   117→  TRANSACTIONAL: 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400',
+   118→  MARKETING: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+   119→  NOTIFICATION: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400',
+   120→  ALERT: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+   121→}
+   122→
+   123→const CHANNEL_OPTIONS = [
+   124→  { value: 'WHATSAPP', label: 'WhatsApp' },
+   125→  { value: 'EMAIL', label: 'Email' },
+   126→  { value: 'SMS', label: 'SMS' },
+   127→  { value: 'IN_APP', label: 'In-App' },
+   128→  { value: 'PUSH', label: 'Push' },
+   129→]
+   130→
+   131→const CATEGORY_FORM_OPTIONS = [
+   132→  { value: 'TRANSACTIONAL', label: 'Transactional' },
+   133→  { value: 'MARKETING', label: 'Marketing' },
+   134→  { value: 'NOTIFICATION', label: 'Notification' },
+   135→  { value: 'ALERT', label: 'Alert' },
+   136→]
+   137→
+   138→// ============================================
+   139→// Skeletons
+   140→// ============================================
+   141→
+   142→function TemplateCardSkeleton() {
+   143→  return (
+   144→    <Card>
+   145→      <CardContent className='p-4'>
+   146→        <div className='flex items-start justify-between gap-3'>
+   147→          <div className='flex-1 space-y-2'>
+   148→            <Skeleton className='h-5 w-40' />
+   149→            <Skeleton className='h-3 w-24' />
+   150→          </div>
+   151→          <Skeleton className='h-6 w-16' />
+   152→        </div>
+   153→        <div className='mt-3 space-y-2'>
+   154→          <Skeleton className='h-3 w-full' />
+   155→          <Skeleton className='h-3 w-3/4' />
+   156→        </div>
+   157→        <div className='mt-3 flex gap-2'>
+   158→          <Skeleton className='h-5 w-16' />
+   159→          <Skeleton className='h-5 w-20' />
+   160→          <Skeleton className='h-5 w-14' />
+   161→        </div>
+   162→      </CardContent>
+   163→    </Card>
+   164→  )
+   165→}
+   166→
+   167→// ============================================
+   168→// Template Card
+   169→// ============================================
+   170→
+   171→function TemplateCard({
+   172→  template,
+   173→  onEdit,
+   174→  onDelete,
+   175→}: {
+   176→  template: Template
+   177→  onEdit: (t: Template) => void
+   178→  onDelete: (t: Template) => void
+   179→}) {
+   180→  const [showPreview, setShowPreview] = useState(false)
+   181→
+   182→  // Replace {{variables}} with placeholder values for preview
+   183→  const previewBody = template.body
+   184→    .replace(/\{\{(\w+)\}\}/g, (_match, varName) => `[${varName}]`)
+   185→    .substring(0, 200)
+   186→
+   187→  return (
+   188→    <Card className='transition-shadow hover:shadow-md'>
+   189→      <CardContent className='p-4'>
+   190→        <div className='flex items-start justify-between gap-3'>
+   191→          <div className='min-w-0 flex-1'>
+   192→            <div className='flex items-center gap-2'>
+   193→              <p className='truncate text-sm font-semibold'>{template.name}</p>
+   194→            </div>
+   195→            {template.subject && (
+   196→              <p className='mt-0.5 truncate text-xs text-muted-foreground'>
+   197→                Subject: {template.subject}
+   198→              </p>
+   199→            )}
+   200→          </div>
+   201→          <Badge variant='outline' className={STATUS_BADGE_STYLES[template.status] || ''}>
+   202→            {template.status}
+   203→          </Badge>
+   204→        </div>
+   205→
+   206→        {/* Preview Body */}
+   207→        <div className='mt-3'>
+   208→          {showPreview ? (
+   209→            <div className='rounded-md border bg-muted/50 p-2.5 text-xs text-muted-foreground'>
+   210→              <p className='whitespace-pre-wrap'>{previewBody}</p>
+   211→              {template.body.length > 200 && (
+   212→                <span className='text-[10px] text-muted-foreground'>...truncated</span>
+   213→              )}
+   214→            </div>
+   215→          ) : (
+   216→            <p className='line-clamp-2 text-xs text-muted-foreground'>{previewBody}</p>
+   217→          )}
+   218→          <button
+   219→            onClick={() => setShowPreview(!showPreview)}
+   220→            className='mt-1 flex items-center gap-1 text-[11px] text-primary hover:underline'
+   221→          >
+   222→            <Eye className='size-3' />
+   223→            {showPreview ? 'Collapse' : 'Preview'}
+   224→          </button>
+   225→        </div>
+   226→
+   227→        {/* Badges & Variables */}
+   228→        <div className='mt-3 flex flex-wrap items-center gap-1.5'>
+   229→          <Badge variant='outline' className={`text-[10px] ${CHANNEL_BADGE_STYLES[template.channel] || ''}`}>
+   230→            {template.channel}
+   231→          </Badge>
+   232→          <Badge variant='outline' className={`text-[10px] ${CATEGORY_BADGE_STYLES[template.category] || ''}`}>
+   233→            {template.category}
+   234→          </Badge>
+   235→          {template.variables.length > 0 && (
+   236→            <Badge variant='outline' className='text-[10px]'>
+   237→              <Code2 className='mr-1 size-2.5' />
+   238→              {template.variables.length} var{template.variables.length > 1 ? 's' : ''}
+   239→            </Badge>
+   240→          )}
+   241→        </div>
+   242→
+   243→        {/* Variable list */}
+   244→        {template.variables.length > 0 && (
+   245→          <div className='mt-2 flex flex-wrap gap-1'>
+   246→            {template.variables.map((v) => (
+   247→              <span
+   248→                key={v}
+   249→                className='rounded bg-muted px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground'
+   250→              >
+   251→                {`{{${v}}}`}
+   252→              </span>
+   253→            ))}
+   254→          </div>
+   255→        )}
+   256→
+   257→        {/* Actions */}
+   258→        <div className='mt-3 flex items-center justify-end gap-1'>
+   259→          <Button
+   260→            variant='ghost'
+   261→            size='sm'
+   262→            className='h-7 px-2 text-xs'
+   263→            onClick={() => onEdit(template)}
+   264→          >
+   265→            <Pencil className='size-3' />
+   266→            Edit
+   267→          </Button>
+   268→          <Button
+   269→            variant='ghost'
+   270→            size='sm'
+   271→            className='h-7 px-2 text-xs text-destructive hover:text-destructive'
+   272→            onClick={() => onDelete(template)}
+   273→          >
+   274→            <Trash2 className='size-3' />
+   275→            Delete
+   276→          </Button>
+   277→        </div>
+   278→      </CardContent>
+   279→    </Card>
+   280→  )
+   281→}
+   282→
+   283→// ============================================
+   284→// Template Form Dialog
+   285→// ============================================
+   286→
+   287→function TemplateFormDialog({
+   288→  open,
+   289→  onOpenChange,
+   290→  template,
+   291→  onSuccess,
+   292→}: {
+   293→  open: boolean
+   294→  onOpenChange: (v: boolean) => void
+   295→  template: Template | null
+   296→  onSuccess: () => void
+   297→}) {
+   298→  const isEdit = !!template
+   299→
+   300→  const [name, setName] = useState('')
+   301→  const [channel, setChannel] = useState('')
+   302→  const [category, setCategory] = useState('')
+   303→  const [status, setStatus] = useState('DRAFT')
+   304→  const [subject, setSubject] = useState('')
+   305→  const [body, setBody] = useState('')
+   306→  const [saving, setSaving] = useState(false)
+   307→
+   308→  useEffect(() => {
+   309→    if (template) {
+   310→      setName(template.name)
+   311→      setChannel(template.channel)
+   312→      setCategory(template.category)
+   313→      setStatus(template.status)
+   314→      setSubject(template.subject || '')
+   315→      setBody(template.body)
+   316→    } else {
+   317→      setName('')
+   318→      setChannel('')
+   319→      setCategory('')
+   320→      setStatus('DRAFT')
+   321→      setSubject('')
+   322→      setBody('')
+   323→    }
+   324→  }, [template, open])
+   325→
+   326→  const handleSave = async () => {
+   327→    if (!name.trim() || !channel || !category || !body.trim()) {
+   328→      toast.error('Please fill in all required fields')
+   329→      return
+   330→    }
+   331→    try {
+   332→      setSaving(true)
+   333→      const payload = {
+   334→        name: name.trim(),
+   335→        channel,
+   336→        category,
+   337→        status,
+   338→        subject: subject.trim() || null,
+   339→        body: body.trim(),
+   340→      }
+   341→      if (isEdit) {
+   342→        await apiFetch(`/api/v1/communication/templates/${template!.id}`, {
+   343→          method: 'PUT',
+   344→          body: JSON.stringify(payload),
+   345→        })
+   346→        toast.success('Template updated')
+   347→      } else {
+   348→        await apiFetch('/api/v1/communication/templates', {
+   349→          method: 'POST',
+   350→          body: JSON.stringify(payload),
+   351→        })
+   352→        toast.success('Template created')
+   353→      }
+   354→      onOpenChange(false)
+   355→      onSuccess()
+   356→    } catch (err) {
+   357→      const msg = err instanceof Error ? err.message : 'Failed to save template'
+   358→      toast.error(msg)
+   359→    } finally {
+   360→      setSaving(false)
+   361→    }
+   362→  }
+   363→
+   364→  return (
+   365→    <Dialog open={open} onOpenChange={onOpenChange}>
+   366→      <DialogContent className='max-w-lg max-h-[90vh] overflow-y-auto'>
+   367→        <DialogHeader>
+   368→          <DialogTitle>{isEdit ? 'Edit Template' : 'Create Template'}</DialogTitle>
+   369→          <DialogDescription>
+   370→            {isEdit
+   371→              ? 'Update the communication template.'
+   372→              : 'Create a new communication template.'}
+   373→          </DialogDescription>
+   374→        </DialogHeader>
+   375→
+   376→        <div className='space-y-4'>
+   377→          <div className='space-y-2'>
+   378→            <Label htmlFor='tpl-name'>Name *</Label>
+   379→            <Input
+   380→              id='tpl-name'
+   381→              placeholder='e.g. Welcome Message'
+   382→              value={name}
+   383→              onChange={(e) => setName(e.target.value)}
+   384→            />
+   385→          </div>
+   386→
+   387→          <div className='grid grid-cols-2 gap-4'>
+   388→            <div className='space-y-2'>
+   389→              <Label>Channel *</Label>
+   390→              <Select value={channel} onValueChange={setChannel}>
+   391→                <SelectTrigger aria-label='Select channel'>
+   392→                  <SelectValue placeholder='Select channel' />
+   393→                </SelectTrigger>
+   394→                <SelectContent>
+   395→                  {CHANNEL_OPTIONS.map((c) => (
+   396→                    <SelectItem key={c.value} value={c.value}>
+   397→                      {c.label}
+   398→                    </SelectItem>
+   399→                  ))}
+   400→                </SelectContent>
+   401→              </Select>
+   402→            </div>
+   403→
+   404→            <div className='space-y-2'>
+   405→              <Label>Category *</Label>
+   406→              <Select value={category} onValueChange={setCategory}>
+   407→                <SelectTrigger aria-label='Select category'>
+   408→                  <SelectValue placeholder='Select category' />
+   409→                </SelectTrigger>
+   410→                <SelectContent>
+   411→                  {CATEGORY_FORM_OPTIONS.map((c) => (
+   412→                    <SelectItem key={c.value} value={c.value}>
+   413→                      {c.label}
+   414→                    </SelectItem>
+   415→                  ))}
+   416→                </SelectContent>
+   417→              </Select>
+   418→            </div>
+   419→          </div>
+   420→
+   421→          <div className='space-y-2'>
+   422→            <Label>Status</Label>
+   423→            <Select value={status} onValueChange={setStatus}>
+   424→              <SelectTrigger aria-label='Select status'>
+   425→                <SelectValue />
+   426→              </SelectTrigger>
+   427→              <SelectContent>
+   428→                <SelectItem value='DRAFT'>Draft</SelectItem>
+   429→                <SelectItem value='ACTIVE'>Active</SelectItem>
+   430→                <SelectItem value='ARCHIVED'>Archived</SelectItem>
+   431→              </SelectContent>
+   432→            </Select>
+   433→          </div>
+   434→
+   435→          {(channel === 'EMAIL' || template?.channel === 'EMAIL') && (
+   436→            <div className='space-y-2'>
+   437→              <Label htmlFor='tpl-subject'>Subject</Label>
+   438→              <Input
+   439→                id='tpl-subject'
+   440→                placeholder='Email subject line'
+   441→                value={subject}
+   442→                onChange={(e) => setSubject(e.target.value)}
+   443→              />
+   444→            </div>
+   445→          )}
+   446→
+   447→          <div className='space-y-2'>
+   448→            <Label htmlFor='tpl-body'>Body * <span className='text-muted-foreground font-normal'>(use {`{{variable}}`} for dynamic content)</span></Label>
+   449→            <Textarea
+   450→              id='tpl-body'
+   451→              placeholder='Hello {{name}}, welcome to {{company}}!'
+   452→              value={body}
+   453→              onChange={(e) => setBody(e.target.value)}
+   454→              rows={6}
+   455→              className='font-mono text-sm'
+   456→            />
+   457→          </div>
+   458→        </div>
+   459→
+   460→        <DialogFooter>
+   461→          <Button variant='outline' onClick={() => onOpenChange(false)}>
+   462→            Cancel
+   463→          </Button>
+   464→          <Button onClick={handleSave} disabled={saving}>
+   465→            {saving ? 'Saving...' : isEdit ? 'Update' : 'Create'}
+   466→          </Button>
+   467→        </DialogFooter>
+   468→      </DialogContent>
+   469→    </Dialog>
+   470→  )
+   471→}
+   472→
+   473→// ============================================
+   474→// Main Page
+   475→// ============================================
+   476→
+   477→export default function TemplatesPage() {
+   478→  const [templates, setTemplates] = useState<Template[]>([])
+   479→  const [loading, setLoading] = useState(true)
+   480→  const [error, setError] = useState<string | null>(null)
+   481→  const [dbUnavailable, setDbUnavailable] = useState(false)
+   482→
+   483→  // Filters
+   484→  const [channelTab, setChannelTab] = useState('')
+   485→  const [categoryFilter, setCategoryFilter] = useState('')
+   486→  const [statusFilter, setStatusFilter] = useState('')
+   487→  const [search, setSearch] = useState('')
+   488→
+   489→  // Dialog
+   490→  const [formOpen, setFormOpen] = useState(false)
+   491→  const [editingTemplate, setEditingTemplate] = useState<Template | null>(null)
+   492→
+   493→  // Delete dialog
+   494→  const [deleteTarget, setDeleteTarget] = useState<Template | null>(null)
+   495→  const [deleting, setDeleting] = useState(false)
+   496→
+   497→  const fetchTemplates = useCallback(async () => {
+   498→    try {
+   499→      setLoading(true)
+   500→      setError(null)
+   501→      setDbUnavailable(false)
+   502→
+   503→      const params = new URLSearchParams()
+   504→      if (channelTab) params.set('channel', channelTab)
+   505→      if (categoryFilter) params.set('category', categoryFilter)
+   506→      if (statusFilter) params.set('status', statusFilter)
+   507→      if (search) params.set('search', search)
+   508→
+   509→      const res = await apiFetch<TemplatesResponse>(
+   510→        `/api/v1/communication/templates?${params}`
+   511→      )
+   512→      setTemplates(res.data)
+   513→    } catch (err) {
+   514→      const msg = err instanceof Error ? err.message : 'Failed to load templates'
+   515→      if (msg.includes('Database unavailable') || msg.includes('503')) {
+   516→        setDbUnavailable(true)
+   517→        setError('Database is currently unavailable. Please try again later.')
+   518→      } else {
+   519→        setError(msg)
+   520→      }
+   521→      toast.error(msg)
+   522→    } finally {
+   523→      setLoading(false)
+   524→    }
+   525→  }, [channelTab, categoryFilter, statusFilter, search])
+   526→
+   527→  useEffect(() => {
+   528→    fetchTemplates()
+   529→  }, [fetchTemplates])
+   530→
+   531→  const handleEdit = (t: Template) => {
+   532→    setEditingTemplate(t)
+   533→    setFormOpen(true)
+   534→  }
+   535→
+   536→  const handleCreate = () => {
+   537→    setEditingTemplate(null)
+   538→    setFormOpen(true)
+   539→  }
+   540→
+   541→  const handleDelete = async () => {
+   542→    if (!deleteTarget) return
+   543→    try {
+   544→      setDeleting(true)
+   545→      await apiFetch(`/api/v1/communication/templates/${deleteTarget.id}`, {
+   546→        method: 'DELETE',
+   547→      })
+   548→      toast.success('Template deleted')
+   549→      setTemplates((prev) => prev.filter((t) => t.id !== deleteTarget.id))
+   550→      setDeleteTarget(null)
+   551→    } catch (err) {
+   552→      const msg = err instanceof Error ? err.message : 'Failed to delete template'
+   553→      toast.error(msg)
+   554→    } finally {
+   555→      setDeleting(false)
+   556→    }
+   557→  }
+   558→
+   559→  const hasActiveFilters = categoryFilter || statusFilter || search
+   560→  const clearFilters = () => {
+   561→    setCategoryFilter('')
+   562→    setStatusFilter('')
+   563→    setSearch('')
+   564→  }
+   565→
+   566→  // ---- DB Unavailable State ----
+   567→  if (dbUnavailable && !templates.length) {
+   568→    return (
+   569→      <div className='space-y-6'>
+   570→        <div>
+   571→          <h1 className='text-2xl font-bold tracking-tight'>Templates</h1>
+   572→          <p className='mt-1 text-muted-foreground'>Communication templates</p>
+   573→        </div>
+   574→        <Card className='border-destructive/50'>
+   575→          <CardContent className='flex flex-col items-center justify-center gap-3 py-12 text-center'>
+   576→            <AlertCircle className='size-10 text-destructive' />
+   577→            <p className='text-sm font-medium text-destructive'>Service Temporarily Unavailable</p>
+   578→            <p className='text-xs text-muted-foreground'>
+   579→              The database is not responding. This is usually a temporary issue.
+   580→            </p>
+   581→            <button
+   582→              onClick={fetchTemplates}
+   583→              className='mt-2 text-sm text-primary underline-offset-4 hover:underline'
+   584→            >
+   585→              Try again
+   586→            </button>
+   587→          </CardContent>
+   588→        </Card>
+   589→      </div>
+   590→    )
+   591→  }
+   592→
+   593→  return (
+   594→    <div className='space-y-6'>
+   595→      {/* Header */}
+   596→      <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
+   597→        <div>
+   598→          <h1 className='text-2xl font-bold tracking-tight'>Templates</h1>
+   599→          <p className='mt-1 text-muted-foreground'>Manage communication templates</p>
+   600→        </div>
+   601→        <Button className='min-w-[140px]' onClick={handleCreate}>
+   602→          <Plus className='size-4' />
+   603→          Create Template
+   604→        </Button>
+   605→      </div>
+   606→
+   607→      {/* Channel Tabs */}
+   608→      <div className='flex gap-1 overflow-x-auto rounded-lg border bg-muted/50 p-1'>
+   609→        {CHANNEL_TABS.map((tab) => (
+   610→          <button
+   611→            key={tab.value}
+   612→            onClick={() => setChannelTab(tab.value)}
+   613→            className={cn(
+   614→              'whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+   615→              channelTab === tab.value
+   616→                ? 'bg-background text-foreground shadow-sm'
+   617→                : 'text-muted-foreground hover:text-foreground'
+   618→            )}
+   619→          >
+   620→            {tab.label}
+   621→          </button>
+   622→        ))}
+   623→      </div>
+   624→
+   625→      {/* Search and Filters */}
+   626→      <div className='flex flex-col gap-3'>
+   627→        <div className='relative'>
+   628→          <Search className='absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground' />
+   629→          <Input
+   630→            placeholder='Search templates...'
+   631→            value={search}
+   632→            onChange={(e) => setSearch(e.target.value)}
+   633→            className='pl-9'
+   634→            aria-label='Search templates'
+   635→          />
+   636→        </div>
+   637→        <div className='flex flex-wrap items-center gap-2'>
+   638→          <div className='flex items-center gap-1.5 text-sm text-muted-foreground'>
+   639→            <Filter className='size-4' />
+   640→            <span className='hidden sm:inline'>Filters:</span>
+   641→          </div>
+   642→          <Select
+   643→            value={categoryFilter}
+   644→            onValueChange={(v) => setCategoryFilter(v === '_all' ? '' : v)}
+   645→          >
+   646→            <SelectTrigger className='w-[160px]' aria-label='Filter by category'>
+   647→              <SelectValue placeholder='All Categories' />
+   648→            </SelectTrigger>
+   649→            <SelectContent>
+   650→              {CATEGORY_OPTIONS.map((opt) => (
+   651→                <SelectItem key={opt.value} value={opt.value || '_all'}>
+   652→                  {opt.label}
+   653→                </SelectItem>
+   654→              ))}
+   655→            </SelectContent>
+   656→          </Select>
+   657→          <Select
+   658→            value={statusFilter}
+   659→            onValueChange={(v) => setStatusFilter(v === '_all' ? '' : v)}
+   660→          >
+   661→            <SelectTrigger className='w-[150px]' aria-label='Filter by status'>
+   662→              <SelectValue placeholder='All Statuses' />
+   663→            </SelectTrigger>
+   664→            <SelectContent>
+   665→              {STATUS_OPTIONS.map((opt) => (
+   666→                <SelectItem key={opt.value} value={opt.value || '_all'}>
+   667→                  {opt.label}
+   668→                </SelectItem>
+   669→              ))}
+   670→            </SelectContent>
+   671→          </Select>
+   672→          {hasActiveFilters && (
+   673→            <Button variant='ghost' size='sm' onClick={clearFilters}>
+   674→              <RotateCcw className='size-3' />
+   675→              Clear
+   676→            </Button>
+   677→          )}
+   678→        </div>
+   679→      </div>
+   680→
+   681→      {/* Error Banner */}
+   682→      {error && !dbUnavailable && (
+   683→        <Card className='border-destructive/50'>
+   684→          <CardContent className='flex items-center gap-3 py-4'>
+   685→            <AlertCircle className='size-5 shrink-0 text-destructive' />
+   686→            <p className='flex-1 text-sm text-destructive'>{error}</p>
+   687→            <Button variant='outline' size='sm' onClick={fetchTemplates}>
+   688→              Retry
+   689→            </Button>
+   690→          </CardContent>
+   691→        </Card>
+   692→      )}
+   693→
+   694→      {/* Loading State */}
+   695→      {loading && (
+   696→        <div className='grid gap-3 sm:grid-cols-2 lg:grid-cols-3'>
+   697→          {Array.from({ length: 6 }).map((_, i) => (
+   698→            <TemplateCardSkeleton key={i} />
+   699→          ))}
+   700→        </div>
+   701→      )}
+   702→
+   703→      {/* Empty State */}
+   704→      {!loading && !error && templates.length === 0 && (
+   705→        <Card>
+   706→          <CardContent className='flex flex-col items-center justify-center py-12 text-center'>
+   707→            <FileText className='mb-3 size-10 text-muted-foreground/50' />
+   708→            <p className='text-sm font-medium text-muted-foreground'>No templates created</p>
+   709→            <p className='mt-1 text-xs text-muted-foreground'>
+   710→              {channelTab || hasActiveFilters
+   711→                ? 'Try adjusting your filters.'
+   712→                : 'Create your first communication template to get started.'}
+   713→            </p>
+   714→            {!channelTab && !hasActiveFilters && (
+   715→              <Button className='mt-4' size='sm' onClick={handleCreate}>
+   716→                <Plus className='size-4' />
+   717→                Create Template
+   718→              </Button>
+   719→            )}
+   720→          </CardContent>
+   721→        </Card>
+   722→      )}
+   723→
+   724→      {/* Template Cards */}
+   725→      {!loading && !error && templates.length > 0 && (
+   726→        <div className='grid gap-3 sm:grid-cols-2 lg:grid-cols-3'>
+   727→          {templates.map((tpl) => (
+   728→            <TemplateCard
+   729→              key={tpl.id}
+   730→              template={tpl}
+   731→              onEdit={handleEdit}
+   732→              onDelete={setDeleteTarget}
+   733→            />
+   734→          ))}
+   735→        </div>
+   736→      )}
+   737→
+   738→      {/* Form Dialog */}
+   739→      <TemplateFormDialog
+   740→        open={formOpen}
+   741→        onOpenChange={setFormOpen}
+   742→        template={editingTemplate}
+   743→        onSuccess={fetchTemplates}
+   744→      />
+   745→
+   746→      {/* Delete Dialog */}
+   747→      <AlertDialog open={!!deleteTarget} onOpenChange={(v) => !v && setDeleteTarget(null)}>
+   748→        <AlertDialogContent>
+   749→          <AlertDialogHeader>
+   750→            <AlertDialogTitle>Delete Template</AlertDialogTitle>
+   751→            <AlertDialogDescription>
+   752→              Are you sure you want to delete &quot;{deleteTarget?.name}&quot;? This action cannot be undone.
+   753→            </AlertDialogDescription>
+   754→          </AlertDialogHeader>
+   755→          <AlertDialogFooter>
+   756→            <AlertDialogCancel>Cancel</AlertDialogCancel>
+   757→            <AlertDialogAction
+   758→              onClick={handleDelete}
+   759→              disabled={deleting}
+   760→              className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
+   761→            >
+   762→              {deleting ? 'Deleting...' : 'Delete'}
+   763→            </AlertDialogAction>
+   764→          </AlertDialogFooter>
+   765→        </AlertDialogContent>
+   766→      </AlertDialog>
+   767→    </div>
+   768→  )
+   769→}
+   770→
