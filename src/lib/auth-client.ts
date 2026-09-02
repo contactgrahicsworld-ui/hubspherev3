@@ -65,7 +65,12 @@ export async function apiFetch<T = unknown>(
     credentials: 'include',
   })
 
-  if (response.status === 401) {
+  // Auth endpoints should NOT trigger token refresh / redirect on 401.
+  // e.g. /api/v1/auth/login returns 401 for wrong credentials — that's a
+  // legitimate error the caller must display, not a session-expiry redirect.
+  const isAuthEndpoint = /\/api\/v1\/auth\/(login|signup|setup)\b/.test(url)
+
+  if (response.status === 401 && !isAuthEndpoint) {
     // Try silent token refresh before redirecting
     try {
       const refreshRes = await fetch('/api/v1/auth/refresh', {
