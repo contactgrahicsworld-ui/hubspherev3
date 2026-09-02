@@ -6,7 +6,8 @@ import { handleApiError } from '@/lib/errors';
 import { success } from '@/lib/api-response';
 import { createAuditLog } from '@/lib/audit';
 import { setAuthCookies } from '@/lib/api-auth';
-import { runSeed } from '@/lib/seed';
+// Seed is now called from the setup page frontend after user creation,
+// to avoid Vercel function timeout during the setup transaction.
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,8 +29,8 @@ export async function POST(request: NextRequest) {
     // Hash password
     const passwordHash = await hashPassword(password);
 
-    // Seed permissions and roles (idempotent)
-    const seedResults = await runSeed();
+    // Note: Permissions and roles are seeded by the frontend
+    // calling /api/v1/system/seed after setup completes.
 
     // Create super admin + tenant + membership in a transaction
     const result = await db.$transaction(async (tx) => {
@@ -95,7 +96,7 @@ export async function POST(request: NextRequest) {
       action: 'auth.setup',
       targetType: 'User',
       targetId: user.id,
-      metadata: { email: user.email, seedResults },
+      metadata: { email: user.email },
       ipAddress: request.headers.get('x-forwarded-for') ?? undefined,
       userAgent: request.headers.get('user-agent') ?? undefined,
     });

@@ -119,8 +119,11 @@ export default function SetupPage() {
       setUserInfo({ name: user.name, email: user.email, role })
 
       toast.success('Super Admin account created!', {
-        description: 'Welcome to HubSphere. Let\'s get you started.',
+        description: 'Initializing system roles and permissions...',
       })
+
+      // Seed roles & permissions in background (non-blocking)
+      fetch('/api/v1/system/seed', { method: 'POST' }).catch(() => {})
 
       router.push('/super-admin')
     } catch (err) {

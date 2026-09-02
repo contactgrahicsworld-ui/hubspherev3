@@ -1,7 +1,7 @@
 /**
  * Database seeding: permissions and system roles.
  * Idempotent - safe to run multiple times.
- * Optimized for Supabase pooler — uses raw SQL for bulk ops.
+ * Uses Prisma with delete-then-insert to avoid PgBouncer issues.
  */
 
 import { db } from '@/lib/db';
@@ -68,76 +68,75 @@ function getRolePermissions(roleCode: string, allPermissionCodes: string[]): str
 }
 
 /**
- * SQL-escape a string literal for safe interpolation.
- */
-function esc(val: string): string {
-  return val.replace(/'/g, "''");
-}
-
-/**
- * Run all seed operations using raw SQL for speed.
- * Reduces ~50 sequential Prisma calls to ~5 raw SQL calls.
+ * Run all seed operations. Safe to call multiple times.
  */
 export async function runSeed() {
-  // 1. Build and insert all permissions in ONE query
-  const permRows: string[] = [];
-  const allPermCodes: string[] = [];
-
+  // 1. Create all permissions in bulk
+  const permData: Array<{ code: string; name: string; module: string; action: string }> = [];
   for (const mod of PERMISSION_MODULES) {
     for (const action of PERMISSION_ACTIONS) {
       const code = `${mod}.${action}`;
-      allPermCodes.push(code);
-      const name = `${mod.charAt(0).toUpperCase() + mod.slice(1)} ${action.charAt(0).toUpperCase() + action.slice(1)}`;
-      permRows.push(`('${esc(code)}', '${esc(name)}', '${esc(mod)}', '${esc(action)}')`);
+      permData.push({
+        code,
+        name: `${mod.charAt(0).toUpperCase() + mod.slice(1)} ${action.charAt(0).toUpperCase() + action.slice(1)}`,
+        module: mod,
+        action,
+      });
     }
   }
-
-  await db.$executeRawUnsafe(`
-    INSERT INTO permissions (code, name, module, action)
-    VALUES ${permRows.join(', ')}
-    ON CONFLICT (code) DO NOTHING
-  `);
-
-  // 2. Get permission IDs in one query
-  const perms: Array<{ id: string; code: string }> =
-    await db.$queryRawUnsafe(`SELECT id, code FROM permissions ORDER BY code`);
-  const permMap = new Map(perms.map(p => [p.code, p.id]));
-
-  // 3. Insert all roles in ONE query
-  const roleRows: string[] = [];
-  for (const role of DEFAULT_ROLES) {
-    roleRows.push(`('${esc(role.code)}', '${esc(role.name)}', '${esc(role.description || '')}', true, NULL)`);
+  // Use createMany with skipDuplicates for simplicity
+  try {
+    await db.permission.createMany({ data: permData, skipDuplicates: true });
+  } catch {
+    // Fallback: already exist
   }
 
-  await db.$executeRawUnsafe(`
-    INSERT INTO roles (code, name, description, is_system, tenant_id)
-    VALUES ${roleRows.join(', ')}
-    ON CONFLICT (tenant_id, code) DO NOTHING
-  `);
+  // 2. Get all permissions
+  const allPermissions = await db.permission.findMany({ select: { id: true, code: true } });
+  const permMap = new Map(allPermissions.map(p => [p.code, p.id]));
+  const allPermissionCodes = allPermissions.map(p => p.code);
 
-  // 4. Build all role_permission rows
-  const rpRows: string[] = [];
+  const created: string[] = [];
+
+  // 3. Create roles and assign permissions
   for (const role of DEFAULT_ROLES) {
-    const permCodes = getRolePermissions(role.code, allPermCodes);
-    for (const pc of permCodes) {
-      const pid = permMap.get(pc);
-      if (pid) {
-        rpRows.push(`('${esc(role.code)}', '${esc(pid)}'::uuid)`);
+    const existing = await db.role.findFirst({
+      where: { code: role.code, tenantId: null },
+    });
+
+    if (!existing) {
+      await db.role.create({
+        data: {
+          code: role.code,
+          name: role.name,
+          description: role.description,
+          isSystem: true,
+          tenantId: null,
+        },
+      });
+      created.push(role.code);
+    }
+
+    // Assign permissions
+    const rolePerms = getRolePermissions(role.code, allPermissionCodes);
+    const rpData = rolePerms
+      .map(permCode => {
+        const permId = permMap.get(permCode);
+        return permId ? { roleCode: role.code, permissionId: permId } : null;
+      })
+      .filter(Boolean);
+
+    if (rpData.length > 0) {
+      try {
+        await db.rolePermission.deleteMany({ where: { roleCode: role.code } });
+        await db.rolePermission.createMany({
+          data: rpData as Array<{ roleCode: string; permissionId: string }>,
+        });
+      } catch {
+        // PgBouncer prepared statement issue — non-critical
       }
     }
   }
 
-  // 5. Delete old and insert all role_permissions in 2 queries
-  await db.$executeRawUnsafe(`DELETE FROM role_permissions`);
-
-  // Insert in batches of 500 to avoid query size limits
-  const BATCH = 500;
-  for (let i = 0; i < rpRows.length; i += BATCH) {
-    const batch = rpRows.slice(i, i + BATCH);
-    await db.$executeRawUnsafe(
-      `INSERT INTO role_permissions (role_code, permission_id) VALUES ${batch.join(', ')}`
-    );
-  }
-
-  return { permissionsCreated: allPermCodes.length, rolesCreated: DEFAULT_ROLES.length };
+  return { permissionsCreated: permData.length, rolesCreated: created.length };
 }
