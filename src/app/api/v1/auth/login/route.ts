@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
         tenant: membership
           ? { id: membership.tenant.id, name: membership.tenant.name, status: membership.tenant.status }
           : null,
-        role: roleCode ?? null,
+        role: user.isSuperAdmin ? 'SUPER_ADMIN' : (roleCode ?? null),
         accessToken,
         refreshToken,
       }),
