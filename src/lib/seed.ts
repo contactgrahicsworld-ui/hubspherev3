@@ -110,9 +110,9 @@ export async function runSeed() {
   }
 
   await db.$executeRawUnsafe(`
-    INSERT INTO roles (code, name, description, "isSystem", "tenantId")
+    INSERT INTO roles (code, name, description, is_system, tenant_id)
     VALUES ${roleRows.join(', ')}
-    ON CONFLICT ("tenantId", code) DO NOTHING
+    ON CONFLICT (tenant_id, code) DO NOTHING
   `);
 
   // 4. Build all role_permission rows
@@ -122,7 +122,7 @@ export async function runSeed() {
     for (const pc of permCodes) {
       const pid = permMap.get(pc);
       if (pid) {
-        rpRows.push(`('${esc(role.code)}', '${esc(pid)}')`);
+        rpRows.push(`('${esc(role.code)}', '${esc(pid)}'::uuid)`);
       }
     }
   }
@@ -135,7 +135,7 @@ export async function runSeed() {
   for (let i = 0; i < rpRows.length; i += BATCH) {
     const batch = rpRows.slice(i, i + BATCH);
     await db.$executeRawUnsafe(
-      `INSERT INTO role_permissions ("roleCode", "permissionId") VALUES ${batch.join(', ')}`
+      `INSERT INTO role_permissions (role_code, permission_id) VALUES ${batch.join(', ')}`
     );
   }
 
