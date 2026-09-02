@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=720">
+<title>HubSphere V3 - Complete User Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+@page {
+  size: 720px 1020px;
+  margin: 0;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 720px;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* COVER PAGE */
+.cover-page {
+  width: 720px;
+  height: 1020px;
+ background: linear-gradient(160deg, #0a0f1e 0%, #0f172a 40%, #1a2744 100%);
+ display: flex;
+ flex-direction: column;
+ justify-content: center;
+ align-items: center;
+ text-align: center;
+ position: relative;
+ overflow: hidden;
+ break-after: page;
+}
+
+.cover-page::before {
+  content: '';
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+.cover-page::after {
+  content: '';
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(59,130,246,0.1) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+.cover-logo {
+  width: 72px;
+  height: 72px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 40px;
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 8px 32px rgba(59,130,246,0.3);
+}
+
+.cover-logo span {
+  font-family: 'Playfair Display', serif;
+  font-size: 32px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.cover-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 52px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -1px;
+  margin: 0 0 8px 0;
+  position: relative;
+  z-index: 1;
+}
+
+.cover-subtitle {
+  font-family: 'Inter', sans-serif;
+  font-size: 22px;
+  font-weight: 300;
+  color: #94a3b8;
+  margin: 0 0 0 0;
+  position: relative;
+  z-index: 1;
+}
+
+.cover-tag {
+  display: inline-block;
+  background: rgba(59,130,246,0.15);
+  border: 1px solid rgba(59,130,246,0.3);
+  color: #60a5fa;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 8px 24px;
+  border-radius: 100px;
+  margin-top: 48px;
+  margin-bottom: 60px;
+  position: relative;
+  z-index: 1;
+}
+
+.cover-line {
+  width: 60px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+  margin-top: 40px;
+  margin-bottom: 24px;
+  position: relative;
+  z-index: 1;
+}
+
+.cover-edition {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  color: #475569;
+  position: relative;
+  z-index: 1;
+  letter-spacing: 1px;
+}
+
+.cover-modules {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 520px;
+  margin-top: 40px;
+  position: relative;
+  z-index: 1;
+}
+
+.cover-modules span {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 500;
+  padding: 5px 14px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+}
+
+/* MAIN CONTENT */
+.main-content {
+  padding: 0;
+}
+
+/* CHAPTER */
+.chapter {
+  margin-top: 48px;
+}
+
+.chapter-number {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: #3b82f6;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  margin-bottom: 6px;
+}
+
+.chapter-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin: 0 0 6px 0;
+  letter-spacing: -0.5px;
+}
+
+.chapter-desc {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 24px;
+  line-height: 1.6;
+}
+
+.section-divider {
+  width: 720px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(59,130,246,0.2), transparent);
+  margin-top: 48px;
+}
+
+/* SECTION */
+.section {
+  margin-top: 24px;
+}
+
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin: 0 0 10px 0;
+}
+
+.section-subtitle {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #cbd5e1;
+  margin: 0 0 10px 0;
+}
+
+p {
+  margin: 0 0 12px 0;
+  color: #94a3b8;
+  line-height: 1.75;
+}
+
+/* FEATURE CARD */
+.feature-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
+  padding: 20px 22px;
+  margin-bottom: 12px;
+  break-inside: avoid;
+}
+
+.feature-card-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin: 0 0 6px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.feature-card-title .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #3b82f6;
+  flex-shrink: 0;
+}
+
+.feature-card p {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.7;
+}
+
+/* STEP LIST */
+.step-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px 0;
+}
+
+.step-list li {
+  padding: 8px 0 8px 28px;
+  position: relative;
+  color: #94a3b8;
+  font-size: 12.5px;
+  line-height: 1.7;
+  border-left: 2px solid rgba(59,130,246,0.15);
+  margin-left: 10px;
+  break-inside: avoid;
+}
+
+.step-list li::before {
+  content: attr(data-step);
+  position: absolute;
+  left: -8px;
+  top: 8px;
+  width: 16px;
+  height: 16px;
+  background: #3b82f6;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 700;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 16px;
+}
+
+/* NOTE / TIP BOX */
+.note-box {
+  background: rgba(59,130,246,0.08);
+  border-left: 3px solid #3b82f6;
+  border-radius: 0 8px 8px 0;
+  padding: 14px 18px;
+  margin: 16px 0;
+  break-inside: avoid;
+}
+
+.note-box .note-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: #3b82f6;
+  margin-bottom: 4px;
+}
+
+.note-box p {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 0;
+}
+
+/* GRID FOR CARDS */
+.card-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.card-grid .feature-card {
+  margin-bottom: 0;
+}
+
+/* TABLE */
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0 16px 0;
+  font-size: 12px;
+}
+
+.info-table th {
+  background: rgba(59,130,246,0.1);
+  color: #93c5fd;
+  font-weight: 600;
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(59,130,246,0.15);
+}
+
+.info-table td {
+  padding: 10px 14px;
+  color: #94a3b8;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.info-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* TOC */
+.toc-page {
+  width: 720px;
+  height: 1020px;
+  background: #0f172a;
+  padding: 60px 50px;
+  box-sizing: border-box;
+  break-after: page;
+}
+
+.toc-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 30px;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin: 0 0 40px 0;
+}
+
+.toc-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.toc-item .toc-chapter {
+  font-size: 12px;
+  font-weight: 700;
+  color: #3b82f6;
+  margin-right: 12px;
+  min-width: 80px;
+}
+
+.toc-item .toc-name {
+  font-size: 13px;
+  color: #cbd5e1;
+  flex: 1;
+}
+
+.toc-item .toc-dots {
+  flex: 1;
+  border-bottom: 1px dotted rgba(255,255,255,0.1);
+  margin: 0 12px;
+  min-height: 1px;
+}
+
+/* CONTENT AREA PADDING */
+.content-pad {
+  padding: 40px 50px;
+}
+
+/* HIGHLIGHT TEXT */
+.hl {
+  color: #60a5fa;
+  font-weight: 500;
+}
+
+.hl-strong {
+  color: #93c5fd;
+  font-weight: 600;
+}
+
+/* BADGE */
+.badge {
+  display: inline-block;
+  background: rgba(59,130,246,0.12);
+  color: #60a5fa;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 100px;
+  margin-right: 4px;
+}
+
+/* FOOTER AREA */
+.page-footer {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 10px;
+  color: #475569;
+}
+</style>
+</head>
+<body>
+
+<!-- ==================== COVER PAGE ==================== -->
+<div class="cover-page">
+  <div class="cover-logo"><span>HS</span></div>
+  <div class="cover-title">HubSphere V3</div>
+  <div class="cover-subtitle">Complete User Guide</div>
+  <div class="cover-line"></div>
+  <div class="cover-tag">Enterprise Management Platform</div>
+  <div class="cover-modules">
+    <span>CRM</span>
+    <span>HRMS</span>
+    <span>Communication</span>
+    <span>Automation</span>
+    <span>Analytics</span>
+    <span>AI Assistant</span>
+  </div>
+  <div class="cover-edition" style="margin-top: 80px;">Version 3.0 &nbsp;|&nbsp; 2025 Edition &nbsp;|&nbsp; Confidential</div>
+</div>
+
+<!-- ==================== TABLE OF CONTENTS ==================== -->
+<div class="toc-page">
+  <div class="toc-title">Table of Contents</div>
+  <div class="toc-item"><span class="toc-chapter">Chapter 1</span><span class="toc-name">Getting Started</span><span class="toc-dots"></span></div>
+  <div class="toc-item"><span class="toc-chapter">Chapter 2</span><span class="toc-name">Authentication</span><span class="toc-dots"></span></div>
+  <div class="toc-item"><span class="toc-chapter">Chapter 3</span><span class="toc-name">Dashboard</span><span class="toc-dots"></span></div>
+  <div class="toc-item"><span class="toc-chapter">Chapter 4</span><span class="toc-name">CRM Module</span><span class="toc-dots"></span></div>
+  <div class="toc-item"><span class="toc-chapter">Chapter 5</span><span class="toc-name">HRMS Module</span><span class="toc-dots"></span></div>
+  <div class="toc-item"><span class="toc-chapter">Chapter 6</span><span class="toc-name">Communication Module</span><span class="toc-dots"></span></div>
+  <div class="toc-item"><span class="toc-chapter">Chapter 7</span><span class="toc-name">Automation Module</span><span class="toc-dots"></span></div>
+  <div class="toc-item"><span class="toc-chapter">Chapter 8</span><span class="toc-name">Analytics Module</span><span class="toc-dots"></span></div>
+  <div class="toc-item"><span class="toc-chapter">Chapter 9</span><span class="toc-name">AI Assistant</span><span class="toc-dots"></span></div>
+  <div class="toc-item"><span class="toc-chapter">Chapter 10</span><span class="toc-name">Admin Panel</span><span class="toc-dots"></span></div>
+  <div class="toc-item"><span class="toc-chapter">Chapter 11</span><span class="toc-name">Super Admin</span><span class="toc-dots"></span></div>
+</div>
+
+<!-- ==================== MAIN CONTENT ==================== -->
+<div class="main-content">
+<div class="content-pad">
+
+<!-- ==================== CHAPTER 1: GETTING STARTED ==================== -->
+<div class="chapter">
+  <div class="chapter-number">Chapter 1</div>
+  <div class="chapter-title">Getting Started</div>
+  <div class="chapter-desc">System requirements, first-time setup, and initial configuration for HubSphere V3.</div>
+
+  <div class="section">
+    <div class="section-title">System Requirements</div>
+    <p>HubSphere V3 is a fully web-based enterprise platform that runs entirely within your browser. You do not need to install any desktop software, plugins, or extensions to use the platform. The application is optimized for modern browsers and requires a stable internet connection with a minimum recommended speed of 5 Mbps for optimal performance. The platform supports screen resolutions from 1024x768 and above, with full responsiveness for tablets and mobile devices.</p>
+    <p>The supported browsers include Google Chrome (version 90 and above), Mozilla Firefox (version 88 and above), Microsoft Edge (version 90 and above), and Safari (version 14 and above). For the best experience, we recommend using the latest stable release of Google Chrome. JavaScript must be enabled in your browser settings, and cookies should be allowed for the hubspherev3.vercel.app domain to ensure proper authentication and session management.</p>
+
+    <div class="feature-card">
+      <div class="feature-card-title"><span class="dot"></span>Supported Platforms</div>
+      <p>HubSphere V3 works across Windows, macOS, Linux, iOS, and Android. The responsive design automatically adapts to your screen size, providing an optimized experience whether you are using a desktop monitor, a laptop, a tablet, or a smartphone. Touch interactions are fully supported on mobile devices for seamless on-the-go usage.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Accessing the Application</div>
+    <p>To access HubSphere V3, open your web browser and navigate to <span class="hl">https://hubspherev3.vercel.app</span>. This is the primary entry point for all users. Upon your first visit, if no organization has been set up yet, you will be automatically redirected to the Setup Wizard. The platform uses secure HTTPS encryption for all data transmission, ensuring that your information is protected at all times during transit.</p>
+    <p>Once the application loads, you will see the HubSphere login screen featuring a clean, modern interface with the company logo at the top. The login form provides fields for your email address and password. If you have forgotten your password, a "Forgot password?" link is available directly below the password field. New users can click "Create account" to begin the registration process and set up their organization.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">The Setup Wizard</div>
+    <p>The Setup Wizard is the very first experience for new organizations joining HubSphere V3. When you access the platform for the first time, you will be guided through a streamlined setup process that establishes your organization's foundation. The wizard collects essential information including your full name, email address, organization name, and a secure password. This process typically takes less than two minutes to complete.</p>
+    <p>During the setup process, the system automatically performs several critical background operations. First, it creates your organization tenant with a unique identifier. Second, it seeds the database with predefined roles such as Super Admin, Admin, and standard User roles, each with appropriate permission sets. Third, it configures default settings for all modules including CRM pipelines, HR leave types, and notification preferences. This automated seeding ensures that your organization is immediately ready for use after setup without requiring manual configuration of basic structures.</p>
+    <p>After completing the Setup Wizard, you will be automatically logged into the platform with Super Admin privileges. From here, you can begin inviting team members, configuring module-specific settings, and customizing the platform to match your organization's workflows. The Setup Wizard is only displayed once per organization. Subsequent users will go directly to the login page.</p>
+
+    <div class="note-box">
+      <div class="note-label">Important</div>
+      <p>The email address you provide during setup becomes your primary administrator account. Ensure this is a valid, accessible email address as it will be used for account recovery, security notifications, and system alerts throughout the lifetime of your HubSphere instance.</p>
+    </div>
+  </div>
+</div>
+
+<div class="section-divider"></div>
+
+<!-- ==================== CHAPTER 2: AUTHENTICATION ==================== -->
+<div class="chapter">
+  <div class="chapter-number">Chapter 2</div>
+  <div class="chapter-title">Authentication</div>
+  <div class="chapter-desc">Login, two-factor authentication, password management, and session handling.</div>
+
+  <div class="section">
+    <div class="section-title">Login</div>
+    <p>Navigate to <span class="hl">https://hubspherev3.vercel.app/login</span> to access the login page. Enter your registered email address and the password you created during setup or registration. HubSphere V3 supports case-sensitive email matching, so ensure you enter your email exactly as it was registered. After entering your credentials, click the "Sign in" button to proceed. The system validates your credentials against the secure database and, upon successful authentication, issues a JSON Web Token (JWT) that maintains your session.</p>
+    <p>If authentication fails, you will see an error message indicating whether the email was not found or the password is incorrect. After multiple failed login attempts, the system may temporarily rate-limit further attempts to protect against brute-force attacks. Upon successful login, you will be redirected to the main dashboard where you can access all authorized modules and features. Your session will remain active as long as you are actively using the platform.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Two-Factor Authentication (2FA)</div>
+    <p>HubSphere V3 provides enterprise-grade security through optional Two-Factor Authentication. When enabled, 2FA adds an additional layer of protection to your account by requiring a verification code in addition to your password. To enable 2FA, navigate to <span class="hl">Admin &gt; Security</span> in the application sidebar. Here you will find the option to activate two-factor authentication for your account. The system uses time-based one-time passwords (TOTP) compatible with authenticator apps such as Google Authenticator, Authy, and Microsoft Authenticator.</p>
+    <p>When you first enable 2FA, the system displays a QR code that you can scan with your authenticator app. After scanning, the app will generate six-digit verification codes that rotate every 30 seconds. You will also receive backup recovery codes that should be stored securely in case you lose access to your authenticator app. Each time you log in with 2FA enabled, you will be prompted to enter the current code from your authenticator app after submitting your email and password. This ensures that even if your password is compromised, unauthorized users cannot access your account without the second factor.</p>
+
+    <div class="note-box">
+      <div class="note-label">Security Recommendation</div>
+      <p>We strongly recommend enabling 2FA for all administrator accounts and any user who handles sensitive data. This significantly reduces the risk of unauthorized access and is considered a security best practice for enterprise applications.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Password Reset</div>
+    <p>If you forget your password, you can initiate a reset directly from the login page. Click the <span class="hl">"Forgot password?"</span> link located below the password input field. You will be directed to a password reset form where you must enter the email address associated with your HubSphere account. After submitting the form, the system sends a secure, time-limited reset link to your registered email address. This link expires after a set period for security purposes.</p>
+    <p>Click the reset link in your email to open the password reset page. Here you will be prompted to enter a new password that meets the platform's security requirements. The new password must be different from your previous password and should include a mix of uppercase letters, lowercase letters, numbers, and special characters for maximum security. After confirming the new password, you can immediately log in with your updated credentials. If you do not receive the reset email, check your spam or junk folder, or contact your organization's administrator for assistance.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Change Password and Session Management</div>
+    <p>To change your password while logged in, navigate to your profile settings accessible from the user menu in the top-right corner of the application. Select the security or password section, where you will be prompted to enter your current password followed by your new password. The system validates the change in real time and applies it immediately. All existing sessions on other devices will be invalidated when your password is changed, requiring re-authentication.</p>
+    <p>HubSphere V3 uses token-based session management with automatic refresh capabilities. Your authentication token is refreshed periodically in the background to maintain an uninterrupted experience. When you click the logout button or close your browser, the session token is cleared from local storage, effectively terminating the session. If a token expires due to inactivity, you will be seamlessly redirected to the login page with a notification explaining that your session has timed out. Administrators can also forcibly terminate user sessions through the Admin panel for security purposes.</p>
+  </div>
+</div>
+
+<div class="section-divider"></div>
+
+<!-- ==================== CHAPTER 3: DASHBOARD ==================== -->
+<div class="chapter">
+  <div class="chapter-number">Chapter 3</div>
+  <div class="chapter-title">Dashboard</div>
+  <div class="chapter-desc">Your central command center for real-time metrics, quick access, and activity monitoring.</div>
+
+  <div class="section">
+    <div class="section-title">Overview</div>
+    <p>The main dashboard serves as the central command center of HubSphere V3, providing you with an at-a-glance view of your organization's most critical metrics and activities. Upon logging in, the dashboard is the first screen you see, designed to give you immediate insight into the health and performance of all connected modules. The layout features a combination of key performance indicator cards, a navigation sidebar, quick-access module links, and a real-time activity timeline that keeps you informed of the latest updates across the platform.</p>
+    <p>The dashboard aggregates data from every module within HubSphere, including CRM, HRMS, Communication, Automation, and Analytics. This means you can see your active deal pipeline value alongside employee attendance rates and recent automation executions, all in a single unified view. The dashboard is fully responsive and adapts its layout based on your screen size, ensuring you have access to critical information whether you are at your desk or working from a mobile device in the field.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Key Metrics and Quick Access</div>
+    <p>At the top of the dashboard, you will find a row of key metric cards that display the most important numbers for your organization. These typically include total active leads, open deals and their combined value, total employees, pending tasks, unread messages, and automation success rates. Each metric card is color-coded and may include trend indicators showing whether the value has increased or decreased compared to the previous period. Clicking on any metric card navigates you directly to the corresponding module for a more detailed view.</p>
+    <p>Below the metrics, quick-access cards provide one-click navigation to each major module. These cards often include a brief summary of pending items within that module, such as the number of leads requiring follow-up or the count of leave requests awaiting approval. The navigation sidebar on the left side of the screen provides persistent access to all modules, settings, and administrative functions. The sidebar can be collapsed to an icon-only view to maximize your workspace when needed.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Activity Timeline</div>
+    <p>The activity timeline on the dashboard displays a chronological feed of recent actions taken across the platform. This includes lead creation and updates, deal stage changes, employee check-ins, sent messages, and automation executions. Each activity entry shows the action description, the user who performed it, and a timestamp. The timeline helps you stay informed about what is happening in your organization without needing to navigate to individual modules.</p>
+    <p>You can filter the activity timeline by module, user, or date range to focus on the events most relevant to your role. For managers and executives, the timeline provides a valuable audit trail of team activities. For individual contributors, it serves as a personal activity log. The timeline automatically updates in real time as new activities occur, ensuring you always have the latest information at your fingertips without needing to manually refresh the page.</p>
+  </div>
+</div>
+
+<div class="section-divider"></div>
+
+<!-- ==================== CHAPTER 4: CRM MODULE ==================== -->
+<div class="chapter">
+  <div class="chapter-number">Chapter 4</div>
+  <div class="chapter-title">CRM Module</div>
+  <div class="chapter-desc">Complete customer relationship management with leads, contacts, deals, and pipeline tracking.</div>
+
+  <div class="section">
+    <div class="section-title">Overview</div>
+    <p>The CRM module is one of the core pillars of HubSphere V3, providing a comprehensive suite of tools for managing your entire sales pipeline and customer relationships. From initial lead capture to closed-won deals, the CRM module tracks every interaction, communication, and milestone in the customer journey. It is designed to support sales teams of all sizes, from individual contributors managing a personal pipeline to large enterprise teams with complex multi-stage approval workflows and territory management requirements.</p>
+    <p>The module integrates seamlessly with the Communication, Automation, and Analytics modules, enabling you to send follow-up emails directly from a lead record, trigger automated workflows when deals move to new stages, and generate detailed performance reports. All CRM data is stored in a centralized database with full audit trails, ensuring data integrity and compliance with organizational governance policies. The interface provides both list views and kanban board views, allowing users to work in the style that best suits their workflow preferences.</p>
+  </div>
+
+  <div class="card-grid">
+    <div class="feature-card">
+      <div class="feature-card-title"><span class="dot"></span>Leads</div>
+      <p>Leads represent potential customers who have shown interest in your products or services but have not yet been qualified. You can create leads manually by filling in contact details, company information, and the lead source. Each lead record supports status tracking (New, Contacted, Qualified, Unqualified), priority levels, and custom fields. Leads can be converted to contacts and deals once they are qualified, automatically carrying forward all associated data, notes, and activity history to the new records without any data loss.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title"><span class="dot"></span>Contacts</div>
+      <p>Contacts are the individuals and decision-makers within your customer organizations. The contact management feature stores comprehensive profiles including personal details, job titles, communication preferences, and interaction history. Each contact can be associated with a company record and linked to multiple deals, tasks, and notes. The contact timeline provides a complete chronological view of every touchpoint, including emails sent, calls made, meetings scheduled, and notes added by any team member.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title"><span class="dot"></span>Companies</div>
+      <p>Companies allow you to organize and track the organizations you do business with. Each company record includes the organization name, industry, size, website, address, and key contact persons. The company view aggregates all related contacts, deals, and activities in a single location, giving your team a 360-degree view of every business relationship. You can also store custom fields for industry-specific data such as annual revenue, technology stack, or procurement timelines to enrich your company profiles.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title"><span class="dot"></span>Deals</div>
+      <p>Deals represent revenue opportunities in your sales pipeline. Each deal tracks the deal name, associated contact and company, deal value, expected close date, and current stage. The pipeline view displays deals as cards arranged across customizable stages such as Prospect, Qualification, Proposal, Negotiation, and Closed. Drag-and-drop functionality allows you to move deals between stages instantly. Each stage change is logged in the activity timeline, and weighted probability calculations help forecast revenue accurately.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Tasks, Calls, Notes, and Follow-ups</div>
+    <p>The CRM module includes built-in task management that allows you to create, assign, and track follow-up activities linked to any CRM entity. Tasks support priority levels (Low, Medium, High, Urgent), due dates, and assignment to team members. Overdue tasks are highlighted in the task list and dashboard, ensuring nothing falls through the cracks. The task board view provides a kanban-style interface for visual workflow management, making it easy to see the status of all pending activities at a glance.</p>
+    <p>The call logging feature enables your sales team to record details of phone conversations with leads and contacts. Each call record captures the call type (Inbound, Outbound, Missed), duration, subject, and detailed notes about the conversation. This creates a comprehensive communication history that any team member can reference before their next interaction. Notes can be attached to any CRM entity to capture meeting summaries, important observations, or action items. Follow-up scheduling allows you to set reminders for future actions, with the system sending notifications at the appropriate time to ensure timely execution.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Tags, Import/Export, and Search</div>
+    <p>Tags provide a flexible categorization system for organizing your CRM data. You can create color-coded tags for lead sources, industry segments, geographic regions, or any custom category relevant to your business. Tags can be applied to leads, contacts, companies, and deals, enabling powerful filtering and segmentation. The tag management interface allows administrators to create, edit, and archive tags, maintaining a clean and organized taxonomy as your data grows.</p>
+    <p>The bulk import and export functionality supports CSV format for efficient data migration and backup operations. You can import leads, contacts, and companies from external sources such as spreadsheets or other CRM systems using a standardized template. The import process includes validation and error reporting to ensure data quality. Export features allow you to generate CSV files of filtered data for reporting, analysis, or backup purposes. The global search feature provides instant results across all CRM entities, searching by name, email, phone number, company, or any custom field, with results displayed in a unified search panel.</p>
+  </div>
+</div>
+
+<div class="section-divider"></div>
+
+<!-- ==================== CHAPTER 5: HRMS MODULE ==================== -->
+<div class="chapter">
+  <div class="chapter-number">Chapter 5</div>
+  <div class="chapter-title">HRMS Module</div>
+  <div class="chapter-desc">Comprehensive human resource management covering employees, attendance, payroll, and leave.</div>
+
+  <div class="section">
+    <div class="section-title">Overview</div>
+    <p>The HRMS (Human Resource Management System) module in HubSphere V3 provides a complete suite of tools for managing your organization's workforce. From onboarding new employees to processing payroll, the HRMS module streamlines every aspect of human resource administration. It serves as the single source of truth for all employee-related data, integrating with the CRM and Communication modules to provide a holistic view of your organization's human capital and operational efficiency.</p>
+    <p>The module is designed to scale with your organization, supporting everything from small teams of ten employees to large enterprises with hundreds of workers across multiple departments and locations. Role-based access controls ensure that employees can view their own data while managers and HR administrators have appropriate access levels for oversight and reporting. Automated workflows reduce manual administrative burden, allowing your HR team to focus on strategic initiatives rather than repetitive paperwork.</p>
+  </div>
+
+  <div class="card-grid">
+    <div class="feature-card">
+      <div class="feature-card-title"><span class="dot"></span>Employees</div>
+      <p>The employee management feature maintains comprehensive profiles for every member of your organization. Each profile includes personal information, employment details, department and designation assignments, emergency contacts, and document attachments. Employee records serve as the foundation for all other HRMS functions, including payroll processing, leave management, and attendance tracking. Administrators can create, edit, and deactivate employee records, with all changes tracked in the audit log for compliance purposes.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title"><span class="dot"></span>Departments and Designations</div>
+      <p>Departments and designations define your organizational structure within HubSphere. Departments represent functional units such as Sales, Marketing, Engineering, and Human Resources. Designations define specific job roles and titles within each department, such as Senior Sales Manager or Software Engineer. Together, these structures enable accurate reporting by organizational unit, role-based access control, and clear hierarchical relationships that support approval workflows throughout the platform.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title"><span class="dot"></span>Leave Management</div>
+      <p>The leave management system handles the complete lifecycle of employee leave requests. Administrators can define custom leave types such as Casual Leave, Sick Leave, Earned Leave, and Maternity Leave, each with specific allocation rules and carry-forward policies. Employees submit leave requests through a simple form specifying the leave type, start date, end date, and reason. Requests are routed to the employee's manager for approval through a streamlined workflow. Both employees and managers receive real-time notifications at each stage of the process, and the leave calendar provides a visual overview of team availability.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title"><span class="dot"></span>Attendance</div>
+      <p>The attendance tracking feature enables employees to log their daily check-in and check-out times. The system automatically calculates working hours, overtime, and late arrivals based on your organization's configured work schedule. Managers can view team attendance in real time through the attendance dashboard, which highlights absences, late arrivals, and employees who have not checked in. Attendance data feeds directly into the payroll module, ensuring accurate compensation calculations and reducing discrepancies between hours worked and pay received.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Expenses, Payroll, and Field Visits</div>
+    <p>The expense management feature allows employees to submit expense claims for business-related costs such as travel, meals, office supplies, and client entertainment. Each expense claim includes the amount, category, date, description, and optional receipt attachments. Claims follow an approval workflow where managers review and either approve or reject submissions. Approved expenses are tracked for reimbursement and can be included in payroll processing. The expense dashboard provides summary views by category, department, and time period for budget monitoring and financial reporting.</p>
+    <p>The payroll module automates the calculation of employee compensation on a configurable cycle (monthly, bi-weekly, or weekly). It factors in base salary, attendance records, approved overtime, leave deductions, and approved expense reimbursements to produce accurate payslips. The payroll dashboard provides an overview of total payroll expenditure, pending processing items, and historical payroll data. Field visit tracking, available for sales and field teams, allows employees to log their field activities with location data, visit notes, and client interaction details, giving managers visibility into field team productivity and route efficiency.</p>
+  </div>
+</div>
+
+<div class="section-divider"></div>
+
+<!-- ==================== CHAPTER 6: COMMUNICATION MODULE ==================== -->
+<div class="chapter">
+  <div class="chapter-number">Chapter 6</div>
+  <div class="chapter-title">Communication Module</div>
+  <div class="chapter-desc">Centralized messaging, templates, notifications, and provider configuration.</div>
+
+  <div class="section">
+    <div class="section-title">Overview</div>
+    <p>The Communication module serves as the centralized hub for all messaging and notification activities within HubSphere V3. It provides a unified interface for managing conversations, templated messages, and system notifications, ensuring that your team can communicate efficiently with colleagues, clients, and prospects without leaving the platform. The module is architected to support multiple communication channels and can be extended with external provider integrations for email, SMS, and messaging services.</p>
+    <p>Effective communication is the backbone of any successful business operation, and HubSphere V3 addresses this need with a robust set of tools that integrate seamlessly with the CRM and HRMS modules. For example, sales representatives can initiate conversations with leads directly from the CRM contact view, while HR teams can send targeted notifications to specific departments or employee groups. The communication history is preserved alongside the relevant business records, creating a comprehensive audit trail that supports accountability and compliance requirements across the organization.</p>
+  </div>
+
+  <div class="card-grid">
+    <div class="feature-card">
+      <div class="feature-card-title"><span class="dot"></span>Inbox</div>
+      <p>The Inbox is your primary messaging interface within HubSphere. It displays all your active conversations in a threaded view, allowing you to see the full history of each interaction. Conversations can be with individual users, teams, or external contacts linked to CRM records. The inbox supports rich text formatting, file attachments, and message search. Unread messages are clearly highlighted, and push notifications alert you to new messages in real time. You can organize conversations by marking them as read, archiving, or flagging them for follow-up action.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title"><span class="dot"></span>Templates</div>
+      <p>Message templates allow you to create pre-defined messages for common communication scenarios. Templates can include dynamic placeholders that are automatically populated with recipient-specific data such as name, company, or deal details. This feature is particularly valuable for sales outreach, onboarding communications, and support responses. Administrators can create organization-wide templates, while individual users can maintain their personal template library. Templates significantly reduce the time spent composing repetitive messages and help maintain consistent communication standards across your team.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title"><span class="dot"></span>Notifications</div>
+      <p>The notification management system keeps you informed about important events across all modules. Notifications are generated for actions such as task assignments, deal stage changes, leave request approvals, and mentions in conversations. The notification center provides a consolidated view of all unread and read notifications, with options to filter by module or type. You can configure your notification preferences to control which events trigger alerts and through which channels (in-app, email, or both). This ensures you receive relevant updates without being overwhelmed by noise.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title"><span class="dot"></span>Settings</div>
+      <p>The Communication Settings panel allows administrators to configure external communication providers for email and SMS delivery. You can integrate services such as SendGrid, Mailgun, Twilio, or other SMTP-compatible providers. The settings interface supports provider-specific configuration fields, API key management, and delivery testing. Once configured, these providers enable the platform to send outbound messages from automation workflows, template-based campaigns, and system-generated notifications to external recipients via their preferred channels.</p>
+    </div>
+  </div>
+</div>
+
+<div class="section-divider"></div>
+
+<!-- ==================== CHAPTER 7: AUTOMATION MODULE ==================== -->
+<div class="chapter">
+  <div class="chapter-number">Chapter 7</div>
+  <div class="chapter-title">Automation Module</div>
+  <div class="chapter-desc">Build intelligent workflows, configure triggers, and monitor automation performance.</div>
+
+  <div class="section">
+    <div class="section-title">Overview</div>
+    <p>The Automation module empowers you to create intelligent workflows that eliminate repetitive manual tasks and enforce consistent business processes across your organization. By defining rules-based triggers and actions, you can automate complex multi-step processes that span multiple modules. For example, you can configure a workflow that automatically assigns a lead to a sales representative when it enters the Qualified stage, sends a welcome email to the lead, creates a follow-up task, and updates the CRM analytics dashboard, all without any manual intervention from your team.</p>
+    <p>The automation engine is designed to be both powerful and accessible. While it supports complex conditional logic, branching, and multi-action sequences, the interface is intuitive enough that non-technical users can create effective automations using a visual builder. All automation executions are logged for auditing and debugging purposes, and the module provides detailed analytics on automation performance, including success rates, execution times, and failure patterns. This transparency allows you to continuously optimize your automations for maximum efficiency and reliability.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Workflows and Triggers</div>
+    <p>Workflows are the core building blocks of the Automation module. Each workflow consists of a name, description, trigger condition, and one or more sequential actions. You create workflows through the workflow builder, which provides a step-by-step interface for defining each component. Workflow names should be descriptive and follow a consistent naming convention so that team members can easily identify the purpose of each automation. Each workflow can be toggled between active and inactive states, allowing you to temporarily disable automations without deleting them.</p>
+    <p>Triggers define the events that initiate a workflow execution. HubSphere V3 supports a variety of trigger types, including record creation events (such as when a new lead is added), record update events (such as when a deal stage changes), scheduled time-based triggers (such as daily at 9:00 AM), and manual triggers that can be invoked by users on demand. Each trigger can be further refined with filter conditions that restrict execution to records matching specific criteria. For example, you could create a trigger that fires only when a deal with a value greater than ten thousand dollars moves to the Negotiation stage, ensuring your high-value opportunities receive appropriate attention.</p>
+
+    <div class="note-box">
+      <div class="note-label">Best Practice</div>
+      <p>When designing automations, start with simple workflows and gradually add complexity as you become familiar with the system. Test each automation with sample data before activating it in a production environment. Monitor the executions tab regularly during the first few days after activation to catch and address any unexpected behavior early.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Executions and Dashboard</div>
+    <p>The Executions tab provides a detailed log of every automation run, including the workflow name, trigger that initiated it, timestamp, execution status (Success, Failed, In Progress), and any error messages. This log is essential for troubleshooting automation issues and understanding how your workflows are performing in practice. You can filter executions by workflow, status, or date range to quickly find specific runs. Failed executions include stack traces and contextual information to help developers diagnose and resolve issues efficiently.</p>
+    <p>The Automation Dashboard presents a high-level summary of your automation performance metrics. Key indicators include the total number of active workflows, total executions in the last 24 hours, success rate percentage, average execution time, and a breakdown of executions by module. The dashboard also highlights the most frequently triggered workflows and those with the highest failure rates, drawing your attention to areas that may need optimization. These analytics help you understand the return on investment of your automation efforts and identify opportunities for additional process improvement across your organization.</p>
+  </div>
+</div>
+
+<div class="section-divider"></div>
+
+<!-- ==================== CHAPTER 8: ANALYTICS MODULE ==================== -->
+<div class="chapter">
+  <div class="chapter-number">Chapter 8</div>
+  <div class="chapter-title">Analytics Module</div>
+  <div class="chapter-desc">Data-driven insights across CRM, HR, Communication, Automation, and AI usage.</div>
+
+  <div class="section">
+    <div class="section-title">Overview</div>
+    <p>The Analytics module is the intelligence layer of HubSphere V3, transforming raw data from every module into actionable insights and visual reports. It provides dedicated analytics views for each major functional area of the platform, enabling decision-makers at every level to understand trends, identify opportunities, and address challenges with data-driven confidence. The analytics are generated in real time, meaning the reports always reflect the most current state of your business data without requiring manual refresh operations or batch processing delays.</p>
+    <p>The module is designed with a layered approach to data access. Frontline users see metrics relevant to their individual performance and immediate tasks, managers see team-level aggregations and comparisons, and executives see organization-wide summaries and strategic KPIs. This role-appropriate data presentation ensures that every user can quickly find the information most relevant to their responsibilities without being overwhelmed by irrelevant details. All charts, graphs, and tables support interactive exploration, allowing users to drill down from summary metrics to underlying data records.</p>
+  </div>
+
+  <div class="card-grid">
+    <div class="feature-card">
+      <div class="feature-card-title"><span class="dot"></span>CRM Analytics</div>
+      <p>CRM Analytics provides comprehensive visibility into your sales performance and pipeline health. Key metrics include the total number of leads by source, conversion rates at each pipeline stage, average deal size, sales cycle length, and revenue forecasts by period. Visual charts display pipeline distribution, win/loss ratios, and team performance comparisons. These insights help sales leaders identify bottlenecks in the pipeline, understand which lead sources produce the highest quality prospects, and make informed decisions about resource allocation and strategy adjustments to maximize revenue growth.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title"><span class="dot"></span>HR Analytics</div>
+      <p>HR Analytics delivers workforce intelligence including headcount trends, department distribution, attendance patterns, leave utilization rates, and payroll expenditure breakdowns. Managers can identify trends in employee absenteeism, compare departmental performance metrics, and track the effectiveness of HR policies over time. The analytics also cover expense claim patterns, helping organizations control costs and ensure policy compliance. These insights support strategic workforce planning, resource optimization, and data-driven HR decision-making at every level of the organization.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title"><span class="dot"></span>Communication Analytics</div>
+      <p>Communication Analytics tracks the effectiveness of your messaging activities across the platform. Metrics include message volume trends, response rates, average response times, and template usage statistics. These analytics help you understand how effectively your team is engaging with contacts and prospects, identify communication bottlenecks, and optimize your messaging strategies. The module also tracks notification delivery rates and read receipts, giving you visibility into whether your important messages are reaching their intended recipients and being acted upon in a timely manner.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title"><span class="dot"></span>Automation Analytics</div>
+      <p>Automation Analytics measures the performance and impact of your automated workflows. Key metrics include total executions, success and failure rates, average execution duration, and the number of actions completed by automation versus manual effort. These metrics help you quantify the time and cost savings generated by your automations, identify workflows that need optimization, and prioritize new automation opportunities. The analytics also track trigger frequency patterns, helping you understand when and how often your automations are being invoked throughout the business day and week.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">AI Usage, Executive Dashboard, and Telecaller Analytics</div>
+    <p>AI Usage Analytics provides visibility into how your organization is leveraging the AI Assistant features. Metrics include the number of AI interactions, most common query types, response quality ratings, and token consumption patterns. These insights help administrators understand the value derived from AI features, optimize provider configurations for cost efficiency, and identify opportunities to expand AI-assisted workflows to additional business processes. The data also supports capacity planning for AI provider subscriptions and budget allocation for AI services.</p>
+    <p>The Executive Dashboard is a high-level strategic view designed for C-suite leaders and senior management. It consolidates the most critical KPIs from every module into a single, visually compelling interface. Key metrics include total revenue, pipeline value, employee count and satisfaction indicators, automation ROI, and communication engagement rates. The dashboard supports date range comparisons, allowing executives to track performance trends over time. Telecaller Analytics, specifically designed for call center and sales calling teams, tracks call volumes, call durations, outcomes, conversion rates, and individual agent performance metrics to optimize telecalling operations and coaching programs.</p>
+  </div>
+</div>
+
+<div class="section-divider"></div>
+
+<!-- ==================== CHAPTER 9: AI ASSISTANT ==================== -->
+<div class="chapter">
+  <div class="chapter-number">Chapter 9</div>
+  <div class="chapter-title">AI Assistant</div>
+  <div class="chapter-desc">Conversational AI, agent configuration, and provider management for intelligent assistance.</div>
+
+  <div class="section">
+    <div class="section-title">Overview</div>
+    <p>The AI Assistant module brings the power of artificial intelligence directly into your daily HubSphere V3 workflow. Rather than switching between your business platform and a separate AI tool, the integrated AI Assistant allows you to ask questions, generate content, analyze data, and receive intelligent suggestions without ever leaving the application context. The AI capabilities are designed to augment human decision-making, not replace it, providing your team with instant access to insights and assistance that would traditionally require significant manual research or analysis effort.</p>
+    <p>The module supports multiple AI providers and models, giving your organization the flexibility to choose the AI service that best meets your performance, cost, and data privacy requirements. All AI interactions are logged for quality assurance and can be reviewed by administrators to ensure appropriate usage. The AI Assistant can access contextual information from your HubSphere data when configured to do so, enabling it to provide responses that are relevant to your specific business situation rather than generic advice. This context-aware capability makes the AI Assistant a genuinely useful business tool rather than a simple chatbot.</p>
+  </div>
+
+  <div class="card-grid">
+    <div class="feature-card">
+      <div class="feature-card-title"><span class="dot"></span>Chat Interface</div>
+      <p>The AI Chat Interface provides a conversational experience where you can interact with the AI Assistant using natural language. The interface supports multi-turn conversations, meaning you can ask follow-up questions and the AI maintains context from previous exchanges within the same session. You can use the chat interface for a wide range of tasks including drafting emails, summarizing reports, generating product descriptions, brainstorming ideas, and asking questions about your HubSphere data. The chat history is preserved so you can reference previous conversations and continue discussions across sessions.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title"><span class="dot"></span>Agent Management</div>
+      <p>The Agent Management feature allows administrators to configure specialized AI agents with specific capabilities and behavioral guidelines. Each agent can be customized with a system prompt that defines its role, expertise area, and response style. For example, you might create a Sales Coach agent that specializes in providing sales strategies, a Compliance Checker agent that reviews content for policy adherence, or a Data Analyst agent that helps interpret business metrics. Agents can be made available to specific user groups based on their roles and responsibilities.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Provider Settings</div>
+    <p>The Provider Settings panel allows administrators to configure the AI service connections that power the Assistant. HubSphere V3 supports integration with major AI providers including OpenAI, Anthropic, Google AI, and other OpenAI-compatible API endpoints. For each provider, you configure the API endpoint URL, authentication key, default model selection, and usage limits. The interface includes a connection test feature that verifies your configuration is working correctly before committing changes.</p>
+    <p>Provider settings also include cost control features such as monthly token budgets, per-user usage limits, and model-tier restrictions. These controls help organizations manage their AI spending while ensuring fair resource distribution among team members. The provider dashboard shows real-time usage statistics including token consumption, request counts, and average response times, enabling administrators to optimize their AI infrastructure for both performance and cost efficiency. Multiple providers can be configured simultaneously, with the ability to route different agent types to different providers based on the specific requirements of each use case.</p>
+  </div>
+</div>
+
+<div class="section-divider"></div>
+
+<!-- ==================== CHAPTER 10: ADMIN PANEL ==================== -->
+<div class="chapter">
+  <div class="chapter-number">Chapter 10</div>
+  <div class="chapter-title">Admin Panel</div>
+  <div class="chapter-desc">User management, roles, permissions, audit logs, and organizational settings.</div>
+
+  <div class="section">
+    <div class="section-title">Overview</div>
+    <p>The Admin Panel is the control center for managing your HubSphere V3 organization. Accessible to users with Admin or Super Admin roles, it provides comprehensive tools for user management, security configuration, and system-wide settings. The Admin Panel is organized into logical sections that mirror the administrative responsibilities within a typical organization, making it intuitive for administrators to find and manage the settings they need without extensive training or technical expertise.</p>
+    <p>All changes made through the Admin Panel are logged in the audit trail, creating a complete record of who changed what and when. This transparency is essential for compliance, accountability, and troubleshooting. The Admin Panel also provides overview dashboards that summarize key administrative metrics such as active user counts, recent security events, and system configuration status. These summaries help administrators quickly assess the health of their HubSphere instance and identify items that require attention during their daily administrative routines.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">User Management and Roles</div>
+    <p>User Management is one of the most frequently used sections of the Admin Panel. Here, administrators can create new user accounts, edit existing user profiles, deactivate accounts, and reset passwords. Each user account includes the user's name, email, assigned role, department, and activation status. The user list supports searching, filtering by role or department, and sorting by various attributes. Bulk actions allow administrators to perform operations on multiple users simultaneously, such as assigning roles or deactivating accounts for a departing team.</p>
+    <p>The Roles and Permissions system implements role-based access control (RBAC) that determines what each user can see and do within the platform. HubSphere V3 comes with predefined roles including Super Admin, Admin, and standard User, each with a carefully curated set of permissions. Administrators can create custom roles tailored to specific job functions, such as Sales Manager, HR Coordinator, or Read-Only Analyst. Each role can be configured with granular permissions at the module and action level, for example allowing a Sales Manager to create and edit deals but not delete them, or allowing an HR Coordinator to manage leave requests but not access payroll settings.</p>
+
+    <div class="note-box">
+      <div class="note-label">Access Control</div>
+      <p>When creating custom roles, always follow the principle of least privilege. Grant users only the permissions they need to perform their job functions. Regularly review role assignments to ensure they remain appropriate as team members change positions or responsibilities within the organization.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Membership, Audit Logs, and Settings</div>
+    <p>Membership Management handles the association between users and their organization tenant. In multi-tenant deployments, this feature ensures that users are correctly linked to the right organizational context, which affects their data access, module visibility, and reporting scope. Administrators can review and modify membership associations, transfer users between tenants, and manage guest access for external collaborators who need limited access to specific modules or records without being full members of the organization.</p>
+    <p>The Audit Logs section provides a comprehensive, searchable record of every significant action taken within the platform. This includes user logins, data modifications, permission changes, automation executions, and administrative configuration updates. Each log entry captures the timestamp, user who performed the action, action type, affected entity, and before-and-after values where applicable. The audit log is an essential tool for security monitoring, compliance reporting, and incident investigation. The Organization Settings section allows administrators to configure company details, default preferences, notification rules, and module-specific configurations that apply to all users within the organization.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Security and Subscription</div>
+    <p>The Security section of the Admin Panel provides centralized management of all security-related configurations. This includes the two-factor authentication settings described in Chapter 2, as well as password policy configuration, session timeout settings, and IP allowlist management for organizations that require network-level access restrictions. Administrators can enforce organization-wide security policies such as minimum password length, required character complexity, and mandatory 2FA for specific roles. The security dashboard highlights recent login activity, failed authentication attempts, and active sessions, providing real-time visibility into the security posture of your HubSphere instance.</p>
+    <p>The Subscription section manages your organization's plan and billing information. It displays your current plan details, usage statistics relative to plan limits, and billing history. If your plan has user seat limits, storage quotas, or feature restrictions, the subscription page clearly shows your current utilization and alerts you when approaching limits. Administrators can upgrade or downgrade plans, manage payment methods, and view upcoming charges. For organizations on annual plans, the subscription page also shows the renewal date and provides options for early renewal or plan modification before the current term expires.</p>
+  </div>
+</div>
+
+<div class="section-divider"></div>
+
+<!-- ==================== CHAPTER 11: SUPER ADMIN ==================== -->
+<div class="chapter">
+  <div class="chapter-number">Chapter 11</div>
+  <div class="chapter-title">Super Admin</div>
+  <div class="chapter-desc">Multi-tenant oversight, global user management, feature flags, and system health monitoring.</div>
+
+  <div class="section">
+    <div class="section-title">Overview</div>
+    <p>The Super Admin panel is the highest level of administrative access in HubSphere V3, designed for platform operators who manage multiple organizations or the entire HubSphere deployment. While the standard Admin Panel focuses on a single organization's configuration, the Super Admin panel provides cross-tenant visibility and control capabilities that are essential for managing a multi-tenant SaaS platform. Access to this panel is restricted to users with the Super Admin role, and all actions performed here are subject to enhanced audit logging given the elevated privileges involved.</p>
+    <p>The Super Admin interface is organized into sections that address the unique responsibilities of platform-level management. These include overseeing all registered organizations, managing global user accounts, configuring platform-wide features, and monitoring the health and performance of the underlying infrastructure. The panel provides aggregated statistics and trends that help platform operators understand usage patterns, identify growth opportunities, and proactively address technical issues before they impact user experience.</p>
+  </div>
+
+  <div class="card-grid">
+    <div class="feature-card">
+      <div class="feature-card-title"><span class="dot"></span>Multi-Tenant Management</div>
+      <p>The Multi-Tenant Management section provides a comprehensive list of all organizations registered on the HubSphere platform. For each tenant, you can view the organization name, creation date, user count, plan type, and current status. Super Admins can perform administrative actions such as suspending or reactivating tenants, modifying plan assignments, and accessing organization-level settings for troubleshooting purposes. This centralized view is essential for platform operators who need to monitor the growth and health of their customer base and respond promptly to tenant-specific issues.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title"><span class="dot"></span>Platform Statistics</div>
+      <p>Platform Statistics provides system-wide metrics that give Super Admins a bird's-eye view of the entire HubSphere deployment. Key metrics include total registered organizations, total active users across all tenants, aggregate data volumes, API request counts, and system throughput measurements. These statistics are presented in both real-time and historical trend views, enabling platform operators to identify growth patterns, seasonal variations, and capacity planning needs. The statistics dashboard also tracks platform-wide engagement metrics such as daily active users, module usage distribution, and average session durations.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title"><span class="dot"></span>Global User Management</div>
+      <p>Global User Management allows Super Admins to view and manage user accounts across all tenants from a single interface. This capability is critical for scenarios such as migrating users between organizations, investigating cross-tenant security incidents, or assisting with support escalations that require user-level intervention. The global user list supports filtering by tenant, role, and account status, making it easy to locate specific users even in large deployments with thousands of accounts. Super Admins can perform actions such as password resets, account unlocks, and role modifications across tenant boundaries.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-title"><span class="dot"></span>Feature Flags</div>
+      <p>Feature Flags provide a mechanism for selectively enabling or disabling platform features at the global level or for specific tenants. This is particularly valuable for rolling out new features gradually, conducting A/B tests, or temporarily disabling problematic features without requiring a full deployment. Super Admins can create feature flags with custom names and descriptions, set them to enabled or disabled states, and configure tenant-level overrides. The feature flag dashboard shows the current status of all flags and their impact on the user base, providing full visibility into which features are active and for which organizations.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">System Health Monitoring</div>
+    <p>The System Health section provides real-time monitoring of the HubSphere infrastructure, including server resource utilization (CPU, memory, disk, and network), database performance metrics (query times, connection pools, and replication status), and external service availability (AI providers, communication providers, and third-party integrations). Each health metric includes configurable alert thresholds that trigger notifications when values exceed acceptable ranges, enabling the operations team to respond proactively to potential issues before they degrade the user experience.</p>
+    <p>The health dashboard presents metrics in an intuitive visual format with color-coded status indicators: green for healthy, yellow for warning, and red for critical. Historical trend charts show how system performance has evolved over time, helping identify patterns such as recurring load spikes or gradual resource consumption growth that may indicate a need for infrastructure scaling. The system also tracks uptime percentages and generates periodic health reports that can be shared with stakeholders to demonstrate platform reliability and support capacity planning discussions with management and finance teams.</p>
+  </div>
+</div>
+
+<div class="page-footer">
+  <span>HubSphere V3 - Complete User Guide</span>
+  <span>Version 3.0 | 2025 Edition</span>
+</div>
+
+</div>
+</div>
+
+</body>
+</html>

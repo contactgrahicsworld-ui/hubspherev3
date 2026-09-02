@@ -7,6 +7,7 @@ import { success } from '@/lib/api-response';
 import { createAuditLog } from '@/lib/audit';
 import { setAuthCookies } from '@/lib/api-auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { DEFAULT_ROLES } from '@/lib/constants';
 
 export async function POST(request: NextRequest) {
   try {
@@ -50,6 +51,14 @@ export async function POST(request: NextRequest) {
     let roleCode: string | undefined;
 
     if (isFirstUser) {
+      // Ensure system roles exist (needed for FK on membership.roleCode)
+      await db.role.createMany({
+        data: DEFAULT_ROLES.map(r => ({
+          code: r.code, name: r.name, description: r.description, isSystem: true, tenantId: null,
+        })),
+        skipDuplicates: true,
+      });
+
       // Create a default tenant for the first user
       const tenant = await db.tenant.create({
         data: {

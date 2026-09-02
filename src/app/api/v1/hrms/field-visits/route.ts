@@ -67,10 +67,9 @@ const fieldVisitSelect = {
   employee: {
     select: {
       id: true,
-      employeeId: true,
-      firstName: true,
-      lastName: true,
-      department: { select: { name: true } },
+      name: true,
+      email: true,
+      avatarUrl: true,
     },
   },
   lead: {
