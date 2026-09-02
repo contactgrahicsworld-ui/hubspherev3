@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { hashPassword, generateAccessToken, generateRefreshToken, getRefreshTokenExpiry } from '@/lib/auth';
-import { signupSchema, validate } from '@/lib/validators';
+import { setupSchema, validate } from '@/lib/validators';
 import { handleApiError } from '@/lib/errors';
 import { success } from '@/lib/api-response';
 import { createAuditLog } from '@/lib/audit';
