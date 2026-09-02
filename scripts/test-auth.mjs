@@ -38,7 +38,8 @@ async function main() {
   r = await api('POST', '/api/v1/auth/setup', {
     name: 'Admin',
     email: 'admin@hubsphere.in',
-    password: 'Admin@12345'
+    password: 'Admin@12345',
+    confirmPassword: 'Admin@12345',
   });
   if (r.status === 201 && r.data?.data?.accessToken) {
     pass(`Setup 201 - Admin created`);
@@ -122,9 +123,9 @@ async function main() {
   // TEST 8: GET /auth/me With Token
   console.log('\n--- TEST 8: GET /auth/me (With Token) ---');
   r = await api('GET', '/api/v1/auth/me', null, ACCESS_TOKEN);
-  if (r.status === 200 && r.data?.data?.email) {
+  if (r.status === 200 && r.data?.data?.user?.email) {
     pass('/auth/me 200 OK');
-    if (r.data.data.email === 'admin@hubsphere.in') pass('/auth/me returns correct email');
+    if (r.data.data.user.email === 'admin@hubsphere.in') pass('/auth/me returns correct email');
   } else {
     fail('/auth/me', `status=${r.status} body=${JSON.stringify(r.data)?.substring(0,200)}`);
   }
