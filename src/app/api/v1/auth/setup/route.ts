@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, email, password } = validate(signupSchema, body);
+    const { name, email, password } = validate(setupSchema, body);
 
     // Hash password
     const passwordHash = await hashPassword(password);
