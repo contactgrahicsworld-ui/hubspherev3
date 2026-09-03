@@ -9,8 +9,20 @@ export async function POST(request: NextRequest) {
   try {
     const payload = await getAuthUser(request);
 
-    // Revoke the refresh token from cookie if present
-    const refreshTokenValue = request.cookies.get('hs-refresh-token')?.value;
+    // Accept refresh token from request body or cookie
+    let refreshTokenValue: string | undefined;
+    try {
+      const body = await request.json();
+      if (body?.refreshToken && typeof body.refreshToken === 'string') {
+        refreshTokenValue = body.refreshToken;
+      }
+    } catch {
+      // No JSON body — fall through to cookie
+    }
+    if (!refreshTokenValue) {
+      refreshTokenValue = request.cookies.get('hs-refresh-token')?.value;
+    }
+
     if (refreshTokenValue) {
       await db.refreshToken.updateMany({
         where: {
