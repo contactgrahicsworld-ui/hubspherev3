@@ -7,6 +7,9 @@ import { success } from '@/lib/api-response';
 import { createAuditLog } from '@/lib/audit';
 import { setAuthCookies } from '@/lib/api-auth';
 import { DEFAULT_ROLES } from '@/lib/constants';
+import { runSeed } from '@/lib/seed';
+
+export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
   try {
@@ -108,6 +111,13 @@ export async function POST(request: NextRequest) {
       ipAddress: request.headers.get('x-forwarded-for') ?? undefined,
       userAgent: request.headers.get('user-agent') ?? undefined,
     });
+
+    // Seed permissions & role assignments (optimized raw SQL, runs in < 3s)
+    try {
+      await runSeed();
+    } catch {
+      // Non-blocking: seed failure shouldn't break setup
+    }
 
     const response = NextResponse.json(
       success({

@@ -1,0 +1,823 @@
+     1→#!/usr/bin/env node
+     2→/**
+     3→ * html2pdf-next.js — HTML → PDF converter using Playwright + Paged.js + pdf-lib
+     4→ *
+     5→ * Uses Paged.js polyfill for pagination (break-inside/before/after, named pages,
+     6→ * orphans/widows) and Chromium for rendering. pdf-lib for post-processing.
+     7→ *
+     8→ * Usage:
+     9→ *   node html2pdf-next.js input.html
+    10→ *   node html2pdf-next.js input.html --output result.pdf
+    11→ *   node html2pdf-next.js input.html --css extra.css
+    12→ *   node html2pdf-next.js input.html --width 720px --height 960px
+    13→ *   node html2pdf-next.js input.html --merge a.pdf b.pdf  (merge additional PDFs after)
+    14→ *
+    15→ * Architecture:
+    16→ *   1. Playwright loads HTML, runs pre-render hooks (Mermaid, KaTeX, overflow detection)
+    17→ *   2. Paged.js polyfill injected — reads @page rules, chunks content into .pagedjs_page containers
+    18→ *   3. Chromium renders the Paged.js output to PDF via page.pdf()
+    19→ *   4. pdf-lib for merge, metadata, page count extraction
+    20→ *   5. Continuous-canvas mode (design_engine.py) skips Paged.js, uses Chromium native print
+    21→ */
+    22→
+    23→const fs = require('fs');
+    24→const path = require('path');
+    25→const { execSync, spawnSync } = require('child_process');
+    26→
+    27→const sleep = ms => new Promise(r => setTimeout(r, ms));
+    28→
+    29→// ═══════════════════════════════════════════════════════════════════
+    30→// Playwright / Chromium resolution (self-contained, no external helper)
+    31→// ═══════════════════════════════════════════════════════════════════
+    32→
+    33→function loadPlaywright() {
+    34→  // Try direct require first
+    35→  try { return require('playwright'); } catch (_) {}
+    36→
+    37→  // Search common global paths
+    38→  const Module = require('module');
+    39→  const roots = new Set();
+    40→  if (process.env.PLAYWRIGHT_PATH) roots.add(process.env.PLAYWRIGHT_PATH);
+    41→  if (process.env.NODE_PATH) {
+    42→    process.env.NODE_PATH.split(path.delimiter).filter(Boolean).forEach(p => roots.add(p));
+    43→  }
+    44→  try {
+    45→    const g = execSync('npm root -g', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+    46→    if (g) roots.add(g);
+    47→  } catch (_) {}
+    48→
+    49→  for (const base of roots) {
+    50→    const pkg = path.join(base, 'playwright', 'package.json');
+    51→    if (!fs.existsSync(pkg)) continue;
+    52→    try { return Module.createRequire(pkg)('playwright'); } catch (_) {}
+    53→  }
+    54→  throw new Error('Playwright not found. Install: npm install -g playwright@1.50.0');
+    55→}
+    56→
+    57→function loadPdfLib() {
+    58→  try { return require('pdf-lib'); } catch (_) {}
+    59→  const Module = require('module');
+    60→  try {
+    61→    const g = execSync('npm root -g', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+    62→    const pkg = path.join(g, 'pdf-lib', 'package.json');
+    63→    if (fs.existsSync(pkg)) return Module.createRequire(pkg)('pdf-lib');
+    64→  } catch (_) {}
+    65→  throw new Error('pdf-lib not found. Install: npm install -g pdf-lib');
+    66→}
+    67→
+    68→function resolveChromium(chromiumObj, allowInstall = false) {
+    69→  let exe;
+    70→  try { exe = chromiumObj.executablePath(); } catch (_) { exe = null; }
+    71→
+    72→  if (exe && fs.existsSync(exe)) {
+    73→    return { status: 'ok', executablePath: exe };
+    74→  }
+    75→
+    76→  // Try system Chrome/Chromium
+    77→  const candidates = [
+    78→    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    79→    '/Applications/Chromium.app/Contents/MacOS/Chromium',
+    80→    '/usr/bin/chromium-browser', '/usr/bin/chromium', '/usr/bin/google-chrome',
+    81→  ];
+    82→  if (process.env.PLAYWRIGHT_CHROMIUM_PATH) candidates.unshift(process.env.PLAYWRIGHT_CHROMIUM_PATH);
+    83→
+    84→  for (const c of candidates) {
+    85→    if (fs.existsSync(c)) return { status: 'fallback', executablePath: c };
+    86→  }
+    87→
+    88→  if (allowInstall) {
+    89→    const r = spawnSync('npx', ['playwright', 'install', 'chromium'], { stdio: 'inherit', shell: true });
+    90→    if (r.status === 0) {
+    91→      try { exe = chromiumObj.executablePath(); } catch (_) {}
+    92→      if (exe && fs.existsSync(exe)) return { status: 'installed', executablePath: exe };
+    93→    }
+    94→  }
+    95→
+    96→  return { status: 'missing', executablePath: exe || '' };
+    97→}
+    98→
+    99→// ═══════════════════════════════════════════════════════════════════
+   100→// CLI
+   101→// ═══════════════════════════════════════════════════════════════════
+   102→
+   103→function cli() {
+   104→  const tokens = process.argv.slice(2);
+   105→  if (!tokens.length || tokens[0] === '-h' || tokens[0] === '--help') {
+   106→    console.log(`
+   107→Usage: node html2pdf-next.js <input.html> [options]
+   108→
+   109→Options:
+   110→  --output, -o <file>   Output PDF path (default: <input>.pdf)
+   111→  --css <file>          Inject extra stylesheet
+   112→  --width <px>          Custom page width  (e.g. 720px)
+   113→  --height <px>         Custom page height (e.g. 960px)
+   114→  --nopaged             Skip Paged.js, use Chromium native @page pagination
+   115→  --merge <files...>    Append additional PDF files after conversion
+   116→  --title <text>        Set PDF document title metadata
+   117→  --help, -h            Show help
+   118→`);
+   119→    process.exit(0);
+   120→  }
+   121→
+   122→  const inputFile = tokens[0];
+   123→  let outputFile = null, customCSS = null, width = null, height = null;
+   124→  let mergeFiles = [], title = null, noPaged = false;
+   125→
+   126→  for (let i = 1; i < tokens.length; i++) {
+   127→    const t = tokens[i];
+   128→    if (t === '--output' || t === '-o') outputFile = tokens[++i];
+   129→    else if (t === '--css') customCSS = tokens[++i];
+   130→    else if (t === '--width') width = tokens[++i];
+   131→    else if (t === '--height') height = tokens[++i];
+   132→    else if (t === '--direct' || t === '--nopaged') { noPaged = true; }
+   133→    else if (t === '--title') title = tokens[++i];
+   134→    else if (t === '--merge') {
+   135→      while (i + 1 < tokens.length && !tokens[i + 1].startsWith('--')) {
+   136→        mergeFiles.push(tokens[++i]);
+   137→      }
+   138→    }
+   139→  }
+   140→
+   141→  if (!outputFile) {
+   142→    const p = path.parse(inputFile);
+   143→    outputFile = path.join(p.dir || '.', p.name + '.pdf');
+   144→  }
+   145→
+   146→  return { inputFile, outputFile, customCSS, width, height, mergeFiles, title, noPaged };
+   147→}
+   148→
+   149→// ═══════════════════════════════════════════════════════════════════
+   150→// Helpers
+   151→// ═══════════════════════════════════════════════════════════════════
+   152→
+   153→function prettyBytes(n) {
+   154→  const units = ['B', 'KB', 'MB', 'GB'];
+   155→  let u = 0;
+   156→  while (n >= 1024 && u < units.length - 1) { n /= 1024; u++; }
+   157→  return `${n.toFixed(1)} ${units[u]}`;
+   158→}
+   159→
+   160→// ═══════════════════════════════════════════════════════════════════
+   161→// Pre-render hooks (run in browser context before PDF export)
+   162→// ═══════════════════════════════════════════════════════════════════
+   163→
+   164→async function preRenderHooks(page) {
+   165→  const warnings = [];
+   166→
+   167→  // 1. Wait for Mermaid diagrams
+   168→  const hasMermaid = await page.evaluate(() => document.querySelectorAll('.mermaid').length > 0);
+   169→  if (hasMermaid) {
+   170→    console.log('  ⏳ Waiting for Mermaid diagrams...');
+   171→    try {
+   172→      await page.waitForFunction(() => {
+   173→        for (const m of document.querySelectorAll('.mermaid'))
+   174→          if (!m.querySelector('svg') && !m.getAttribute('data-processed')) return false;
+   175→        return true;
+   176→      }, { timeout: 30000 });
+   177→      await sleep(2000);
+   178→      console.log('  ✓ Mermaid rendered');
+   179→    } catch (_) {
+   180→      warnings.push('Mermaid rendering timed out (30s)');
+   181→    }
+   182→  }
+   183→
+   184→  // 2. Trigger KaTeX math rendering
+   185→  const katexStatus = await page.evaluate(() => ({
+   186→    lib: typeof renderMathInElement === 'function' || typeof katex !== 'undefined',
+   187→    rendered: document.querySelectorAll('.katex').length > 0,
+   188→    raw: /\$[^$]+\$|\$\$[^$]+\$\$|\\\(.*?\\\)|\\\[.*?\\\]/.test(document.body.innerText),
+   189→  }));
+   190→
+   191→  // Auto-inject KaTeX CDN if raw math detected but library not loaded
+   192→  if (!katexStatus.lib && katexStatus.raw && !katexStatus.rendered) {
+   193→    console.log('  ⏳ Auto-injecting KaTeX CDN (math formulas detected but KaTeX not loaded)...');
+   194→    await page.addStyleTag({ url: 'https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css' });
+   195→    await page.addScriptTag({ url: 'https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js' });
+   196→    await page.addScriptTag({ url: 'https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js' });
+   197→    await sleep(2000); // Wait for CDN scripts to load
+   198→    // Re-check
+   199→    const recheckLib = await page.evaluate(() => typeof renderMathInElement === 'function');
+   200→    if (recheckLib) {
+   201→      console.log('  ✓ KaTeX CDN loaded successfully');
+   202→    } else {
+   203→      console.log('  ⚠ KaTeX CDN failed to load — math will render as raw text');
+   204→      warnings.push('KaTeX CDN injection failed; math formulas may appear as raw LaTeX code');
+   205→    }
+   206→  }
+   207→
+   208→  // Re-evaluate after potential CDN injection
+   209→  const katexReady = await page.evaluate(() => ({
+   210→    lib: typeof renderMathInElement === 'function' || typeof katex !== 'undefined',
+   211→    rendered: document.querySelectorAll('.katex').length > 0,
+   212→    raw: /\$[^$]+\$|\$\$[^$]+\$\$|\\\(.*?\\\)|\\\[.*?\\\]/.test(document.body.innerText),
+   213→  }));
+   214→
+   215→  if (katexReady.lib && !katexReady.rendered && katexReady.raw) {
+   216→    console.log('  ⏳ Triggering KaTeX rendering...');
+   217→    await page.evaluate(() => {
+   218→      if (typeof renderMathInElement === 'function')
+   219→        renderMathInElement(document.body, {
+   220→          delimiters: [
+   221→            { left: '$$', right: '$$', display: true },
+   222→            { left: '$', right: '$', display: false },
+   223→            { left: '\\(', right: '\\)', display: false },
+   224→            { left: '\\[', right: '\\]', display: true },
+   225→          ],
+   226→          throwOnError: false,
+   227→        });
+   228→    });
+   229→    await sleep(1000);
+   230→    console.log('  ✓ KaTeX rendered');
+   231→  } else if (katexReady.rendered) {
+   232→    await sleep(500); // Font loading settle
+   233→  }
+   234→
+   235→  // 3. Fix oversized elements that prevent page breaks
+   236→  const nFixed = await page.evaluate(() => {
+   237→    const LIMIT = 1000;
+   238→    let n = 0;
+   239→    document.querySelectorAll(
+   240→      '[style*="page-break-inside: avoid"],[style*="break-inside: avoid"],' +
+   241→      '.avoid-break,table,figure,.theorem,.algorithm'
+   242→    ).forEach(el => {
+   243→      if (el.getBoundingClientRect().height > LIMIT) {
+   244→        el.style.pageBreakInside = 'auto';
+   245→        el.style.breakInside = 'auto';
+   246→        n++;
+   247→      }
+   248→    });
+   249→    return n;
+   250→  });
+   251→  if (nFixed) {
+   252→    console.log(`  ⚠ Fixed ${nFixed} oversized elements (removed break-inside: avoid)`);
+   253→  }
+   254→
+   255→  // 4. Detect overflow (horizontal AND vertical)
+   256→  const overflows = await page.evaluate(() => {
+   257→    const out = [];
+   258→    document.querySelectorAll('pre,table,figure,img,svg,.mermaid,blockquote,.equation').forEach(el => {
+   259→      const hDiff = el.scrollWidth - el.clientWidth;
+   260→      const vDiff = el.scrollHeight - el.clientHeight;
+   261→      if (hDiff > 2 || vDiff > 2) out.push({
+   262→        tag: el.tagName.toLowerCase(),
+   263→        cls: el.className || '',
+   264→        hOverflow: hDiff > 2 ? hDiff : 0,
+   265→        vOverflow: vDiff > 2 ? vDiff : 0,
+   266→        preview: (el.textContent || '').slice(0, 50).replace(/\s+/g, ' '),
+   267→      });
+   268→    });
+   269→    return out;
+   270→  });
+   271→  if (overflows.length) {
+   272→    console.log('  ⚠ Overflow detected:');
+   273→    overflows.forEach(o => {
+   274→      const parts = [];
+   275→      if (o.hOverflow) parts.push(`H +${o.hOverflow}px`);
+   276→      if (o.vOverflow) parts.push(`V +${o.vOverflow}px`);
+   277→      console.log(`    <${o.tag}${o.cls ? '.' + o.cls.split(' ')[0] : ''}> ${parts.join(', ')}`);
+   278→    });
+   279→    warnings.push(`${overflows.length} element(s) have overflow`);
+   280→  }
+   281→
+   282→  // 4b. Remove overflow:hidden BEFORE Paged.js injection.
+   283→  //     Paged.js reads the DOM layout to chunk content into pages.
+   284→  //     If a container has overflow:hidden + fixed height, Paged.js only sees
+   285→  //     the visible portion and silently loses the clipped content.
+   286→  //     We must remove overflow:hidden first so Paged.js gets the full content.
+   287→  const vOverflowFix = await page.evaluate(() => {
+   288→    const fixes = [];
+   289→    const candidates = [document.documentElement, document.body];
+   290→    const bodyChildren = document.body.children;
+   291→    for (let i = 0; i < bodyChildren.length; i++) {
+   292→      const child = bodyChildren[i];
+   293→      const tag = child.tagName.toLowerCase();
+   294→      if (tag === 'svg' || tag === 'script' || tag === 'style' || tag === 'link') continue;
+   295→      candidates.push(child);
+   296→      for (let j = 0; j < child.children.length; j++) {
+   297→        const grandchild = child.children[j];
+   298→        const gtag = grandchild.tagName.toLowerCase();
+   299→        if (gtag === 'svg' || gtag === 'script' || gtag === 'style') continue;
+   300→        candidates.push(grandchild);
+   301→      }
+   302→    }
+   303→
+   304→    for (const el of candidates) {
+   305→      const computed = getComputedStyle(el);
+   306→      const overflow = computed.overflow || computed.overflowY;
+   307→      const hasHiddenOverflow = overflow === 'hidden' || overflow === 'clip';
+   308→      const diff = el.scrollHeight - el.clientHeight;
+   309→
+   310→      if (hasHiddenOverflow && diff > 5) {
+   311→        const tag = el.tagName.toLowerCase();
+   312→        const id = el.id ? `#${el.id}` : '';
+   313→        const cls = el.className ? `.${String(el.className).split(' ')[0]}` : '';
+   314→        const selector = `${tag}${id}${cls}`;
+   315→
+   316→        // ONLY remove overflow — do NOT touch height, position, or any
+   317→        // other layout property (preserves absolute-positioned layouts).
+   318→        el.style.overflow = 'visible';
+   319→        el.style.overflowY = 'visible';
+   320→
+   321→        fixes.push({ selector, clipped: diff });
+   322→      }
+   323→    }
+   324→
+   325→    const finalHeight = Math.max(
+   326→      document.documentElement.scrollHeight,
+   327→      document.body.scrollHeight
+   328→    );
+   329→    return { fixes, finalHeight };
+   330→  });
+   331→
+   332→  if (vOverflowFix.fixes.length) {
+   333→    console.log('  ⚠️  Removed overflow:hidden (content was clipped):');
+   334→    vOverflowFix.fixes.forEach(f => {
+   335→      console.log(`    ${f.selector}: ${f.clipped}px clipped → overflow:visible`);
+   336→    });
+   337→  }
+   338→
+   339→  // Measure content height for diagnostics
+   340→  const contentHeight = vOverflowFix.fixes.length > 0
+   341→    ? vOverflowFix.finalHeight
+   342→    : await page.evaluate(() => Math.max(
+   343→        document.documentElement.scrollHeight,
+   344→        document.body.scrollHeight
+   345→      ));
+   346→
+   347→  // 5. Inject minimal @page CSS fallback
+   348→  await page.evaluate(() => {
+   349→    const styles = Array.from(document.querySelectorAll('style'));
+   350→    const hasPageRule = styles.some(s => (s.textContent || '').includes('@page'));
+   351→    if (!hasPageRule) {
+   352→      const s = document.createElement('style');
+   353→      s.textContent = `@page { margin: 20mm; }`;
+   354→      document.head.appendChild(s);
+   355→    }
+   356→  });
+   357→
+   358→  // 6. (Removed) — Paged.js handles cover sections (100vh, break-after: page,
+   359→  //     page-break-inside: avoid) natively. No manual fixup needed.
+   360→
+   361→  return { warnings, contentHeight };
+   362→}
+   363→
+   364→// ═══════════════════════════════════════════════════════════════════
+   365→// Content statistics (post-render, from PDF or page)
+   366→// ═══════════════════════════════════════════════════════════════════
+   367→
+   368→async function collectStats(page) {
+   369→  return page.evaluate(() => {
+   370→    const body = document.body;
+   371→    const text = body.innerText || '';
+   372→    const zhChars = (text.match(/[\u4e00-\u9fa5]/g) || []).length;
+   373→    const enWords = (text.match(/[a-zA-Z]+/g) || []).length;
+   374→    return {
+   375→      wordCount: zhChars + enWords,
+   376→      figures: document.querySelectorAll('figure,.figure,img').length,
+   377→      tables: document.querySelectorAll('table').length,
+   378→    };
+   379→  });
+   380→}
+   381→
+   382→// ═══════════════════════════════════════════════════════════════════
+   383→// pdf-lib post-processing: page count, metadata, merge
+   384→// ═══════════════════════════════════════════════════════════════════
+   385→
+   386→async function postProcess(pdfPath, options = {}) {
+   387→  const { PDFDocument } = loadPdfLib();
+   388→  const pdfBytes = fs.readFileSync(pdfPath);
+   389→  const doc = await PDFDocument.load(pdfBytes);
+   390→
+   391→  // Set metadata
+   392→  if (options.title) doc.setTitle(options.title);
+   393→  doc.setProducer('html2pdf-next (Playwright + pdf-lib)');
+   394→  doc.setCreationDate(new Date());
+   395→
+   396→  const pageCount = doc.getPageCount();
+   397→
+   398→  // Merge additional PDFs
+   399→  if (options.mergeFiles && options.mergeFiles.length) {
+   400→    for (const mf of options.mergeFiles) {
+   401→      if (!fs.existsSync(mf)) {
+   402→        console.log(`  ⚠ Merge file not found: ${mf}`);
+   403→        continue;
+   404→      }
+   405→      console.log(`  📎 Merging: ${path.basename(mf)}`);
+   406→      const donorBytes = fs.readFileSync(mf);
+   407→      const donorDoc = await PDFDocument.load(donorBytes);
+   408→      const copiedPages = await doc.copyPages(donorDoc, donorDoc.getPageIndices());
+   409→      copiedPages.forEach(p => doc.addPage(p));
+   410→    }
+   411→  }
+   412→
+   413→  // Save
+   414→  const finalBytes = await doc.save();
+   415→  fs.writeFileSync(pdfPath, finalBytes);
+   416→
+   417→  return { pageCount: doc.getPageCount(), originalPages: pageCount };
+   418→}
+   419→
+   420→// ═══════════════════════════════════════════════════════════════════
+   421→// Main pipeline
+   422→// ═══════════════════════════════════════════════════════════════════
+   423→
+   424→async function convert(inputFile, outputFile, customCSS, options = {}) {
+   425→  const { width, height, mergeFiles, title, noPaged } = options;
+   426→
+   427→  if (!fs.existsSync(inputFile)) {
+   428→    console.error(`✗ File not found: ${inputFile}`);
+   429→    process.exit(1);
+   430→  }
+   431→
+   432→  const playwright = loadPlaywright();
+   433→  const { chromium } = playwright;
+   434→
+   435→  // Resolve browser
+   436→  const canInstall = process.env.PDF_SKIP_BROWSER_INSTALL !== '1';
+   437→  const bInfo = resolveChromium(chromium, canInstall);
+   438→
+   439→  if (bInfo.status === 'missing') {
+   440→    console.error('\n✗ Chromium not found. Run: npx playwright install chromium\n');
+   441→    process.exit(2);
+   442→  }
+   443→  if (bInfo.status === 'fallback') {
+   444→    console.log(`⚠ Using fallback Chromium: ${bInfo.executablePath}`);
+   445→  }
+   446→
+   447→  const absIn = path.resolve(inputFile);
+   448→  const absOut = path.resolve(outputFile);
+   449→
+   450→  console.log(`\n🔄 Converting ${path.basename(inputFile)}...`);
+   451→  console.log(`   Engine: Playwright + ${noPaged ? 'Chromium native @page' : 'Paged.js'}`);
+   452→
+   453→  // Read and optionally inject CSS
+   454→  let html = fs.readFileSync(absIn, 'utf-8');
+   455→  if (customCSS) {
+   456→    if (!fs.existsSync(customCSS)) {
+   457→      console.error(`✗ CSS file not found: ${customCSS}`);
+   458→      process.exit(1);
+   459→    }
+   460→    const tag = `<style>${fs.readFileSync(customCSS, 'utf-8')}</style>`;
+   461→    html = html.includes('</head>') ? html.replace('</head>', tag + '\n</head>') : tag + '\n' + html;
+   462→    // Write modified HTML for Playwright to load
+   463→    const tmpHtml = absIn + '.tmp.html';
+   464→    fs.writeFileSync(tmpHtml, html);
+   465→    // We'll clean up later
+   466→  }
+   467→
+   468→  // Launch browser
+   469→  let browser;
+   470→  try {
+   471→    const opts = { headless: true };
+   472→    if (bInfo.status === 'fallback') opts.executablePath = bInfo.executablePath;
+   473→    browser = await chromium.launch(opts);
+   474→  } catch (err) {
+   475→    const msg = err.message || '';
+   476→    if (msg.includes('shared libraries') || msg.includes('.so')) {
+   477→      console.error('\n✗ Missing system libraries. Run: npx playwright install-deps chromium\n');
+   478→    } else {
+   479→      console.error(`\n✗ Browser launch failed: ${msg}\n`);
+   480→    }
+   481→    process.exit(1);
+   482→  }
+   483→
+   484→  try {
+   485→    const page = await browser.newPage();
+   486→    const loadFile = customCSS ? absIn + '.tmp.html' : absIn;
+   487→    await page.goto('file://' + loadFile, { waitUntil: 'networkidle' });
+   488→
+   489→    // ── Pre-render hooks ──
+   490→    console.log('\n📋 Pre-render checks:');
+   491→    const preRenderResult = await preRenderHooks(page);
+   492→    const warnings = preRenderResult.warnings;
+   493→    const measuredContentHeight = preRenderResult.contentHeight;
+   494→
+   495→    // ── Detect continuous-canvas mode (design_engine.py output) ──
+   496→    const continuousInfo = await page.evaluate(() => {
+   497→      const el = document.querySelector('.continuous-canvas');
+   498→      if (!el) return null;
+   499→      const root = getComputedStyle(document.documentElement);
+   500→      return {
+   501→        width: root.getPropertyValue('--canvas-w').trim() || '720px',
+   502→        height: root.getPropertyValue('--canvas-h').trim() || '960px',
+   503→        pages: el.querySelectorAll('.page-section').length,
+   504→      };
+   505→    });
+   506→
+   507→    if (continuousInfo) {
+   508→      // Creative PDF: design_engine.py output with fixed-canvas page-sections.
+   509→      // These are already laid out as absolute-positioned pages — skip Paged.js,
+   510→      // use Chromium native print directly.
+   511→      console.log(`\n🎨 Creative layout: ${continuousInfo.pages} pages @ ${continuousInfo.width} × ${continuousInfo.height}`);
+   512→      await page.pdf({
+   513→        path: absOut,
+   514→        printBackground: true,
+   515→        preferCSSPageSize: false,
+   516→        margin: { top: 0, right: 0, bottom: 0, left: 0 },
+   517→        width: continuousInfo.width,
+   518→        height: continuousInfo.height,
+   519→      });
+   520→    } else if (noPaged) {
+   521→      // ── Chromium native pagination (--nopaged flag) ──
+   522→      console.log('\n📄 Rendering PDF (Chromium native @page)...');
+   523→      const pdfOpts = {
+   524→        path: absOut,
+   525→        printBackground: true,
+   526→        preferCSSPageSize: true,
+   527→        tagged: true,
+   528→      };
+   529→
+   530→      if (width || height) {
+   531→        if (width) pdfOpts.width = width;
+   532→        if (height) pdfOpts.height = height;
+   533→        pdfOpts.margin = { top: 0, right: 0, bottom: 0, left: 0 };
+   534→        console.log(`   Custom size: ${pdfOpts.width || 'auto'} × ${pdfOpts.height || 'auto'}`);
+   535→      } else {
+   536→        const pageSize = await page.evaluate(() => {
+   537→          const styles = Array.from(document.querySelectorAll('style'));
+   538→          for (const s of styles) {
+   539→            const text = s.textContent || '';
+   540→            const match = text.match(/@page\s*\{[^}]*size:\s*([\d.]+)px\s+([\d.]+)px/);
+   541→            if (match) return { width: parseFloat(match[1]), height: parseFloat(match[2]) };
+   542→          }
+   543→          return null;
+   544→        });
+   545→        if (pageSize) {
+   546→          pdfOpts.margin = { top: 0, right: 0, bottom: 0, left: 0 };
+   547→          console.log(`   @page size: ${pageSize.width}px × ${pageSize.height}px`);
+   548→        } else {
+   549→          pdfOpts.format = 'A4';
+   550→        }
+   551→      }
+   552→
+   553→      await page.pdf(pdfOpts);
+   554→    } else {
+   555→      // Inject Paged.js polyfill to take over pagination.
+   556→      // Paged.js reads @page rules, chunks content into .pagedjs_page containers,
+   557→      // and handles break-inside/before/after, orphans/widows, named pages, etc.
+   558→      console.log('\n📖 Injecting Paged.js for pagination...');
+   559→
+   560→      // Resolve the paged.polyfill.js path
+   561→      const pagedPolyfillPath = (() => {
+   562→        // Try workspace node_modules first
+   563→        const candidates = [
+   564→          path.resolve(__dirname, '..', '..', '..', 'node_modules', 'pagedjs', 'dist', 'paged.polyfill.js'),
+   565→          path.resolve(process.cwd(), 'node_modules', 'pagedjs', 'dist', 'paged.polyfill.js'),
+   566→        ];
+   567→        for (const c of candidates) {
+   568→          if (fs.existsSync(c)) return c;
+   569→        }
+   570→        // Try require.resolve
+   571→        try {
+   572→          const mod = require.resolve('pagedjs/dist/paged.polyfill.js');
+   573→          return mod;
+   574→        } catch (_) {}
+   575→        return null;
+   576→      })();
+   577→
+   578→      if (!pagedPolyfillPath) {
+   579→        console.error('\n✗ pagedjs not found. Run: npm install pagedjs');
+   580→        process.exit(1);
+   581→      }
+   582→
+   583→      const pagedScript = fs.readFileSync(pagedPolyfillPath, 'utf-8');
+   584→      await page.addScriptTag({ content: pagedScript });
+   585→
+   586→      // Wait for Paged.js to finish rendering
+   587→      try {
+   588→        await page.waitForSelector('.pagedjs_page', { timeout: 30000 });
+   589→        // Give it extra time for all pages to settle
+   590→        await sleep(2000);
+   591→      } catch (_) {
+   592→        console.log('  ⚠ Paged.js did not create .pagedjs_page elements (timeout 30s)');
+   593→        console.log('    Falling back to Chromium native @page pagination.');
+   594→        warnings.push('Paged.js rendering timed out; fell back to native pagination');
+   595→      }
+   596→
+   597→      // Check Paged.js results
+   598→      const pagedInfo = await page.evaluate(() => {
+   599→        const pages = document.querySelectorAll('.pagedjs_page');
+   600→        if (pages.length === 0) return null;
+   601→        return {
+   602→          pageCount: pages.length,
+   603→          pageWidth: pages[0].offsetWidth,
+   604→          pageHeight: pages[0].offsetHeight,
+   605→        };
+   606→      });
+   607→
+   608→      if (pagedInfo) {
+   609→        console.log(`  ✓ Paged.js: ${pagedInfo.pageCount} pages @ ${pagedInfo.pageWidth}×${pagedInfo.pageHeight}px`);
+   610→      }
+   611→
+   612→      // ── Post-Paged.js background & centering fix ──
+   613→      // Paged.js creates .pagedjs_page containers that are transparent by default.
+   614→      // If body has a background color/image, the empty areas of each page may show
+   615→      // the wrong color. Fix: propagate background to .pagedjs_page containers.
+   616→      const bgFix = await page.evaluate(() => {
+   617→        const body = document.body;
+   618→        const html = document.documentElement;
+   619→        const bodyStyle = getComputedStyle(body);
+   620→        const htmlStyle = getComputedStyle(html);
+   621→        const bodyBg = bodyStyle.backgroundColor;
+   622→        const htmlBg = htmlStyle.backgroundColor;
+   623→        const bodyBgImg = bodyStyle.backgroundImage;
+   624→        const htmlBgImg = htmlStyle.backgroundImage;
+   625→
+   626→        const isTransparent = (c) => !c || c === 'rgba(0, 0, 0, 0)' || c === 'transparent';
+   627→        const hasGradient = (img) => img && img !== 'none';
+   628→
+   629→        // Check if body or html uses a gradient/image background
+   630→        const bodyHasGradient = hasGradient(bodyBgImg);
+   631→        const htmlHasGradient = hasGradient(htmlBgImg);
+   632→
+   633→        // If body uses gradient, propagate the full background shorthand
+   634→        // (not just backgroundColor, which would be transparent for gradients)
+   635→        if (bodyHasGradient) {
+   636→          // Copy body's full background to each .pagedjs_page
+   637→          const pages = document.querySelectorAll('.pagedjs_page');
+   638→          pages.forEach(p => {
+   639→            p.style.backgroundImage = bodyBgImg;
+   640→            p.style.backgroundSize = bodyStyle.backgroundSize;
+   641→            p.style.backgroundPosition = bodyStyle.backgroundPosition;
+   642→            p.style.backgroundRepeat = bodyStyle.backgroundRepeat;
+   643→            if (!isTransparent(bodyBg)) p.style.backgroundColor = bodyBg;
+   644→          });
+   645→          // Unify html to prevent color leaking
+   646→          html.style.backgroundColor = isTransparent(bodyBg) ? '#000' : bodyBg;
+   647→          html.style.backgroundImage = bodyBgImg;
+   648→
+   649→          const pagesContainer = document.querySelector('.pagedjs_pages');
+   650→          if (pagesContainer) { pagesContainer.style.margin = '0'; pagesContainer.style.padding = '0'; }
+   651→
+   652→          return { pageBg: 'gradient', pagesFixed: pages.length, bodyBg, htmlBg, gradient: true };
+   653→        }
+   654→
+   655→        // Solid color path: body bg > html bg > white
+   656→        const pageBg = !isTransparent(bodyBg) ? bodyBg
+   657→                     : !isTransparent(htmlBg) ? htmlBg
+   658→                     : 'white';
+   659→
+   660→        const pages = document.querySelectorAll('.pagedjs_page');
+   661→        let fixed = 0;
+   662→        pages.forEach(p => {
+   663→          if (isTransparent(getComputedStyle(p).backgroundColor)) {
+   664→            p.style.backgroundColor = pageBg;
+   665→            fixed++;
+   666→          }
+   667→        });
+   668→
+   669→        // Unify html/body background to match (prevents color leaking around pages)
+   670→        html.style.backgroundColor = pageBg;
+   671→        // Only set body bg if it was transparent (don't override an intentional body bg)
+   672→        if (isTransparent(bodyBg)) body.style.backgroundColor = pageBg;
+   673→
+   674→        const pagesContainer = document.querySelector('.pagedjs_pages');
+   675→        if (pagesContainer) { pagesContainer.style.margin = '0'; pagesContainer.style.padding = '0'; }
+   676→
+   677→        return { pageBg, pagesFixed: fixed, bodyBg, htmlBg, gradient: false };
+   678→      });
+   679→
+   680→      if (bgFix.pagesFixed > 0) {
+   681→        console.log(`  ✓ Background fix: ${bgFix.pagesFixed} pages → ${bgFix.pageBg}`);
+   682→      }
+   683→
+   684→      // ── Post-Paged.js layout alignment fix ──
+   685→      // Paged.js renders pages inside .pagedjs_pages with padding/margin for screen
+   686→      // preview (visual spacing between pages). In print/PDF mode this causes the
+   687→      // .pagedjs_page to start at (40,40) instead of (0,0), shifting content.
+   688→      // Fix: reset all Paged.js wrapper margins/paddings so pages start at origin.
+   689→      if (pagedInfo) {
+   690→        const alignFix = await page.evaluate(() => {
+   691→          // Reset pagedjs_pages container
+   692→          const pc = document.querySelector('.pagedjs_pages');
+   693→          if (pc) {
+   694→            pc.style.margin = '0';
+   695→            pc.style.padding = '0';
+   696→          }
+   697→          // Reset all pagedjs_page wrappers
+   698→          document.querySelectorAll('.pagedjs_page').forEach(p => {
+   699→            p.style.margin = '0';
+   700→          });
+   701→          // Reset body/html margins
+   702→          document.body.style.margin = '0';
+   703→          document.body.style.padding = '0';
+   704→          document.documentElement.style.margin = '0';
+   705→          document.documentElement.style.padding = '0';
+   706→          // Check final alignment
+   707→          const firstPage = document.querySelector('.pagedjs_page');
+   708→          if (!firstPage) return { fixed: false };
+   709→          const rect = firstPage.getBoundingClientRect();
+   710→          return { fixed: true, x: rect.x, y: rect.y, w: rect.width, h: rect.height };
+   711→        });
+   712→        if (alignFix.fixed && (alignFix.x > 1 || alignFix.y > 1)) {
+   713→          console.log(`  ⚠ Page offset after reset: (${alignFix.x}, ${alignFix.y}) — may still have internal pagedjs margins`);
+   714→        }
+   715→      }
+   716→
+   717→      // Generate PDF
+   718→      console.log('\n📄 Rendering PDF...');
+   719→      const pdfOpts = {
+   720→        path: absOut,
+   721→        printBackground: true,
+   722→        preferCSSPageSize: true,
+   723→        tagged: true,
+   724→        margin: { top: 0, right: 0, bottom: 0, left: 0 },
+   725→      };
+   726→
+   727→      if (width || height) {
+   728→        if (width) pdfOpts.width = width;
+   729→        if (height) pdfOpts.height = height;
+   730→        console.log(`   Custom size: ${pdfOpts.width || 'auto'} × ${pdfOpts.height || 'auto'}`);
+   731→      } else if (!pagedInfo) {
+   732→        // Paged.js didn't run (fallback) — detect @page or use A4
+   733→        const pageSize = await page.evaluate(() => {
+   734→          const styles = Array.from(document.querySelectorAll('style'));
+   735→          for (const s of styles) {
+   736→            const text = s.textContent || '';
+   737→            const match = text.match(/@page\s*\{[^}]*size:\s*([\d.]+)px\s+([\d.]+)px/);
+   738→            if (match) return { width: parseFloat(match[1]), height: parseFloat(match[2]) };
+   739→          }
+   740→          return null;
+   741→        });
+   742→        if (pageSize) {
+   743→          console.log(`   @page size: ${pageSize.width}px × ${pageSize.height}px`);
+   744→        } else {
+   745→          pdfOpts.format = 'A4';
+   746→        }
+   747→      }
+   748→
+   749→      await page.pdf(pdfOpts);
+   750→    }
+   751→
+   752→    // Collect content stats from the page
+   753→    const stats = await collectStats(page);
+   754→
+   755→    // ── pdf-lib post-processing ──
+   756→    console.log('\n🔧 Post-processing (pdf-lib):');
+   757→    const postResult = await postProcess(absOut, { mergeFiles, title });
+   758→
+   759→    // Clean up temp HTML
+   760→    const tmpHtml = absIn + '.tmp.html';
+   761→    if (fs.existsSync(tmpHtml)) fs.unlinkSync(tmpHtml);
+   762→
+   763→    // ── Report ──
+   764→    const sz = fs.statSync(absOut).size;
+   765→    console.log('\n' + '═'.repeat(40));
+   766→    console.log('  PDF Generated Successfully');
+   767→    console.log('═'.repeat(40));
+   768→    console.log(`  File:    ${path.basename(absOut)}`);
+   769→    console.log(`  Pages:   ${postResult.pageCount}`);
+   770→    console.log(`  Size:    ${prettyBytes(sz)}`);
+   771→    console.log(`  Words:   ~${stats.wordCount.toLocaleString()}`);
+   772→    console.log(`  Assets:  ${stats.figures} figures, ${stats.tables} tables`);
+   773→    const engineLabel = continuousInfo ? 'Playwright (Creative canvas)'
+   774→                      : noPaged ? 'Playwright (Chromium native @page)'
+   775→                      : 'Playwright + Paged.js';
+   776→    console.log(`  Engine:  ${engineLabel}`);
+   777→    console.log(`  Path:    ${absOut}`);
+   778→
+   779→    if (mergeFiles && mergeFiles.length && postResult.pageCount > postResult.originalPages) {
+   780→      console.log(`  Merged:  +${postResult.pageCount - postResult.originalPages} pages from ${mergeFiles.length} file(s)`);
+   781→    }
+   782→
+   783→    if (warnings.length) {
+   784→      console.log('\n⚠ Warnings:');
+   785→      warnings.forEach(w => console.log(`  · ${w}`));
+   786→    }
+   787→
+   788→    // Anomaly detection
+   789→    if (postResult.pageCount > 1 && stats.wordCount > 0) {
+   790→      const avgWordsPerPage = stats.wordCount / postResult.pageCount;
+   791→      if (avgWordsPerPage < 30) {
+   792→        console.log(`\n⚠ Low content density: ~${Math.round(avgWordsPerPage)} words/page (expected 100+)`);
+   793→      }
+   794→    }
+   795→
+   796→  } catch (err) {
+   797→    console.error('\n✗ Conversion failed:', err.message);
+   798→    process.exit(1);
+   799→  } finally {
+   800→    await browser.close();
+   801→  }
+   802→}
+   803→
+   804→// ═══════════════════════════════════════════════════════════════════
+   805→// Entry
+   806→// ═══════════════════════════════════════════════════════════════════
+   807→
+   808→(async () => {
+   809→  try {
+   810→    const args = cli();
+   811→    await convert(args.inputFile, args.outputFile, args.customCSS, {
+   812→      width: args.width,
+   813→      height: args.height,
+   814→      mergeFiles: args.mergeFiles,
+   815→      title: args.title,
+   816→      noPaged: args.noPaged,
+   817→    });
+   818→  } catch (err) {
+   819→    console.error('Error:', err.message);
+   820→    process.exit(1);
+   821→  }
+   822→})();
+   823→

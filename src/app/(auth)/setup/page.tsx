@@ -122,9 +122,7 @@ export default function SetupPage() {
         description: 'Initializing system roles and permissions...',
       })
 
-      // Seed roles & permissions in background (non-blocking)
-      fetch('/api/v1/system/seed', { method: 'POST' }).catch(() => {})
-
+      // Roles & permissions are now seeded by the setup API itself
       router.push('/super-admin')
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Setup failed. Please try again.'

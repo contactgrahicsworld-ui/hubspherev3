@@ -78,6 +78,24 @@ export async function POST(request: NextRequest) {
           status: 'ACTIVE',
         },
       });
+    } else {
+      // Add to the first available tenant as VIEWER
+      const existingTenant = await db.tenant.findFirst({
+        where: { status: 'ACTIVE' },
+        orderBy: { createdAt: 'asc' },
+      });
+      if (existingTenant) {
+        tenantId = existingTenant.id;
+        roleCode = 'VIEWER';
+        await db.membership.create({
+          data: {
+            userId: user.id,
+            tenantId: existingTenant.id,
+            roleCode: 'VIEWER',
+            status: 'ACTIVE',
+          },
+        });
+      }
     }
 
     // Generate tokens

@@ -1,702 +1,80 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HubSphere Enterprise V3 - Complete Instruction Guide</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Playfair+Display:wght@400;700;900&display=swap" rel="stylesheet">
+<title>HubSphere V3 - Samagra Nirdeshika</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-@page {
-    size: 720px 1020px;
-    margin: 0;
-}
-:root {
-    --c-bg: #f8fafc;
-    --c-dark: #0f172a;
-    --c-text: #1e293b;
-    --c-muted: #64748b;
-    --c-accent: #6366f1;
-    --c-accent-light: #eef2ff;
-    --c-green: #10b981;
-    --c-orange: #f59e0b;
-    --c-red: #ef4444;
-    --c-border: #e2e8f0;
-    --font-sans: 'Inter', sans-serif;
-    --font-serif: 'Playfair Display', serif;
-}
-html, body {
-    margin: 0;
-    padding: 0;
-    width: 720px;
-    background: var(--c-bg);
-    color: var(--c-text);
-    font-family: var(--font-sans), sans-serif;
-    line-height: 1.6;
-}
-@media screen {
-    html { height: auto; display: flex; justify-content: center; background: #cbd5e1; }
-    body { transform-origin: top center; margin: 20px auto; box-shadow: 0 10px 40px rgba(0,0,0,0.15); }
-}
-
-/* COVER */
-.cover {
-    width: 720px;
-    height: 1020px;
-    box-sizing: border-box;
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    padding: 80px 60px;
-    break-after: page;
-    overflow: hidden;
-    position: relative;
-}
-.cover::before {
-    content: '';
-    position: absolute;
-    top: 0px;
-    right: 0px;
-    width: 400px;
-    height: 400px;
-    border-radius: 50%;
-    background: rgba(99,102,241,0.15);
-}
-.cover::after {
-    content: '';
-    position: absolute;
-    bottom: 0px;
-    left: 0px;
-    width: 300px;
-    height: 300px;
-    border-radius: 50%;
-    background: rgba(16,185,129,0.1);
-}
-.cover-badge {
-    display: inline-block;
-    background: rgba(99,102,241,0.2);
-    border: 1px solid rgba(99,102,241,0.4);
-    color: #a5b4fc;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    padding: 8px 20px;
-    border-radius: 20px;
-    margin-bottom: 40px;
-    position: relative;
-    z-index: 1;
-}
-.cover h1 {
-    font-family: var(--font-serif), serif;
-    font-size: 52px;
-    font-weight: 900;
-    color: #f1f5f9;
-    margin: 0 0 28px 0;
-    line-height: 1.1;
-    position: relative;
-    z-index: 1;
-}
-.cover h1 span { color: #818cf8; }
-.cover-subtitle {
-    font-size: 16px;
-    color: #94a3b8;
-    max-width: 460px;
-    margin: 0 0 50px 0;
-    position: relative;
-    z-index: 1;
-    line-height: 1.7;
-}
-.cover-features {
-    display: flex;
-    gap: 30px;
-    position: relative;
-    z-index: 1;
-}
-.cover-feature {
-    text-align: center;
-}
-.cover-feature-num {
-    font-size: 28px;
-    font-weight: 900;
-    color: #818cf8;
-}
-.cover-feature-label {
-    font-size: 10px;
-    color: #64748b;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-.cover-footer {
-    position: absolute;
-    bottom: 40px;
-    font-size: 10px;
-    color: #475569;
-    letter-spacing: 1px;
-}
-
-/* MAIN CONTENT */
-.main-content {
-    padding: 50px 60px 40px 60px;
-}
-
-/* CHAPTER HEADER */
-.chapter-header {
-    break-after: avoid;
-    break-inside: avoid;
-    margin-top: 28px;
-}
-.section-tag {
-    display: inline-block;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 2.5px;
-    text-transform: uppercase;
-    color: var(--c-accent);
-    background: var(--c-accent-light);
-    padding: 4px 12px;
-    border-radius: 4px;
-    margin-bottom: 10px;
-}
-.section-title {
-    font-size: 26px;
-    font-weight: 800;
-    color: var(--c-dark);
-    margin: 0 0 6px 0;
-    line-height: 1.2;
-}
-.section-desc {
-    font-size: 14px;
-    color: var(--c-muted);
-    margin: 0 0 16px 0;
-}
-.divider {
-    width: 50px;
-    height: 3px;
-    background: var(--c-accent);
-    border-radius: 2px;
-    margin-bottom: 18px;
-}
-
-/* BODY TEXT */
-.body-text {
-    font-size: 13px;
-    color: #334155;
-    margin: 0 0 14px 0;
-    line-height: 1.7;
-}
-
-/* STEP CARDS */
-.step-card {
-    background: white;
-    border: 1px solid var(--c-border);
-    border-radius: 10px;
-    padding: 16px 18px;
-    margin-bottom: 10px;
-    break-inside: avoid;
-}
-.step-card-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 8px;
-}
-.step-num {
-    width: 28px;
-    height: 28px;
-    background: var(--c-accent);
-    color: white;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 13px;
-    font-weight: 700;
-    flex-shrink: 0;
-}
-.step-title {
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--c-dark);
-    margin: 0;
-}
-.step-desc {
-    font-size: 12px;
-    color: #475569;
-    margin: 0;
-    line-height: 1.6;
-}
-
-/* INFO BOX */
-.info-box {
-    background: var(--c-accent-light);
-    border-left: 3px solid var(--c-accent);
-    border-radius: 0 8px 8px 0;
-    padding: 12px 16px;
-    margin: 14px 0;
-    break-inside: avoid;
-}
-.info-box-title {
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--c-accent);
-    margin: 0 0 4px 0;
-}
-.info-box-text {
-    font-size: 12px;
-    color: #334155;
-    margin: 0;
-    line-height: 1.5;
-}
-
-/* FEATURE GRID */
-.feature-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin: 14px 0;
-}
-.feature-item {
-    background: white;
-    border: 1px solid var(--c-border);
-    border-radius: 8px;
-    padding: 12px 14px;
-    break-inside: avoid;
-}
-.feature-item-title {
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--c-dark);
-    margin: 0 0 4px 0;
-}
-.feature-item-desc {
-    font-size: 11px;
-    color: var(--c-muted);
-    margin: 0;
-    line-height: 1.5;
-}
-
-/* TABLE OF CONTENTS */
-.toc { margin: 10px 0 20px 0; }
-.toc-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 0;
-    border-bottom: 1px solid var(--c-border);
-    font-size: 13px;
-    color: #334155;
-}
-.toc-item:last-child { border-bottom: none; }
-.toc-section { font-weight: 600; color: var(--c-dark); }
-.toc-sub { padding-left: 16px; font-size: 12px; color: var(--c-muted); }
-
-/* WARNING BOX */
-.warn-box {
-    background: #fef3c7;
-    border-left: 3px solid #f59e0b;
-    border-radius: 0 8px 8px 0;
-    padding: 12px 16px;
-    margin: 14px 0;
-    break-inside: avoid;
-}
-.warn-box-text {
-    font-size: 12px;
-    color: #92400e;
-    margin: 0;
-    line-height: 1.5;
-}
-
-/* ENDING */
-.ending {
-    width: 720px;
-    height: 1020px;
-    box-sizing: border-box;
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    padding: 80px 60px;
-    break-before: page;
-    overflow: hidden;
-}
-.ending h2 {
-    font-family: var(--font-serif), serif;
-    font-size: 36px;
-    color: #f1f5f9;
-    margin: 0 0 16px 0;
-}
-.ending p {
-    font-size: 14px;
-    color: #94a3b8;
-    max-width: 400px;
-    margin: 0 0 30px 0;
-}
-.ending-url {
-    display: inline-block;
-    background: rgba(99,102,241,0.2);
-    border: 1px solid rgba(99,102,241,0.4);
-    color: #a5b4fc;
-    font-size: 16px;
-    font-weight: 600;
-    padding: 14px 30px;
-    border-radius: 10px;
-    text-decoration: none;
-}
+@page { size: 720px 1020px; margin: 0; }
+:root { --bg: #0f172a; --bg-card: #1e293b; --text: #e2e8f0; --text-muted: #94a3b8; --accent: #3b82f6; --accent-light: #60a5fa; --green: #10b981; --orange: #f59e0b; --red: #ef4444; --border: #334155; --font: "Inter", sans-serif; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 720px; background: var(--bg); color: var(--text); font-family: var(--font); font-size: 13px; line-height: 1.7; -webkit-font-smoothing: antialiased; }
+@media screen { html { height: auto; display: flex; justify-content: center; background: #0b1120; } body { transform-origin: top center; margin: 20px auto; box-shadow: 0 10px 60px rgba(0,0,0,0.5); } }
+.cover { width: 720px; height: 1020px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 80px 60px; position: relative; overflow: hidden; background: linear-gradient(160deg, #0f172a 0%, #162032 40%, #1a2744 70%, #0f172a 100%); break-after: page; }
+.cover::before { content: ''; position: absolute; top: -80px; right: -80px; width: 400px; height: 400px; border-radius: 50%; background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%); }
+.cover::after { content: ''; position: absolute; bottom: -60px; left: -60px; width: 350px; height: 350px; border-radius: 50%; background: radial-gradient(circle, rgba(16,185,129,0.1) 0%, transparent 70%); }
+.cover-badge { display: inline-block; background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.4); color: var(--accent-light); font-size: 10px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; padding: 8px 24px; border-radius: 20px; margin-bottom: 36px; position: relative; z-index: 1; }
+.cover-logo { width: 72px; height: 72px; background: linear-gradient(135deg, var(--accent), var(--green)); border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 900; color: #fff; margin-bottom: 32px; position: relative; z-index: 1; }
+.cover h1 { font-size: 48px; font-weight: 900; color: #f1f5f9; margin-bottom: 16px; line-height: 1.1; position: relative; z-index: 1; }
+.cover h1 span { color: var(--accent-light); }
+.cover-subtitle { font-size: 15px; color: var(--text-muted); font-weight: 400; margin-bottom: 40px; position: relative; z-index: 1; line-height: 1.7; }
+.cover-meta { position: relative; z-index: 1; display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; margin-bottom: 48px; }
+.cover-meta-item { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px 22px; text-align: center; }
+.cover-meta-item .val { font-size: 22px; font-weight: 800; color: #f1f5f9; display: block; }
+.cover-meta-item .lbl { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; display: block; }
+.cover-url { position: relative; z-index: 1; font-size: 13px; color: var(--accent-light); background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.25); padding: 10px 28px; border-radius: 8px; font-weight: 500; }
+.cover-line { width: 60px; height: 3px; background: linear-gradient(90deg, var(--accent), var(--green)); border-radius: 2px; margin: 0 auto 20px auto; position: relative; z-index: 1; }
+.page { width: 720px; min-height: 1020px; padding: 48px 52px 56px 52px; background: var(--bg); position: relative; break-after: page; }
+.page-num { position: absolute; bottom: 24px; right: 52px; font-size: 10px; color: var(--text-muted); font-weight: 500; }
+.page-footer { position: absolute; bottom: 24px; left: 52px; font-size: 9px; color: #475569; letter-spacing: 1px; text-transform: uppercase; }
+.section-num { font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 6px; }
+.section-title { font-size: 26px; font-weight: 800; color: #f1f5f9; margin-bottom: 8px; line-height: 1.25; }
+.section-divider { width: 48px; height: 3px; background: var(--accent); border-radius: 2px; margin-bottom: 20px; }
+.sub-title { font-size: 16px; font-weight: 700; color: #f1f5f9; margin-top: 22px; margin-bottom: 10px; padding-left: 14px; border-left: 3px solid var(--accent); }
+.sub-title-sm { font-size: 13px; font-weight: 600; color: var(--accent-light); margin-top: 16px; margin-bottom: 8px; }
+p { margin-bottom: 12px; color: var(--text); text-align: justify; }
+ul, ol { margin: 0 0 14px 0; padding-left: 22px; }
+li { margin-bottom: 5px; color: var(--text); }
+li strong, strong { color: #f1f5f9; font-weight: 600; }
+.info-box { background: var(--bg-card); border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: 8px; padding: 14px 16px; margin: 12px 0; }
+.info-box.green { border-left-color: var(--green); }
+.info-box.orange { border-left-color: var(--orange); }
+.info-box.red { border-left-color: var(--red); }
+.info-box-title { font-size: 11px; font-weight: 700; color: #f1f5f9; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+.info-box p { margin-bottom: 4px; font-size: 12px; }
+.step-list { counter-reset: step; list-style: none; padding-left: 0; margin: 12px 0; }
+.step-list li { counter-increment: step; padding: 7px 0 7px 40px; position: relative; border-bottom: 1px solid rgba(51,65,85,0.5); min-height: 24px; }
+.step-list li:last-child { border-bottom: none; }
+.step-list li::before { content: counter(step); position: absolute; left: 0; top: 7px; width: 24px; height: 24px; background: var(--accent); color: #fff; border-radius: 50%; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.feature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 0; }
+.feature-item { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+.feature-item .fi-title { font-size: 11px; font-weight: 700; color: #f1f5f9; margin-bottom: 4px; }
+.feature-item .fi-desc { font-size: 10.5px; color: var(--text-muted); line-height: 1.5; }
+.toc-item { display: flex; align-items: baseline; padding: 7px 0; border-bottom: 1px solid rgba(51,65,85,0.3); font-size: 12.5px; }
+.toc-num { font-weight: 700; color: var(--accent); min-width: 36px; font-size: 13px; }
+.toc-text { color: var(--text); }
+.pipeline { display: flex; gap: 4px; margin: 10px 0; flex-wrap: wrap; }
+.pipeline-stage { background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 5px 8px; font-size: 9.5px; font-weight: 600; color: var(--text); text-align: center; flex: 1; min-width: 65px; }
+.pipeline-stage.active { border-color: var(--accent); color: var(--accent-light); }
+.info-box, .feature-grid, .pipeline, .step-list li { break-inside: avoid; }
 </style>
 </head>
 <body>
-
-<!-- COVER PAGE -->
 <div class="cover">
-    <div class="cover-badge">Enterprise Platform</div>
-    <h1>HubSphere <span>V3</span></h1>
-    <p class="cover-subtitle">Complete Instruction Guide - From initial setup to mastering every module. Your comprehensive reference for the all-in-one business management platform.</p>
-    <div class="cover-features">
-        <div class="cover-feature">
-            <div class="cover-feature-num">6</div>
-            <div class="cover-feature-label">Modules</div>
-        </div>
-        <div class="cover-feature">
-            <div class="cover-feature-num">60+</div>
-            <div class="cover-feature-label">API Endpoints</div>
-        </div>
-        <div class="cover-feature">
-            <div class="cover-feature-num">50+</div>
-            <div class="cover-feature-label">Pages</div>
-        </div>
-    </div>
-    <div class="cover-footer">Version 3.0 | September 2026</div>
+<div class="cover-badge">AI-Powered Business OS</div>
+<div class="cover-logo">HS</div>
+<div class="cover-line"></div>
+<h1>HubSphere <span>V3</span></h1>
+<div class="cover-subtitle">Samagra Nirdeshika -- Prayog Karne Ka Purna Guide<br>AI Adhisthit Vyavsay Pranali ka Step-by-Step Upyog Margdarshan</div>
+<div class="cover-meta">
+<div class="cover-meta-item"><span class="val">35</span><span class="lbl">Modules</span></div>
+<div class="cover-meta-item"><span class="val">13</span><span class="lbl">Roles</span></div>
+<div class="cover-meta-item"><span class="val">5</span><span class="lbl">AI Agents</span></div>
+<div class="cover-meta-item"><span class="val">396</span><span class="lbl">Permissions</span></div>
 </div>
-
-<!-- MAIN CONTENT -->
-<div class="main-content">
-
-    <!-- TABLE OF CONTENTS -->
-    <div class="chapter-header">
-        <div class="section-tag">Contents</div>
-        <div class="section-title">Table of Contents</div>
-        <div class="divider"></div>
-    </div>
-    <div class="toc">
-        <div class="toc-item"><span class="toc-section">1. Getting Started - Setup Wizard</span></div>
-        <div class="toc-item"><span class="toc-section">2. Dashboard Overview</span></div>
-        <div class="toc-item"><span class="toc-section">3. CRM Module</span></div>
-        <div class="toc-item"><span class="toc-sub">Leads, Contacts, Companies, Deals, Tasks, Follow-ups, Calls, Tags</span></div>
-        <div class="toc-item"><span class="toc-section">4. HRMS Module</span></div>
-        <div class="toc-item"><span class="toc-sub">Employees, Departments, Attendance, Leave, Payroll, Expenses</span></div>
-        <div class="toc-item"><span class="toc-section">5. Communication Module</span></div>
-        <div class="toc-item"><span class="toc-sub">Inbox, Notifications, Templates, Provider Settings</span></div>
-        <div class="toc-item"><span class="toc-section">6. Automation Module</span></div>
-        <div class="toc-item"><span class="toc-sub">Workflows, Execution History, Trigger Events</span></div>
-        <div class="toc-item"><span class="toc-section">7. AI Module</span></div>
-        <div class="toc-item"><span class="toc-sub">AI Chat, Agent Configuration, Provider Setup</span></div>
-        <div class="toc-item"><span class="toc-section">8. Analytics Module</span></div>
-        <div class="toc-item"><span class="toc-sub">CRM, HR, Executive, Telecaller, Communication, AI Reports</span></div>
-        <div class="toc-item"><span class="toc-section">9. Admin Panel</span></div>
-        <div class="toc-item"><span class="toc-section">10. Super Admin Panel</span></div>
-        <div class="toc-item"><span class="toc-section">11. Security and Best Practices</span></div>
-    </div>
-
-    <!-- CHAPTER 1: GETTING STARTED -->
-    <div class="chapter-header">
-        <div class="section-tag">Chapter 1</div>
-        <div class="section-title">Getting Started - Setup Wizard</div>
-        <div class="divider"></div>
-        <p class="section-desc">Setting up HubSphere for the first time as the Super Administrator</p>
-    </div>
-    <p class="body-text">When you first access your HubSphere instance, the application detects that no administrator account exists and automatically redirects you to the Setup Wizard. This is a one-time process that creates the primary Super Admin account along with the default organization tenant and all system roles.</p>
-    <p class="body-text">The Setup Wizard requires three pieces of information: your full name, a valid email address that will serve as your admin login, and a strong password. The password must be at least 8 characters long and include at least one uppercase letter, one lowercase letter, and one numeric digit. You will also need to confirm the password by typing it again.</p>
-
-    <div class="step-card">
-        <div class="step-card-header">
-            <div class="step-num">1</div>
-            <h3 class="step-title">Navigate to Your HubSphere URL</h3>
-        </div>
-        <p class="step-desc">Open your web browser and go to your HubSphere URL. If no admin exists, you will be automatically redirected to the Setup page at /setup. You can also directly visit /setup at any time.</p>
-    </div>
-    <div class="step-card">
-        <div class="step-card-header">
-            <div class="step-num">2</div>
-            <h3 class="step-title">Fill in the Setup Form</h3>
-        </div>
-        <p class="step-desc">Enter your Full Name (e.g., John Doe), your Email Address (this becomes your admin login), a strong Password (minimum 8 characters with uppercase, lowercase, and a number), and confirm the password in the Confirm Password field.</p>
-    </div>
-    <div class="step-card">
-        <div class="step-card-header">
-            <div class="step-num">3</div>
-            <h3 class="step-title">Click "Create Super Admin Account"</h3>
-        </div>
-        <p class="step-desc">Upon clicking the button, the system creates your admin account, the default organization tenant (HubSphere Enterprise), all 13 system roles (Super Admin, Tenant Owner, Admin, Manager, Sales Manager, etc.), and logs you in automatically. You are then redirected to the Super Admin dashboard.</p>
-    </div>
-
-    <div class="info-box">
-        <p class="info-box-title">Important Note</p>
-        <p class="info-box-text">The Setup Wizard can only be used once. After the first Super Admin is created, attempting to access /setup will show a message that setup is already complete. New users must be invited through the Admin panel instead.</p>
-    </div>
-
-    <p class="body-text">After setup completes, the system automatically seeds roles and permissions. If for any reason the seeding does not complete, you can manually trigger it by visiting /api/v1/system/seed in your browser while logged in. This ensures all 13 predefined roles are available for user assignment.</p>
-
-    <!-- CHAPTER 2: LOGIN -->
-    <div class="chapter-header">
-        <div class="section-tag">Chapter 2</div>
-        <div class="section-title">Login and Authentication</div>
-        <div class="divider"></div>
-        <p class="section-desc">How to log in, manage your session, and use security features</p>
-    </div>
-    <p class="body-text">After completing the setup wizard, you can log in to HubSphere at any time using your admin credentials. Navigate to the /login page in your browser, enter your registered email and password, and click the Login button. The system uses JWT (JSON Web Token) based authentication with secure httpOnly cookies and supports automatic token refresh for a seamless experience.</p>
-    <p class="body-text">If you enter incorrect credentials, the system will display an error message and temporarily rate-limit login attempts (10 attempts per 15 minutes per IP address) to protect against brute-force attacks. After 5 consecutive failed attempts, you will need to wait before trying again.</p>
-
-    <div class="feature-grid">
-        <div class="feature-item">
-            <p class="feature-item-title">Password Reset</p>
-            <p class="feature-item-desc">Visit /forgot-password, enter your email. If an SMTP provider is configured, a reset link will be sent. Use the link within 1 hour to set a new password.</p>
-        </div>
-        <div class="feature-item">
-            <p class="feature-item-title">Two-Factor Auth (2FA)</p>
-            <p class="feature-item-desc">Enable 2FA from your profile or Admin Security settings. Scan the QR code with any TOTP authenticator app (Google Authenticator, Authy). Store recovery codes securely.</p>
-        </div>
-        <div class="feature-item">
-            <p class="feature-item-title">Change Password</p>
-            <p class="feature-item-desc">Go to Admin Panel then Security settings. Enter your current password, then the new password (twice). The new password must differ from the current one.</p>
-        </div>
-        <div class="feature-item">
-            <p class="feature-item-title">Session Management</p>
-            <p class="feature-item-desc">JWT access tokens expire every 15 minutes. The system automatically refreshes them using the refresh token (valid for 30 days). Logging out invalidates the refresh token immediately.</p>
-        </div>
-    </div>
-
-    <div class="warn-box">
-        <p class="warn-box-text">If you forget your password and no SMTP is configured, you will need to contact your database administrator to manually reset the password hash in the users table.</p>
-    </div>
-
-    <!-- CHAPTER 3: CRM -->
-    <div class="chapter-header">
-        <div class="section-tag">Chapter 3</div>
-        <div class="section-title">CRM Module</div>
-        <div class="divider"></div>
-        <p class="section-desc">Complete Customer Relationship Management with leads, contacts, deals, and more</p>
-    </div>
-    <p class="body-text">The CRM module is the heart of HubSphere, providing a comprehensive suite of tools for managing your entire sales pipeline and customer relationships. From capturing initial leads to closing deals and tracking follow-ups, every aspect of the customer journey is covered within this module. Access it from the main navigation sidebar under the CRM section.</p>
-
-    <p class="body-text"><strong>CRM Dashboard</strong> - The CRM dashboard (accessible at /crm or via the CRM sidebar item) provides an at-a-glance overview of your entire sales pipeline. It displays key metrics including total leads, active deals, upcoming follow-ups, recent calls, tasks organized by status, and deals grouped by pipeline stage. This dashboard serves as the command center for your sales operations.</p>
-
-    <p class="body-text"><strong>Leads Management</strong> - Leads represent potential customers at the top of your sales funnel. Navigate to /crm/leads to view all leads in a filterable and sortable list. To create a new lead, click the "Add Lead" button, fill in the contact details (first name, last name, email, phone), assign a source (Website, Referral, LinkedIn, Cold Call, etc.), and set the initial status. Leads can be progressed through statuses: New, Contacted, Qualified, Proposal, Negotiation, Won, or Lost.</p>
-
-    <p class="body-text"><strong>Lead Conversion</strong> - When a lead is ready to move to the next stage, you can convert it directly into a Contact and optionally a Company. The conversion process preserves all the lead's information and creates the corresponding CRM records. This seamless transition ensures no data is lost when moving prospects through your pipeline.</p>
-
-    <p class="body-text"><strong>Contacts and Companies</strong> - Contacts (at /crm/contacts) store detailed information about individual people associated with your business. Companies (at /crm/companies) represent organizations. Each contact and company record supports full CRUD operations - you can create, view, update, and delete records. Companies can be linked to contacts and deals to provide a complete view of business relationships.</p>
-
-    <p class="body-text"><strong>Deals Pipeline</strong> - The Deals section (at /crm/deals) provides a visual representation of your sales pipeline. Deals move through six stages: New, Qualified, Proposal, Negotiation, Won, and Lost. Each deal tracks a monetary value, associated contact and company, and can be moved between stages using the drag-and-drop interface. The dashboard aggregates deal values by stage to give you a clear picture of your pipeline health.</p>
-
-    <p class="body-text"><strong>Tasks and Follow-ups</strong> - Tasks (at /crm/tasks) help you track actionable items with priorities (Low, Medium, High, Urgent) and statuses (Todo, In Progress, Completed, Cancelled). Follow-ups (at /crm/follow-ups) are time-sensitive activities that require action by a specific date. Both types support full lifecycle management from creation to completion.</p>
-
-    <p class="body-text"><strong>Additional CRM Features</strong> - The CRM module also includes: Notes for attaching text notes to any record, Calls for logging telecaller activities, Tags for categorizing records with color-coded labels, Search for finding records across all CRM entities, a Timeline view for activity history, Import/Export functionality for bulk data operations, and a dedicated Telecaller interface for outbound calling teams.</p>
-
-    <!-- CHAPTER 4: HRMS -->
-    <div class="chapter-header">
-        <div class="section-tag">Chapter 4</div>
-        <div class="section-title">HRMS Module</div>
-        <div class="divider"></div>
-        <p class="section-desc">Complete Human Resource Management with employees, attendance, leave, and payroll</p>
-    </div>
-    <p class="body-text">The HRMS (Human Resource Management System) module provides comprehensive tools for managing your organization's workforce. From onboarding new employees to processing payroll, this module handles every aspect of employee lifecycle management. Access it from the main navigation under the HRMS section.</p>
-
-    <p class="body-text"><strong>HRMS Dashboard</strong> - The HR dashboard (/hrms) displays a consolidated view of your workforce metrics including total employees, attendance statistics, pending leave requests, expense summaries, and payroll status. This gives HR managers an instant overview of organizational health.</p>
-
-    <p class="body-text"><strong>Employees</strong> - The Employees section (/hrms/employees) manages your workforce directory. Employee records are linked to user accounts and contain details like department, designation, employment status, date of joining, and manager assignments. Employees are linked to Users and Memberships in the system for proper access control. To add an employee, first create a User through the Admin panel, then create the Employee record linked to that user.</p>
-
-    <p class="body-text"><strong>Departments and Designations</strong> - Departments (/hrms/departments) represent organizational units (e.g., Engineering, Sales, HR). Designations (/hrms/designations) represent job titles/roles within departments (e.g., Senior Developer, Sales Manager). Both support full CRUD operations and are used to categorize employees for reporting and access control purposes.</p>
-
-    <p class="body-text"><strong>Attendance</strong> - The Attendance module (/hrms/attendance) tracks daily employee presence. It supports multiple statuses: Present, Absent, Half Day, Late, On Leave, Holiday, and Week Off. Employees can check in and check out, and the system calculates total working hours. Attendance records feed directly into payroll calculations.</p>
-
-    <p class="body-text"><strong>Leave Management</strong> - Leave Types (/hrms/leave-types) define the categories of leave available (Casual, Sick, Earned, Maternity, etc.) with configurable days per year. Leave Requests (/hrms/leave) allow employees to submit leave applications. Managers can approve or reject requests with a single click. The system tracks leave balances and prevents over-allocation.</p>
-
-    <p class="body-text"><strong>Expenses and Field Visits</strong> - The Expenses module (/hrms/expenses) lets employees submit expense claims with categories like Travel, Food, Accommodation, and Transport. Field Visits (/hrms/field-sales) track outdoor sales activities with planned and actual visit details, including location tracking and visit status management.</p>
-
-    <p class="body-text"><strong>Payroll</strong> - The Payroll module (/hrms/payroll) handles salary processing. Payroll records track amounts, deductions, bonuses, and net pay. Records move through statuses: Draft, Processing, Finalized, Paid, and Cancelled. Bank transfer records track actual payment disbursements with their own status lifecycle.</p>
-
-    <!-- CHAPTER 5: COMMUNICATION -->
-    <div class="chapter-header">
-        <div class="section-tag">Chapter 5</div>
-        <div class="section-title">Communication Module</div>
-        <div class="divider"></div>
-        <p class="section-desc">Multi-channel messaging with inbox, templates, and provider management</p>
-    </div>
-    <p class="body-text">The Communication module enables multi-channel messaging across WhatsApp, Email, SMS, In-App, and Push notifications. It provides a centralized inbox for managing conversations, template management for consistent messaging, and provider configuration for connecting external services.</p>
-
-    <p class="body-text"><strong>Inbox and Conversations</strong> - The Inbox (/communication/inbox) displays all active conversations in a unified view. Each conversation is linked to a contact and tracks the channel (WhatsApp, Email, etc.), status (Active, Closed, Archived), and assigned team member. You can view conversation messages, reply directly, and mark conversations as read. Bulk messaging (/communication/bulk) allows sending messages to multiple contacts simultaneously.</p>
-
-    <p class="body-text"><strong>Notifications</strong> - The Notifications system (/communication/notifications) manages in-app alerts. Notifications can be created automatically by the system (e.g., new lead assigned, leave request received) or manually. Each notification tracks whether it has been read and supports individual deletion or bulk actions.</p>
-
-    <p class="body-text"><strong>Templates and Providers</strong> - Message Templates (/communication/templates) let you create reusable message formats with template variables (e.g., {name}, {company}, {date}). Templates are categorized as Transactional, Marketing, Notification, or Alert. Communication Providers (/communication/settings) configure the external services used for sending messages - Twilio for SMS/calls, SMTP for email, WhatsApp Business API, and Push notification services.</p>
-
-    <!-- CHAPTER 6: AUTOMATION -->
-    <div class="chapter-header">
-        <div class="section-tag">Chapter 6</div>
-        <div class="section-title">Automation Module</div>
-        <div class="divider"></div>
-        <p class="section-desc">Build powerful workflows that automate repetitive business processes</p>
-    </div>
-    <p class="body-text">The Automation module allows you to create workflows that automatically trigger actions based on events in your business. Instead of manually performing repetitive tasks, you can define rules that execute automatically when specific conditions are met. This module is a powerful tool for scaling your operations without proportionally increasing manual effort.</p>
-
-    <p class="body-text"><strong>Creating Workflows</strong> - Navigate to /automation/workflows and click to create a new workflow. Each workflow consists of three components: Triggers (what starts the workflow - e.g., lead created, deal stage changed, expense submitted), Conditions (filters that determine if the action should execute - e.g., deal value greater than X, lead source equals Y), and Actions (what the workflow does - e.g., create a task, send an email, assign a user, update a lead status, create a notification).</p>
-
-    <p class="body-text"><strong>Workflow Management</strong> - Workflows have four statuses: Draft, Active, Paused, and Archived. After creating a workflow in Draft, you can activate it to start listening for trigger events. Pausing temporarily suspends execution without deleting the workflow. The Executions page (/automation/executions) shows a complete history of all workflow runs with their status (Running, Completed, Failed, Cancelled) and detailed execution logs for debugging.</p>
-
-    <p class="body-text"><strong>Trigger Events</strong> - HubSphere supports 22 different trigger events across all modules including lead.created, lead.status_changed, deal.stage_changed, deal.won, task.completed, followup.due, call.completed, employee.created, leave.requested, expense.submitted, attendance.checkin, and more. Each trigger event provides context data that can be used in conditions and actions.</p>
-
-    <div class="info-box">
-        <p class="info-box-title">Example Workflow</p>
-        <p class="info-box-text">Trigger: When a deal moves to "Won" stage. Condition: Deal value is greater than 50,000. Action: Send a congratulatory WhatsApp message to the salesperson and create a follow-up task for the account manager. This entire sequence runs automatically without any manual intervention.</p>
-    </div>
-
-    <!-- CHAPTER 7: AI -->
-    <div class="chapter-header">
-        <div class="section-tag">Chapter 7</div>
-        <div class="section-title">AI Module</div>
-        <div class="divider"></div>
-        <p class="section-desc">AI-powered chat, agent configuration, and usage analytics</p>
-    </div>
-    <p class="body-text">The AI module brings artificial intelligence capabilities directly into your HubSphere workspace. It provides an integrated chat interface for interacting with AI models, a provider configuration system for connecting to different AI services, and comprehensive usage tracking to monitor your AI expenditure and utilization patterns.</p>
-
-    <p class="body-text"><strong>AI Chat</strong> - The AI Chat interface (/ai/chat) provides a conversational interface for interacting with configured AI models. You can ask questions, generate content, analyze data, or get assistance with any business task. The chat supports context-aware conversations and maintains conversation history for continuity between requests.</p>
-
-    <p class="body-text"><strong>AI Providers and Agents</strong> - The Providers configuration (/ai page, settings section) allows you to connect external AI services such as OpenAI (GPT models), Google AI (Gemini models), and Anthropic (Claude models). Each provider requires an API key. AI Agents (/ai page, agents section) are pre-configured AI personas with specific system prompts and capabilities tailored for different business functions like sales assistance, HR queries, or data analysis.</p>
-
-    <p class="body-text"><strong>AI Usage Analytics</strong> - The Usage page (/ai page, usage section) displays detailed metrics about your AI consumption including request counts, token usage, cost breakdown by model and agent, and usage trends over time. This helps you optimize your AI spending and identify which agents are providing the most value to your team.</p>
-
-    <!-- CHAPTER 8: ANALYTICS -->
-    <div class="chapter-header">
-        <div class="section-tag">Chapter 8</div>
-        <div class="section-title">Analytics Module</div>
-        <div class="divider"></div>
-        <p class="section-desc">Data-driven insights across CRM, HR, Executive, Telecaller, Communication, and AI</p>
-    </div>
-    <p class="body-text">The Analytics module provides a comprehensive suite of reporting and visualization tools that transform your raw data into actionable business intelligence. Each sub-section is tailored to a specific business function, offering KPIs, trend analysis, and performance metrics that help decision-makers understand their operations at a deep level.</p>
-
-    <div class="feature-grid">
-        <div class="feature-item">
-            <p class="feature-item-title">CRM Analytics</p>
-            <p class="feature-item-desc">Lead conversion rates, deal pipeline analysis, sales team performance, revenue by source, and contact growth trends. Helps optimize your sales funnel.</p>
-        </div>
-        <div class="feature-item">
-            <p class="feature-item-title">HR Analytics</p>
-            <p class="feature-item-desc">Employee headcount trends, attendance patterns, leave utilization, department-wise distribution, and payroll expenditure analysis over time.</p>
-        </div>
-        <div class="feature-item">
-            <p class="feature-item-title">Executive Dashboard</p>
-            <p class="feature-item-desc">High-level business KPIs combining CRM revenue, HR costs, operational metrics, and growth indicators. Designed for C-suite decision making.</p>
-        </div>
-        <div class="feature-item">
-            <p class="feature-item-title">Telecaller Analytics</p>
-            <p class="feature-item-desc">Call volume trends, call outcomes (connected, missed, failed), average call duration, and agent-level performance metrics for telecaller teams.</p>
-        </div>
-        <div class="feature-item">
-            <p class="feature-item-title">Communication Analytics</p>
-            <p class="feature-item-desc">Message delivery rates, channel-wise distribution (WhatsApp, Email, SMS), response times, and template performance metrics.</p>
-        </div>
-        <div class="feature-item">
-            <p class="feature-item-title">Automation Analytics</p>
-            <p class="feature-item-desc">Workflow execution success rates, most triggered events, average execution time, and failure analysis for debugging workflows.</p>
-        </div>
-        <div class="feature-item">
-            <p class="feature-item-title">AI Usage Analytics</p>
-            <p class="feature-item-desc">Token consumption trends, cost breakdown by model/agent, request volumes, and efficiency metrics for your AI integrations.</p>
-        </div>
-        <div class="feature-item">
-            <p class="feature-item-title">Report Builder</p>
-            <p class="feature-item-desc">Generate custom reports combining data from multiple modules. Select date ranges, metrics, and groupings to create tailored business reports.</p>
-        </div>
-    </div>
-
-    <!-- CHAPTER 9: ADMIN -->
-    <div class="chapter-header">
-        <div class="section-tag">Chapter 9</div>
-        <div class="section-title">Admin Panel</div>
-        <div class="divider"></div>
-        <p class="section-desc">User management, roles, settings, and security controls for your organization</p>
-    </div>
-    <p class="body-text">The Admin Panel provides organization-level management capabilities. Access it from the sidebar under the Admin section. This panel is available to users with Admin, Manager, or Tenant Owner roles. Here you can manage users, configure roles and permissions, view audit logs, and configure security settings.</p>
-
-    <p class="body-text"><strong>Users Management</strong> - The Users page (/admin/users) displays all users in your organization. You can create new users by providing an email, name, and assigning a role. User statuses include Active, Inactive, and Suspended. Suspended users cannot log in but their data is preserved. You can also edit user details and delete users (which removes their membership but preserves audit history).</p>
-
-    <p class="body-text"><strong>Roles and Permissions</strong> - The Roles page (/admin/roles) displays all available roles. HubSphere comes with 13 predefined system roles including Super Admin, Tenant Owner, Admin, Manager, Sales Manager, Sales Executive, Telecaller, HR Manager, HR Executive, Field Manager, Field Executive, Accountant, and Viewer. Each role can be assigned granular permissions across 35+ modules covering view, create, edit, delete, manage, export, import, execute, approve, reject, and update actions.</p>
-
-    <p class="body-text"><strong>Settings and Security</strong> - The Settings page (/admin/settings) allows configuration of organization-level preferences. The Security page (/admin/security) provides access to Two-Factor Authentication setup, password change functionality, and session management. The Audit Log (/admin/audit) records a complete history of all administrative actions with timestamps, actor information, and action details for compliance and accountability.</p>
-
-    <p class="body-text"><strong>Memberships and Subscription</strong> - The Memberships page (/admin/memberships) shows all user-organization associations with their assigned roles and status. The Subscription page (/admin/subscription) displays your current plan details (Free, Starter, Pro, or Enterprise) with user limits and feature access information.</p>
-
-    <!-- CHAPTER 10: SUPER ADMIN -->
-    <div class="chapter-header">
-        <div class="section-tag">Chapter 10</div>
-        <div class="section-title">Super Admin Panel</div>
-        <div class="divider"></div>
-        <p class="section-desc">Platform-level controls for managing tenants, global settings, and system health</p>
-    </div>
-    <p class="body-text">The Super Admin Panel is exclusively available to users with the Super Admin role (typically the person who completed the initial setup). It provides platform-level controls that span across all tenants and organizations. Access it from the sidebar under the Super Admin section.</p>
-
-    <p class="body-text"><strong>Platform Statistics</strong> - The Super Admin dashboard (/super-admin) displays platform-wide metrics including total tenants, total users, database health, and system uptime. This provides a high-level view of the entire HubSphere platform's health and utilization.</p>
-
-    <p class="body-text"><strong>Tenant Management</strong> - The Tenants page (/super-admin/tenants) allows you to view and manage all organizations on the platform. Each tenant record shows its name, plan (Free, Starter, Pro, Enterprise), status (Active, Suspended, Trial), user count, and creation date. You can update tenant settings or suspend/reactivate tenants as needed.</p>
-
-    <p class="body-text"><strong>Platform Users and Roles</strong> - The Users (/super-admin/users) and Roles (/super-admin/roles) pages provide platform-wide user and role management. Unlike the Admin panel which is scoped to a single tenant, the Super Admin panel shows users across all tenants and allows cross-tenant operations.</p>
-
-    <p class="body-text"><strong>System Health and Features</strong> - The Health page (/super-admin/health) displays real-time system diagnostics including database connection status, uptime, and response times. The Features page (/super-admin/features) provides feature flag management - you can enable or disable entire modules for specific tenants. The Settings page (/super-admin/settings) controls platform-wide configuration. The Audit page (/super-admin/audit) shows a comprehensive log of all platform-level administrative actions.</p>
-
-    <!-- CHAPTER 11: SECURITY -->
-    <div class="chapter-header">
-        <div class="section-tag">Chapter 11</div>
-        <div class="section-title">Security and Best Practices</div>
-        <div class="divider"></div>
-        <p class="section-desc">Enterprise-grade security features and recommendations for safe usage</p>
-    </div>
-    <p class="body-text">HubSphere implements multiple layers of security to protect your data and ensure safe operations. Understanding these features and following best practices will help you maintain a secure environment for your organization's critical business data.</p>
-
-    <div class="feature-grid">
-        <div class="feature-item">
-            <p class="feature-item-title">JWT Authentication</p>
-            <p class="feature-item-desc">Access tokens expire every 15 minutes. Refresh tokens last 30 days. Tokens are stored in httpOnly, secure, SameSite=Lax cookies to prevent XSS attacks.</p>
-        </div>
-        <div class="feature-item">
-            <p class="feature-item-title">Rate Limiting</p>
-            <p class="feature-item-desc">Login endpoints are rate-limited to 10 attempts per 15 minutes per IP. This protects against brute-force attacks. Failed attempts are logged in the audit trail.</p>
-        </div>
-        <div class="feature-item">
-            <p class="feature-item-title">Two-Factor Authentication</p>
-            <p class="feature-item-desc">TOTP-based 2FA using authenticator apps. Provides 10 one-time recovery codes. Can be enabled/disabled per user from Security settings.</p>
-        </div>
-        <div class="feature-item">
-            <p class="feature-item-title">Role-Based Access Control</p>
-            <p class="feature-item-desc">13 predefined roles with 35+ permission modules. Each module supports 11 action types. Granular control over who can access what.</p>
-        </div>
-        <div class="feature-item">
-            <p class="feature-item-title">Audit Logging</p>
-            <p class="feature-item-desc">Every significant action (login, data changes, admin operations) is logged with actor, timestamp, IP address, and user agent for compliance.</p>
-        </div>
-        <div class="feature-item">
-            <p class="feature-item-title">Database Security</p>
-            <p class="feature-item-desc">PostgreSQL on Supabase with connection pooling. Passwords hashed with bcrypt. Sensitive operations require authentication. SQL injection prevented via Prisma ORM.</p>
-        </div>
-    </div>
-
-    <div class="info-box">
-        <p class="info-box-title">Recommendations</p>
-        <p class="info-box-text">Always use strong passwords (12+ characters). Enable 2FA for all admin accounts. Regularly review audit logs. Assign the minimum necessary role to each user. Keep your JWT_SECRET and REFRESH_TOKEN_SECRET secure and rotate them periodically. Never share your Super Admin credentials.</p>
-    </div>
-
+<div class="cover-url">hubspherev3.vercel.app</div>
 </div>
-
-<!-- ENDING PAGE -->
-<div class="ending">
-    <h2>Ready to Get Started?</h2>
-    <p>Your HubSphere instance is fully configured and ready. Log in now to explore all the features described in this guide and start managing your business operations more efficiently.</p>
-    <a class="ending-url">hubspherev3.vercel.app</a>
-</div>
-
+<div class="page"><div class="section-num">Sarvangin Suchi</div><div class="section-title">Vishay-Suchi</div><div class="section-divider"></div><div class="toc-item"><span class="toc-num">01</span><span class="toc-text">HubSphere Parichaya -- Platform Ka Introduction</span></div><div class="toc-item"><span class="toc-num">02</span><span class="toc-text">Shuru Karne Ka Tareeqa -- Setup Wizard aur Super Admin</span></div><div class="toc-item"><span class="toc-num">03</span><span class="toc-text">Login aur Authentication -- 2FA, Password Change, Reset</span></div><div class="toc-item"><span class="toc-num">04</span><span class="toc-text">Dashboard Overview -- Main Dashboard aur Navigation</span></div><div class="toc-item"><span class="toc-num">05</span><span class="toc-text">CRM Module -- Leads, Contacts, Companies, Deals, Tasks</span></div><div class="toc-item"><span class="toc-num">06</span><span class="toc-text">CRM Bhag 2 -- Follow-ups, Telecaller, Tags, Import/Export</span></div><div class="toc-item"><span class="toc-num">07</span><span class="toc-text">HRMS Module -- Employees, Departments, Attendance, Leave</span></div><div class="toc-item"><span class="toc-num">08</span><span class="toc-text">HRMS Bhag 2 -- Field Sales, Expenses, Payroll</span></div><div class="toc-item"><span class="toc-num">09</span><span class="toc-text">Communication Module -- Inbox, Templates, Notifications</span></div><div class="toc-item"><span class="toc-num">10</span><span class="toc-text">Automation Module -- Workflows, Triggers, Actions</span></div><div class="toc-item"><span class="toc-num">11</span><span class="toc-text">Analytics Module -- CRM, HR, Executive, AI Analytics</span></div><div class="toc-item"><span class="toc-num">12</span><span class="toc-text">AI Module -- 5 AI Agents aur Chat Interface</span></div><div class="toc-item"><span class="toc-num">13</span><span class="toc-text">Admin Panel -- Settings, Users, Roles, Audit, Security</span></div><div class="toc-item"><span class="toc-num">14</span><span class="toc-text">Super Admin Panel -- Multi-tenant, Features, Health</span></div><div class="toc-item"><span class="toc-num">15</span><span class="toc-text">Security -- 2FA, RBAC, Rate Limiting, Audit Logging</span></div><div class="page-footer">HubSphere V3 Nirdeshika</div><div class="page-num">2</div></div><!-- CONTENT_PLACEHOLDER -->
 </body>
 </html>
