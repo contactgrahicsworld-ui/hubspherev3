@@ -1,0 +1,373 @@
+{
+  "timestamp": "2026-09-04T12:51:50.442Z",
+  "results": {
+    "passed": 60,
+    "failed": 0,
+    "total": 60,
+    "elapsed": "99.3"
+  },
+  "details": [
+    {
+      "cat": "Health",
+      "test": "Health endpoint",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "cat": "Health",
+      "test": "DB connected",
+      "status": "PASS",
+      "detail": "db=connected"
+    },
+    {
+      "cat": "Security",
+      "test": "HSTS",
+      "status": "PASS",
+      "detail": "max-age=31536000; includeSubDomains"
+    },
+    {
+      "cat": "Security",
+      "test": "X-Frame-Options: DENY",
+      "status": "PASS",
+      "detail": "DENY"
+    },
+    {
+      "cat": "Security",
+      "test": "X-Content-Type-Options",
+      "status": "PASS",
+      "detail": "nosniff"
+    },
+    {
+      "cat": "Security",
+      "test": "CSP present",
+      "status": "PASS",
+      "detail": "default-src 'self'; script-src"
+    },
+    {
+      "cat": "Security",
+      "test": "Referrer-Policy",
+      "status": "PASS",
+      "detail": "strict-origin-when-cross-origin"
+    },
+    {
+      "cat": "Security",
+      "test": "Permissions-Policy",
+      "status": "PASS",
+      "detail": "camera=(), microphone=(), geolocation=()"
+    },
+    {
+      "cat": "Auth",
+      "test": "Setup complete",
+      "status": "PASS",
+      "detail": "complete=true"
+    },
+    {
+      "cat": "Auth",
+      "test": "Login",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "cat": "Auth",
+      "test": "Auth/me",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "cat": "Auth",
+      "test": "Tenant context",
+      "status": "PASS",
+      "detail": "tenantId=5f867efe-ede8-42ef-8da4-f37909300688"
+    },
+    {
+      "cat": "Auth",
+      "test": "Token refresh",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "cat": "Auth",
+      "test": "Old RT revoked",
+      "status": "PASS",
+      "detail": "status=401"
+    },
+    {
+      "cat": "Auth",
+      "test": "Invalid token → 401",
+      "status": "PASS",
+      "detail": "status=401"
+    },
+    {
+      "cat": "RBAC",
+      "test": "Roles list",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "cat": "CRM",
+      "test": "Create lead",
+      "status": "PASS",
+      "detail": "status=201"
+    },
+    {
+      "cat": "CRM",
+      "test": "Read lead",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "cat": "CRM",
+      "test": "Update lead",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "cat": "CRM",
+      "test": "Delete lead",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "cat": "CRM",
+      "test": "Create contact",
+      "status": "PASS",
+      "detail": "status=201"
+    },
+    {
+      "cat": "CRM",
+      "test": "Read contact",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "cat": "CRM",
+      "test": "Delete contact",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "cat": "CRM",
+      "test": "Create company",
+      "status": "PASS",
+      "detail": "status=201"
+    },
+    {
+      "cat": "CRM",
+      "test": "Delete company",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "cat": "CRM",
+      "test": "Create task",
+      "status": "PASS",
+      "detail": "status=201"
+    },
+    {
+      "cat": "CRM",
+      "test": "Delete task",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "cat": "CRM",
+      "test": "Create deal",
+      "status": "PASS",
+      "detail": "status=201 data={\"success\":true,\"data\":{\"id\":\"316c4a68-7985-4ee9-a1c9-2cba3d1adbe5\",\"title\":\"Smo"
+    },
+    {
+      "cat": "CRM",
+      "test": "Delete deal",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "cat": "CRM",
+      "test": "List leads",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "cat": "CRM",
+      "test": "List contacts",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "cat": "CRM",
+      "test": "List companies",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "cat": "HRMS",
+      "test": "Create department",
+      "status": "PASS",
+      "detail": "status=201"
+    },
+    {
+      "cat": "HRMS",
+      "test": "List departments",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "cat": "HRMS",
+      "test": "Delete department",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "cat": "Admin",
+      "test": "List users",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "cat": "Admin",
+      "test": "Settings",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "cat": "SuperAdmin",
+      "test": "List tenants",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "cat": "SuperAdmin",
+      "test": "List all users",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "cat": "Unauth",
+      "test": "/api/v1/crm/leads → 401",
+      "status": "PASS",
+      "detail": "status=401"
+    },
+    {
+      "cat": "Unauth",
+      "test": "/api/v1/crm/contacts → 401",
+      "status": "PASS",
+      "detail": "status=401"
+    },
+    {
+      "cat": "Unauth",
+      "test": "/api/v1/crm/companies → 401",
+      "status": "PASS",
+      "detail": "status=401"
+    },
+    {
+      "cat": "Unauth",
+      "test": "/api/v1/hrms/departments → 401",
+      "status": "PASS",
+      "detail": "status=401"
+    },
+    {
+      "cat": "Unauth",
+      "test": "/api/v1/admin/users → 401",
+      "status": "PASS",
+      "detail": "status=401"
+    },
+    {
+      "cat": "Pages",
+      "test": "/login loads",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "cat": "Pages",
+      "test": "/signup loads",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "cat": "Pages",
+      "test": "/forgot-password loads",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "cat": "Pages",
+      "test": "/setup loads",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "cat": "Redirect",
+      "test": "/dashboard → login",
+      "status": "PASS",
+      "detail": "status=307"
+    },
+    {
+      "cat": "Redirect",
+      "test": "/leads → login",
+      "status": "PASS",
+      "detail": "status=307"
+    },
+    {
+      "cat": "Redirect",
+      "test": "/contacts → login",
+      "status": "PASS",
+      "detail": "status=307"
+    },
+    {
+      "cat": "Redirect",
+      "test": "/companies → login",
+      "status": "PASS",
+      "detail": "status=307"
+    },
+    {
+      "cat": "Redirect",
+      "test": "/deals → login",
+      "status": "PASS",
+      "detail": "status=307"
+    },
+    {
+      "cat": "Redirect",
+      "test": "/employees → login",
+      "status": "PASS",
+      "detail": "status=307"
+    },
+    {
+      "cat": "Redirect",
+      "test": "/settings → login",
+      "status": "PASS",
+      "detail": "status=307"
+    },
+    {
+      "cat": "Leaks",
+      "test": "No sensitive data in errors",
+      "status": "PASS",
+      "detail": "clean"
+    },
+    {
+      "cat": "Mobile",
+      "test": "Login page on iPhone",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "cat": "Mobile",
+      "test": "Signup page on Android",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "cat": "Auth",
+      "test": "Logout",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "cat": "Auth",
+      "test": "RT revoked after logout",
+      "status": "PASS",
+      "detail": "status=401"
+    }
+  ],
+  "errors": [],
+  "status": "ALL_PASS"
+}
