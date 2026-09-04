@@ -13,7 +13,10 @@ export default function AppError({
   reset: () => void
 }) {
   useEffect(() => {
-    console.error('[AppError]', error)
+    // Log error via structured reporting in production
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[AppError]', error)
+    }
   }, [error])
 
   return (

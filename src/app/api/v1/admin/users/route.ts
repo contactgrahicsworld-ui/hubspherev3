@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
     // Create new user
     const passwordHash = data.password
       ? await hashPassword(data.password)
-      : await hashPassword(`TempPass_${crypto.randomUUID().slice(0, 8)}!k9`);
+      : await hashPassword(`${crypto.randomUUID().slice(0, 16)}!${crypto.randomUUID().slice(0, 4)}Z`);
 
     const user = await db.user.create({
       data: {

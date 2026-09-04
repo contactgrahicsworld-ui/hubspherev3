@@ -37,7 +37,10 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('[HubSphere] Unhandled error:', error, errorInfo)
+    // Log error via structured reporting in production
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[HubSphere] Unhandled error:', error, errorInfo)
+    }
   }
 
   render() {

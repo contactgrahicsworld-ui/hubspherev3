@@ -168,7 +168,7 @@ export function AppHeader({
                     {userInfo?.name || 'User'}
                   </p>
                   <p className='text-xs leading-none text-muted-foreground'>
-                    {userInfo?.email || 'user@example.com'}
+                    {userInfo?.email || '—'}
                   </p>
                 </div>
               </DropdownMenuLabel>
