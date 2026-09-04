@@ -41,17 +41,17 @@ export async function POST(request: NextRequest) {
     });
 
     if (!storedToken) {
-      try { logger.security('token_refresh_failure', { module: 'auth', reason: 'token_not_found' }); } catch {}
+      try { logger.security('token_refresh_failure', { module: 'auth', reason: 'token_not_found' }); } catch (e) { console.error('[Logger fallback]', e) }
       throw new AuthenticationError('Invalid refresh token');
     }
 
     if (storedToken.revokedAt) {
-      try { logger.security('token_refresh_failure', { module: 'auth', userId: storedToken.userId, reason: 'token_revoked' }); } catch {}
+      try { logger.security('token_refresh_failure', { module: 'auth', userId: storedToken.userId, reason: 'token_revoked' }); } catch (e) { console.error('[Logger fallback]', e) }
       throw new AuthenticationError('Refresh token has been revoked');
     }
 
     if (storedToken.expiresAt < new Date()) {
-      try { logger.security('token_refresh_failure', { module: 'auth', userId: storedToken.userId, reason: 'token_expired' }); } catch {}
+      try { logger.security('token_refresh_failure', { module: 'auth', userId: storedToken.userId, reason: 'token_expired' }); } catch (e) { console.error('[Logger fallback]', e) }
       throw new AuthenticationError('Refresh token has expired');
     }
 
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
     );
 
     setAuthCookies(response, accessToken, newRefreshToken);
-    try { logger.info('Token refreshed', { module: 'auth', userId: storedToken.user.id, tenantId }); } catch {}
+    try { logger.info('Token refreshed', { module: 'auth', userId: storedToken.user.id, tenantId }); } catch (e) { console.error('[Logger fallback]', e) }
     return response;
   } catch (error) {
     const { statusCode, body } = handleApiError(error);

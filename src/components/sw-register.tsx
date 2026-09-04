@@ -10,7 +10,9 @@ export function ServiceWorkerRegistration() {
       navigator.serviceWorker
         .register('/sw.js')
         .then((registration) => {
-          console.log('SW registered:', registration.scope)
+          if (process.env.NODE_ENV === 'development') {
+            console.log('SW registered:', registration.scope)
+          }
 
           // Check for updates periodically
           intervalRef.current = setInterval(() => {
@@ -18,15 +20,21 @@ export function ServiceWorkerRegistration() {
           }, 60 * 60 * 1000) // Every hour
         })
         .catch((error) => {
-          console.log('SW registration failed:', error)
+          if (process.env.NODE_ENV === 'development') {
+            console.log('SW registration failed:', error)
+          }
         })
 
       // Listen for network status
       const handleOnline = () => {
-        console.log('Network: online')
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Network: online')
+        }
       }
       const handleOffline = () => {
-        console.log('Network: offline')
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Network: offline')
+        }
       }
 
       window.addEventListener('online', handleOnline)

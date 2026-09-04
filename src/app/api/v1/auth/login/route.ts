@@ -50,20 +50,20 @@ export async function POST(request: NextRequest) {
     });
 
     if (!user) {
-      try { logger.security('auth_failure', { module: 'auth', email, reason: 'user_not_found' }); } catch {}
+      try { logger.security('auth_failure', { module: 'auth', email, reason: 'user_not_found' }); } catch (e) { console.error('[Logger fallback]', e) }
       throw new AuthenticationError('Invalid email or password');
     }
 
     // Check user status
     if (user.status === 'SUSPENDED') {
-      try { logger.security('auth_failure', { module: 'auth', email, userId: user.id, reason: 'account_suspended' }); } catch {}
+      try { logger.security('auth_failure', { module: 'auth', email, userId: user.id, reason: 'account_suspended' }); } catch (e) { console.error('[Logger fallback]', e) }
       throw new AuthenticationError('Account has been suspended');
     }
 
     // Verify password
     const validPassword = await verifyPassword(password, user.passwordHash);
     if (!validPassword) {
-      try { logger.security('auth_failure', { module: 'auth', email, userId: user.id, reason: 'invalid_password' }); } catch {}
+      try { logger.security('auth_failure', { module: 'auth', email, userId: user.id, reason: 'invalid_password' }); } catch (e) { console.error('[Logger fallback]', e) }
       throw new AuthenticationError('Invalid email or password');
     }
 
@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
     );
 
     setAuthCookies(response, accessToken, refreshToken);
-    try { logger.info('User login', { module: 'auth', userId: user.id, email: user.email, tenantId, roleCode }); } catch {}
+    try { logger.info('User login', { module: 'auth', userId: user.id, email: user.email, tenantId, roleCode }); } catch (e) { console.error('[Logger fallback]', e) }
     return response;
   } catch (error) {
     const { statusCode, body } = handleApiError(error);

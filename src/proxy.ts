@@ -63,7 +63,7 @@ const SECURITY_HEADERS: Record<string, string> = {
   // object-src: 'none' prevents plugin content
   'Content-Security-Policy': [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+    "script-src 'self' 'unsafe-inline'",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "img-src 'self' data: blob: https: https://*.supabase.co",
     "font-src 'self' data: https://fonts.gstatic.com",

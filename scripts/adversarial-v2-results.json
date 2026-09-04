@@ -1,0 +1,62 @@
+{
+  "timestamp": "2026-09-04T08:37:29.886Z",
+  "passed": 86,
+  "failed": 2,
+  "elapsed": "247.3",
+  "sections": {
+    "Session": {
+      "passed": 10,
+      "failed": 0
+    },
+    "API-Adv": {
+      "passed": 20,
+      "failed": 0
+    },
+    "API-Sec": {
+      "passed": 2,
+      "failed": 0
+    },
+    "XSS": {
+      "passed": 12,
+      "failed": 0
+    },
+    "Auth": {
+      "passed": 11,
+      "failed": 0
+    },
+    "Race": {
+      "passed": 2,
+      "failed": 0
+    },
+    "DB": {
+      "passed": 8,
+      "failed": 0
+    },
+    "Tenant": {
+      "passed": 1,
+      "failed": 2
+    },
+    "FailInj": {
+      "passed": 8,
+      "failed": 0
+    },
+    "Mobile": {
+      "passed": 4,
+      "failed": 0
+    },
+    "Observ": {
+      "passed": 4,
+      "failed": 0
+    },
+    "Perf": {
+      "passed": 4,
+      "failed": 0
+    }
+  },
+  "errors": [
+    "[Tenant] B cannot read A lead: status=200",
+    "[Tenant] B list no A data: found A: true"
+  ],
+  "warnings": [],
+  "status": "FAILURES_FOUND"
+}

@@ -116,16 +116,19 @@ export async function runSeed() {
     }
   }
 
-  // 5. Delete all existing role-permission assignments (1 query)
-  await db.$executeRawUnsafe(`DELETE FROM role_permissions`);
+  // 5–6. Delete + re-insert role-permission assignments atomically.
+  // If inserts fail after delete, a non-transactional approach would wipe all
+  // role permissions. Wrapping in $transaction ensures rollback on failure.
+  await db.$transaction(async (tx) => {
+    await tx.$executeRawUnsafe(`DELETE FROM role_permissions`);
 
-  // 6. Insert all role-permission pairs in bulk (3 queries for ~3000 pairs)
-  for (let i = 0; i < allRpValues.length; i += 1000) {
-    const chunk = allRpValues.slice(i, i + 1000);
-    await db.$executeRawUnsafe(
-      `INSERT INTO role_permissions (id, role_code, permission_id) VALUES ${chunk.join(', ')}`
-    );
-  }
+    for (let i = 0; i < allRpValues.length; i += 1000) {
+      const chunk = allRpValues.slice(i, i + 1000);
+      await tx.$executeRawUnsafe(
+        `INSERT INTO role_permissions (id, role_code, permission_id) VALUES ${chunk.join(', ')}`
+      );
+    }
+  });
 
   return {
     permissionsCreated: permValues.length,

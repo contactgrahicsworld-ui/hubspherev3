@@ -1,0 +1,234 @@
+     1→/home/z/my-project/src/app/api/v1/communication/templates/route.ts:64: * Extract {{variable}} placeholders from template body/subject.
+     2→/home/z/my-project/src/app/api/v1/communication/templates/route.ts:171:    // Extract {{variable}} placeholders from body and subject
+     3→/home/z/my-project/src/app/(app)/communication/inbox/page.tsx:501:            placeholder='Search conversations...'
+     4→/home/z/my-project/src/app/(app)/communication/inbox/page.tsx:512:              <SelectValue placeholder='All Statuses' />
+     5→/home/z/my-project/src/app/(app)/communication/inbox/page.tsx:672:                      placeholder='Type a message...'
+     6→/home/z/my-project/src/app/(app)/communication/settings/page.tsx:66:    fields: { key: string; label: string; type: 'text' | 'password' | 'number'; placeholder: string }[]
+     7→/home/z/my-project/src/app/(app)/communication/settings/page.tsx:74:      { key: 'providerUrl', label: 'Provider URL', type: 'text', placeholder: 'https://graph.facebook.com/v17.0' },
+     8→/home/z/my-project/src/app/(app)/communication/settings/page.tsx:75:      { key: 'apiToken', label: 'API Token', type: 'password', placeholder: 'Enter API token' },
+     9→/home/z/my-project/src/app/(app)/communication/settings/page.tsx:76:      { key: 'phoneNumberId', label: 'Phone Number ID', type: 'text', placeholder: 'Enter phone number ID' },
+    10→/home/z/my-project/src/app/(app)/communication/settings/page.tsx:84:      { key: 'smtpHost', label: 'SMTP Host', type: 'text', placeholder: 'smtp.example.com' },
+    11→/home/z/my-project/src/app/(app)/communication/settings/page.tsx:85:      { key: 'smtpPort', label: 'Port', type: 'number', placeholder: '587' },
+    12→/home/z/my-project/src/app/(app)/communication/settings/page.tsx:86:      { key: 'smtpUser', label: 'SMTP User', type: 'text', placeholder: 'user@example.com' },
+    13→/home/z/my-project/src/app/(app)/communication/settings/page.tsx:87:      { key: 'smtpPassword', label: 'SMTP Password', type: 'password', placeholder: 'Enter password' },
+    14→/home/z/my-project/src/app/(app)/communication/settings/page.tsx:88:      { key: 'fromAddress', label: 'From Address', type: 'text', placeholder: 'noreply@example.com' },
+    15→/home/z/my-project/src/app/(app)/communication/settings/page.tsx:96:      { key: 'provider', label: 'Provider', type: 'text', placeholder: 'twilio, vonage, etc.' },
+    16→/home/z/my-project/src/app/(app)/communication/settings/page.tsx:97:      { key: 'apiKey', label: 'API Key', type: 'password', placeholder: 'Enter API key' },
+    17→/home/z/my-project/src/app/(app)/communication/settings/page.tsx:98:      { key: 'fromNumber', label: 'From Number', type: 'text', placeholder: '+1234567890' },
+    18→/home/z/my-project/src/app/(app)/communication/settings/page.tsx:106:      { key: 'providerKey', label: 'Provider Key', type: 'password', placeholder: 'Enter provider key' },
+    19→/home/z/my-project/src/app/(app)/communication/settings/page.tsx:233:                  placeholder={field.placeholder}
+    20→/home/z/my-project/src/app/(app)/communication/templates/page.tsx:182:  // Replace {{variables}} with placeholder values for preview
+    21→/home/z/my-project/src/app/(app)/communication/templates/page.tsx:381:              placeholder='e.g. Welcome Message'
+    22→/home/z/my-project/src/app/(app)/communication/templates/page.tsx:392:                  <SelectValue placeholder='Select channel' />
+    23→/home/z/my-project/src/app/(app)/communication/templates/page.tsx:408:                  <SelectValue placeholder='Select category' />
+    24→/home/z/my-project/src/app/(app)/communication/templates/page.tsx:440:                placeholder='Email subject line'
+    25→/home/z/my-project/src/app/(app)/communication/templates/page.tsx:451:              placeholder='Hello {{name}}, welcome to {{company}}!'
+    26→/home/z/my-project/src/app/(app)/communication/templates/page.tsx:630:            placeholder='Search templates...'
+    27→/home/z/my-project/src/app/(app)/communication/templates/page.tsx:647:              <SelectValue placeholder='All Categories' />
+    28→/home/z/my-project/src/app/(app)/communication/templates/page.tsx:662:              <SelectValue placeholder='All Statuses' />
+    29→/home/z/my-project/src/app/(app)/admin/audit/page.tsx:148:                <SelectValue placeholder='Filter by action' />
+    30→/home/z/my-project/src/app/(app)/admin/users/page.tsx:225:                    placeholder='user@example.com'
+    31→/home/z/my-project/src/app/(app)/admin/users/page.tsx:239:                  placeholder='Full name'
+    32→/home/z/my-project/src/app/(app)/admin/users/page.tsx:249:                    <SelectValue placeholder='Select a role' />
+    33→/home/z/my-project/src/app/(app)/admin/roles/page.tsx:157:                  placeholder='e.g., EDITOR'
+    34→/home/z/my-project/src/app/(app)/admin/roles/page.tsx:169:                  placeholder='e.g., Editor'
+    35→/home/z/my-project/src/app/(app)/admin/roles/page.tsx:181:                  placeholder='Brief description of this role'
+    36→/home/z/my-project/src/app/(app)/admin/settings/page.tsx:132:                  placeholder='Enter organization name'
+    37→/home/z/my-project/src/app/(app)/admin/settings/page.tsx:146:                  placeholder='e.g., company.com'
+    38→/home/z/my-project/src/app/(app)/hrms/attendance/page.tsx:286:                  <SelectTrigger id='checkin-employee'><SelectValue placeholder='Select employee' /></SelectTrigger>
+    39→/home/z/my-project/src/app/(app)/hrms/attendance/page.tsx:310:          <SelectTrigger className='w-[160px]'><SelectValue placeholder='All Statuses' /></SelectTrigger>
+    40→/home/z/my-project/src/app/(app)/hrms/payroll/page.tsx:203:              <Textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder='Optional notes...' />
+    41→/home/z/my-project/src/app/(app)/hrms/payroll/page.tsx:351:                  <SelectTrigger id='pr-employee'><SelectValue placeholder='Select employee' /></SelectTrigger>
+    42→/home/z/my-project/src/app/(app)/hrms/payroll/page.tsx:372:                  <Input id='pr-basic' type='number' min='0' step='0.01' placeholder='50000' value={form.basicSalary} onChange={(e) => setForm({ ...form, basicSalary: e.target.value })} required />
+    43→/home/z/my-project/src/app/(app)/hrms/payroll/page.tsx:376:                  <Input id='pr-allowances' type='number' min='0' step='0.01' placeholder='0' value={form.totalAllowances} onChange={(e) => setForm({ ...form, totalAllowances: e.target.value })} />
+    44→/home/z/my-project/src/app/(app)/hrms/payroll/page.tsx:382:                  <Input id='pr-deductions' type='number' min='0' step='0.01' placeholder='0' value={form.totalDeductions} onChange={(e) => setForm({ ...form, totalDeductions: e.target.value })} />
+    45→/home/z/my-project/src/app/(app)/hrms/payroll/page.tsx:386:                  <Input id='pr-overtime' type='number' min='0' step='0.01' placeholder='0' value={form.overtimePay} onChange={(e) => setForm({ ...form, overtimePay: e.target.value })} />
+    46→/home/z/my-project/src/app/(app)/hrms/payroll/page.tsx:390:                  <Input id='pr-bonus' type='number' step='0.01' placeholder='0' value={form.bonus} onChange={(e) => setForm({ ...form, bonus: e.target.value })} />
+    47→/home/z/my-project/src/app/(app)/hrms/payroll/page.tsx:395:                <Textarea id='pr-notes' placeholder='Payroll notes...' rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+    48→/home/z/my-project/src/app/(app)/hrms/payroll/page.tsx:411:          <SelectTrigger className='w-[160px]'><SelectValue placeholder='All Statuses' /></SelectTrigger>
+    49→/home/z/my-project/src/app/(app)/hrms/leave/page.tsx:196:          <Textarea placeholder='Rejection reason...' rows={3} value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} />
+    50→/home/z/my-project/src/app/(app)/hrms/leave/page.tsx:358:              <SelectTrigger className='w-[160px]'><SelectValue placeholder='All Statuses' /></SelectTrigger>
+    51→/home/z/my-project/src/app/(app)/hrms/leave/page.tsx:380:                      <SelectTrigger id='lr-employee'><SelectValue placeholder='Select employee' /></SelectTrigger>
+    52→/home/z/my-project/src/app/(app)/hrms/leave/page.tsx:391:                      <SelectTrigger id='lr-type'><SelectValue placeholder='Select leave type' /></SelectTrigger>
+    53→/home/z/my-project/src/app/(app)/hrms/leave/page.tsx:411:                    <Textarea id='lr-reason' placeholder='Leave reason...' rows={3} value={lrForm.reason} onChange={(e) => setLrForm({ ...lrForm, reason: e.target.value })} />
+    54→/home/z/my-project/src/app/(app)/hrms/leave/page.tsx:527:                      <Input id='lt-name' placeholder='Casual Leave' value={ltForm.name} onChange={(e) => setLtForm({ ...ltForm, name: e.target.value })} required />
+    55→/home/z/my-project/src/app/(app)/hrms/leave/page.tsx:531:                      <Input id='lt-code' placeholder='CL' value={ltForm.code} onChange={(e) => setLtForm({ ...ltForm, code: e.target.value })} required />
+    56→/home/z/my-project/src/app/(app)/hrms/leave/page.tsx:537:                      <Input id='lt-days' type='number' min='0' placeholder='12' value={ltForm.defaultDays} onChange={(e) => setLtForm({ ...ltForm, defaultDays: e.target.value })} />
+    57→/home/z/my-project/src/app/(app)/hrms/leave/page.tsx:562:                    <Textarea id='lt-desc' placeholder='Description...' rows={2} value={ltForm.description} onChange={(e) => setLtForm({ ...ltForm, description: e.target.value })} />
+    58→/home/z/my-project/src/app/api/v1/crm/calls/initiate/route.ts:118:    // 2. Create the Call record — NEVER fake a successful call
+    59→/home/z/my-project/src/app/(app)/hrms/employees/page.tsx:380:                  <Input id='first-name' placeholder='John' value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} required />
+    60→/home/z/my-project/src/app/(app)/hrms/employees/page.tsx:384:                  <Input id='last-name' placeholder='Doe' value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} />
+    61→/home/z/my-project/src/app/(app)/hrms/employees/page.tsx:390:                  <SelectTrigger id='user-select'><SelectValue placeholder='Select a user' /></SelectTrigger>
+    62→/home/z/my-project/src/app/(app)/hrms/employees/page.tsx:401:                  <Input id='emp-id' placeholder='EMP-001' value={form.employeeId} onChange={(e) => setForm({ ...form, employeeId: e.target.value })} required />
+    63→/home/z/my-project/src/app/(app)/hrms/employees/page.tsx:405:                  <Input id='emp-email' type='email' placeholder='john@company.com' value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+    64→/home/z/my-project/src/app/(app)/hrms/employees/page.tsx:411:                  <Input id='emp-mobile' placeholder='+91 9876543210' value={form.mobile} onChange={(e) => setForm({ ...form, mobile: e.target.value })} />
+    65→/home/z/my-project/src/app/(app)/hrms/employees/page.tsx:429:                    <SelectTrigger id='emp-dept'><SelectValue placeholder='Select department' /></SelectTrigger>
+    66→/home/z/my-project/src/app/(app)/hrms/employees/page.tsx:440:                    <SelectTrigger id='emp-designation'><SelectValue placeholder='Select designation' /></SelectTrigger>
+    67→/home/z/my-project/src/app/(app)/hrms/employees/page.tsx:456:                  <Input id='emp-salary' type='number' min='0' step='0.01' placeholder='50000' value={form.basicSalary} onChange={(e) => setForm({ ...form, basicSalary: e.target.value })} />
+    68→/home/z/my-project/src/app/(app)/hrms/employees/page.tsx:461:                <Input id='emp-location' placeholder='Office / Remote / Hybrid' value={form.workLocation} onChange={(e) => setForm({ ...form, workLocation: e.target.value })} />
+    69→/home/z/my-project/src/app/(app)/hrms/employees/page.tsx:478:          <Input placeholder='Search employees...' value={searchInput} onChange={(e) => setSearchInput(e.target.value)} className='pl-9' />
+    70→/home/z/my-project/src/app/(app)/hrms/employees/page.tsx:481:          <SelectTrigger className='w-[160px]'><SelectValue placeholder='All Statuses' /></SelectTrigger>
+    71→/home/z/my-project/src/app/(app)/hrms/departments/page.tsx:192:                <Input id='dept-name' placeholder='Engineering' value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+    72→/home/z/my-project/src/app/(app)/hrms/departments/page.tsx:197:                  <Input id='dept-code' placeholder='ENG' value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })} />
+    73→/home/z/my-project/src/app/(app)/hrms/departments/page.tsx:212:                <Textarea id='dept-desc' placeholder='Brief description...' rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+    74→/home/z/my-project/src/app/(app)/hrms/departments/page.tsx:228:        <Input placeholder='Search departments...' value={searchInput} onChange={(e) => setSearchInput(e.target.value)} className='pl-9' />
+    75→/home/z/my-project/src/app/(app)/hrms/expenses/page.tsx:176:          <Textarea placeholder='Rejection reason...' rows={3} value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} />
+    76→/home/z/my-project/src/app/(app)/hrms/expenses/page.tsx:295:                  <SelectTrigger id='exp-employee'><SelectValue placeholder='Select employee' /></SelectTrigger>
+    77→/home/z/my-project/src/app/(app)/hrms/expenses/page.tsx:306:                  <Input id='exp-amount' type='number' min='0' step='0.01' placeholder='0.00' value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} required />
+    78→/home/z/my-project/src/app/(app)/hrms/expenses/page.tsx:316:                  <SelectTrigger id='exp-category'><SelectValue placeholder='Select category' /></SelectTrigger>
+    79→/home/z/my-project/src/app/(app)/hrms/expenses/page.tsx:332:                <Textarea id='exp-desc' placeholder='Expense details...' rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+    80→/home/z/my-project/src/app/(app)/hrms/expenses/page.tsx:348:          <SelectTrigger className='w-[150px]'><SelectValue placeholder='All Statuses' /></SelectTrigger>
+    81→/home/z/my-project/src/app/(app)/hrms/expenses/page.tsx:357:          <SelectTrigger className='w-[170px]'><SelectValue placeholder='All Categories' /></SelectTrigger>
+    82→/home/z/my-project/src/app/(app)/hrms/designations/page.tsx:203:                <Input id='desig-title' placeholder='Software Engineer' value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required />
+    83→/home/z/my-project/src/app/(app)/hrms/designations/page.tsx:209:                    <SelectTrigger id='desig-dept'><SelectValue placeholder='Any department' /></SelectTrigger>
+    84→/home/z/my-project/src/app/(app)/hrms/designations/page.tsx:230:                <Textarea id='desig-desc' placeholder='Role description...' rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+    85→/home/z/my-project/src/app/(app)/hrms/designations/page.tsx:246:        <Input placeholder='Search designations...' value={searchInput} onChange={(e) => setSearchInput(e.target.value)} className='pl-9' />
+    86→/home/z/my-project/src/app/(app)/hrms/field-sales/page.tsx:184:                  <div className='space-y-2'><Label>Outcome</Label><Textarea rows={2} value={outcome} onChange={(e) => setOutcome(e.target.value)} placeholder='Visit outcome...' /></div>
+    87→/home/z/my-project/src/app/(app)/hrms/field-sales/page.tsx:185:                  <div className='space-y-2'><Label>Notes</Label><Textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder='Additional notes...' /></div>
+    88→/home/z/my-project/src/app/(app)/hrms/field-sales/page.tsx:348:              <div className='space-y-2'><Label htmlFor='fv-employee'>Employee *</Label><Select value={form.employeeId} onValueChange={(v) => setForm({ ...form, employeeId: v })}><SelectTrigger id='fv-employee'><SelectValue placeholder='Select employee' /></SelectTrigger><SelectContent>{employees.map((emp) => <SelectItem key={emp.id} value={emp.id}>{employeeFullName(emp)} ({emp.employeeId})</SelectItem>)}</SelectContent></Select></div>
+    89→/home/z/my-project/src/app/(app)/hrms/field-sales/page.tsx:353:              <div className='space-y-2'><Label htmlFor='fv-purpose'>Purpose</Label><Textarea id='fv-purpose' placeholder='Visit purpose...' rows={2} value={form.purpose} onChange={(e) => setForm({ ...form, purpose: e.target.value })} /></div>
+    90→/home/z/my-project/src/app/(app)/hrms/field-sales/page.tsx:354:              <div className='space-y-2'><Label htmlFor='fv-notes'>Notes</Label><Textarea id='fv-notes' placeholder='Additional notes...' rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
+    91→/home/z/my-project/src/app/(app)/hrms/field-sales/page.tsx:391:              <SelectTrigger className='w-[160px]'><SelectValue placeholder='All Statuses' /></SelectTrigger>
+    92→/home/z/my-project/src/app/(app)/hrms/field-sales/page.tsx:453:            <div className='space-y-2'><Label>Outcome</Label><Textarea rows={2} value={updateOutcome} onChange={(e) => setUpdateOutcome(e.target.value)} placeholder='Visit outcome...' /></div>
+    93→/home/z/my-project/src/app/(app)/hrms/field-sales/page.tsx:454:            <div className='space-y-2'><Label>Notes</Label><Textarea rows={2} value={updateNotes} onChange={(e) => setUpdateNotes(e.target.value)} placeholder='Additional notes...' /></div>
+    94→/home/z/my-project/src/app/(app)/crm/leads/[id]/page.tsx:580:                    placeholder='Add a note...'
+    95→/home/z/my-project/src/app/(app)/crm/leads/page.tsx:366:            placeholder='Search by name, email, mobile, or company...'
+    96→/home/z/my-project/src/app/(app)/crm/leads/page.tsx:383:              <SelectValue placeholder='All Statuses' />
+    97→/home/z/my-project/src/app/(app)/crm/leads/page.tsx:395:              <SelectValue placeholder='All Sources' />
+    98→/home/z/my-project/src/app/(app)/crm/leads/page.tsx:407:              <SelectValue placeholder='All Priorities' />
+    99→/home/z/my-project/src/app/(app)/crm/leads/page.tsx:419:              <SelectValue placeholder='Sort by' />
+   100→/home/z/my-project/src/app/(app)/crm/follow-ups/page.tsx:364:            placeholder='Search follow-ups...'
+   101→/home/z/my-project/src/app/(app)/crm/export/page.tsx:149:                <SelectValue placeholder='Select entity type' />
+   102→/home/z/my-project/src/app/(app)/crm/export/page.tsx:173:                  <SelectValue placeholder='All Statuses' />
+   103→/home/z/my-project/src/app/(app)/crm/import/page.tsx:193:                <SelectValue placeholder='Select entity type' />
+   104→/home/z/my-project/src/app/(app)/crm/contacts/[id]/page.tsx:480:                  placeholder='Add a note...'
+   105→/home/z/my-project/src/app/(app)/crm/contacts/page.tsx:321:            placeholder='Search by name, email, mobile, phone, or title...'
+   106→/home/z/my-project/src/app/(app)/crm/contacts/page.tsx:337:              <SelectValue placeholder='All Companies' />
+   107→/home/z/my-project/src/app/(app)/crm/contacts/page.tsx:349:              <SelectValue placeholder='All Owners' />
+   108→/home/z/my-project/src/app/(app)/crm/contacts/page.tsx:361:              <SelectValue placeholder='Sort by' />
+   109→/home/z/my-project/src/app/(app)/crm/calls/page.tsx:315:            placeholder='Search by contact info, agent...'
+   110→/home/z/my-project/src/app/(app)/crm/calls/page.tsx:331:              <SelectValue placeholder='Direction' />
+   111→/home/z/my-project/src/app/(app)/crm/calls/page.tsx:342:              <SelectValue placeholder='All Statuses' />
+   112→/home/z/my-project/src/app/(app)/crm/calls/page.tsx:354:              <SelectValue placeholder='Recording' />
+   113→/home/z/my-project/src/app/(app)/crm/companies/[id]/page.tsx:465:                <Textarea placeholder='Add a note...' value={noteContent} onChange={(e) => setNoteContent(e.target.value)} rows={2} className='flex-1' />
+   114→/home/z/my-project/src/app/(app)/crm/companies/page.tsx:310:            placeholder='Search by name, email, phone, website, or industry...'
+   115→/home/z/my-project/src/app/(app)/crm/companies/page.tsx:326:              <SelectValue placeholder='All Industries' />
+   116→/home/z/my-project/src/app/(app)/crm/companies/page.tsx:338:              <SelectValue placeholder='All Owners' />
+   117→/home/z/my-project/src/app/(app)/crm/companies/page.tsx:350:              <SelectValue placeholder='All Cities' />
+   118→/home/z/my-project/src/app/(app)/crm/companies/page.tsx:362:              <SelectValue placeholder='Sort by' />
+   119→/home/z/my-project/src/app/(app)/crm/page.tsx:358:      {/* Recent Activities Placeholder */}
+   120→/home/z/my-project/src/app/(app)/crm/tasks/page.tsx:380:            placeholder='Search tasks...'
+   121→/home/z/my-project/src/app/(app)/crm/tasks/page.tsx:396:              <SelectValue placeholder='All Priorities' />
+   122→/home/z/my-project/src/app/(app)/crm/tasks/page.tsx:411:            placeholder='Due from'
+   123→/home/z/my-project/src/app/(app)/crm/tasks/page.tsx:420:            placeholder='Due to'
+   124→/home/z/my-project/src/app/(app)/crm/telecaller/page.tsx:460:                placeholder='Search leads...'
+   125→/home/z/my-project/src/app/(app)/crm/telecaller/page.tsx:802:                placeholder='Add notes about this call...'
+   126→/home/z/my-project/src/app/(app)/crm/telecaller/page.tsx:844:            placeholder='Enter your note...'
+   127→/home/z/my-project/src/app/(app)/crm/telecaller/page.tsx:881:                placeholder='Follow-up title...'
+   128→/home/z/my-project/src/app/(app)/crm/deals/[id]/page.tsx:486:                <Textarea placeholder='Add a note...' value={noteContent} onChange={(e) => setNoteContent(e.target.value)} rows={2} className='flex-1' />
+   129→/home/z/my-project/src/app/(app)/crm/deals/page.tsx:434:            placeholder='Search deals...'
+   130→/home/z/my-project/src/app/(app)/crm/deals/page.tsx:450:              <SelectValue placeholder='All Stages' />
+   131→/home/z/my-project/src/app/(app)/crm/deals/page.tsx:462:              <SelectValue placeholder='All Contacts' />
+   132→/home/z/my-project/src/app/(app)/crm/deals/page.tsx:474:              <SelectValue placeholder='All Companies' />
+   133→/home/z/my-project/src/app/(app)/crm/deals/page.tsx:487:                <SelectValue placeholder='Sort by' />
+   134→/home/z/my-project/src/app/(app)/ai/chat/page.tsx:265:              <SelectValue placeholder='Select agent' />
+   135→/home/z/my-project/src/app/(app)/ai/chat/page.tsx:375:          placeholder={isNotConfigured ? 'Configure AI provider to start chatting...' : `Message ${AGENT_LABELS[activeAgent] || activeAgent}...`}
+   136→/home/z/my-project/src/app/(app)/super-admin/users/page.tsx:162:            placeholder='Search by name or email...'
+   137→/home/z/my-project/src/app/(app)/super-admin/tenants/page.tsx:181:                  placeholder='Acme Corp'
+   138→/home/z/my-project/src/app/(app)/super-admin/tenants/page.tsx:190:                  placeholder='acme-corp'
+   139→/home/z/my-project/src/app/(app)/super-admin/tenants/page.tsx:199:                  placeholder='acme.example.com'
+   140→/home/z/my-project/src/app/(app)/super-admin/features/page.tsx:27:const PLACEHOLDER_FLAGS: FeatureFlag[] = [
+   141→/home/z/my-project/src/app/(app)/super-admin/features/page.tsx:29:    id: 'placeholder-1',
+   142→/home/z/my-project/src/app/(app)/super-admin/features/page.tsx:39:    id: 'placeholder-2',
+   143→/home/z/my-project/src/app/(app)/super-admin/features/page.tsx:49:    id: 'placeholder-3',
+   144→/home/z/my-project/src/app/(app)/super-admin/features/page.tsx:59:    id: 'placeholder-4',
+   145→/home/z/my-project/src/app/(app)/super-admin/features/page.tsx:69:    id: 'placeholder-5',
+   146→/home/z/my-project/src/app/(app)/super-admin/features/page.tsx:79:    id: 'placeholder-6',
+   147→/home/z/my-project/src/app/(app)/super-admin/features/page.tsx:114:  const [usePlaceholder, setUsePlaceholder] = useState(false)
+   148→/home/z/my-project/src/app/(app)/super-admin/features/page.tsx:126:          setUsePlaceholder(false)
+   149→/home/z/my-project/src/app/(app)/super-admin/features/page.tsx:130:          setFlags(PLACEHOLDER_FLAGS)
+   150→/home/z/my-project/src/app/(app)/super-admin/features/page.tsx:131:          setUsePlaceholder(true)
+   151→/home/z/my-project/src/app/(app)/super-admin/features/page.tsx:147:    if (usePlaceholder) {
+   152→/home/z/my-project/src/app/(app)/super-admin/features/page.tsx:168:      {usePlaceholder && !loading && (
+   153→/home/z/my-project/src/app/(app)/super-admin/features/page.tsx:174:                Placeholder Mode
+   154→/home/z/my-project/src/app/(app)/super-admin/features/page.tsx:186:      {error && !loading && !usePlaceholder && (
+   155→/home/z/my-project/src/app/(app)/super-admin/features/page.tsx:195:      {!loading && flags.length === 0 && !usePlaceholder && (
+   156→/home/z/my-project/src/app/(app)/automation/executions/page.tsx:362:            <SelectValue placeholder='All Statuses' />
+   157→/home/z/my-project/src/app/(app)/automation/workflows/[id]/page.tsx:1049:                placeholder='e.g., source, status, value'
+   158→/home/z/my-project/src/app/(app)/automation/workflows/[id]/page.tsx:1071:                placeholder='Value to compare against'
+   159→/home/z/my-project/src/app/(app)/automation/workflows/[id]/page.tsx:1110:                  <SelectValue placeholder='Select an action' />
+   160→/home/z/my-project/src/app/(app)/automation/workflows/page.tsx:264:              placeholder='e.g., Auto-assign new leads'
+   161→/home/z/my-project/src/app/(app)/automation/workflows/page.tsx:275:              placeholder='What does this workflow do?'
+   162→/home/z/my-project/src/app/(app)/automation/workflows/page.tsx:286:                <SelectValue placeholder='Select a trigger event' />
+   163→/home/z/my-project/src/app/(app)/automation/workflows/page.tsx:445:            placeholder='Search workflows...'
+   164→/home/z/my-project/src/app/(app)/automation/workflows/page.tsx:461:              <SelectValue placeholder='All Statuses' />
+   165→/home/z/my-project/src/app/(app)/automation/workflows/page.tsx:472:              <SelectValue placeholder='All Triggers' />
+   166→/home/z/my-project/src/app/(auth)/login/page.tsx:127:                        placeholder="you@company.com"
+   167→/home/z/my-project/src/app/(auth)/login/page.tsx:151:                        placeholder="Enter your password"
+   168→/home/z/my-project/src/app/(auth)/forgot-password/page.tsx:112:                            placeholder="you@company.com"
+   169→/home/z/my-project/src/app/(auth)/setup/page.tsx:180:                        placeholder="John Doe"
+   170→/home/z/my-project/src/app/(auth)/setup/page.tsx:204:                        placeholder="admin@company.com"
+   171→/home/z/my-project/src/app/(auth)/setup/page.tsx:228:                        placeholder="Create a strong password"
+   172→/home/z/my-project/src/app/(auth)/setup/page.tsx:252:                        placeholder="Confirm your password"
+   173→/home/z/my-project/src/app/(auth)/reset-password/page.tsx:138:                            placeholder="Enter new password"
+   174→/home/z/my-project/src/app/(auth)/reset-password/page.tsx:162:                            placeholder="Confirm new password"
+   175→/home/z/my-project/src/app/(auth)/signup/page.tsx:141:                        placeholder="John Doe"
+   176→/home/z/my-project/src/app/(auth)/signup/page.tsx:165:                        placeholder="you@company.com"
+   177→/home/z/my-project/src/app/(auth)/signup/page.tsx:189:                        placeholder="Create a strong password"
+   178→/home/z/my-project/src/app/(auth)/signup/page.tsx:213:                        placeholder="Confirm your password"
+   179→/home/z/my-project/src/lib/communication/dispatcher.ts:6: * NEVER fakes delivery — if a provider throws or isn't configured, the
+   180→/home/z/my-project/src/lib/providers/ai-gateway.ts:4: * NEVER fakes a response.
+   181→/home/z/my-project/src/components/crm/lead-form.tsx:264:              placeholder='John'
+   182→/home/z/my-project/src/components/crm/lead-form.tsx:280:              placeholder='Doe'
+   183→/home/z/my-project/src/components/crm/lead-form.tsx:293:                placeholder='john@example.com'
+   184→/home/z/my-project/src/components/crm/lead-form.tsx:307:                placeholder='+1 234 567 8900'
+   185→/home/z/my-project/src/components/crm/lead-form.tsx:319:              placeholder='Acme Inc.'
+   186→/home/z/my-project/src/components/crm/lead-form.tsx:331:                  <SelectValue placeholder='Select source' />
+   187→/home/z/my-project/src/components/crm/lead-form.tsx:347:                  <SelectValue placeholder='Select priority' />
+   188→/home/z/my-project/src/components/crm/lead-form.tsx:365:                <SelectValue placeholder={loadingUsers ? 'Loading...' : 'Select owner'} />
+   189→/home/z/my-project/src/components/crm/lead-form.tsx:385:              placeholder='0.00'
+   190→/home/z/my-project/src/components/crm/lead-form.tsx:396:              placeholder='Add any notes about this lead...'
+   191→/home/z/my-project/src/components/ui/input-otp.tsx:47:  const { char, hasFakeCaret, isActive } = inputOTPContext?.slots[index] ?? {}
+   192→/home/z/my-project/src/components/ui/input-otp.tsx:60:      {hasFakeCaret && (
+   193→/home/z/my-project/src/components/crm/task-form.tsx:245:              placeholder='Enter task title...'
+   194→/home/z/my-project/src/components/crm/task-form.tsx:261:              placeholder='Add task description...'
+   195→/home/z/my-project/src/components/crm/task-form.tsx:274:                  <SelectValue placeholder='Select status' />
+   196→/home/z/my-project/src/components/crm/task-form.tsx:290:                  <SelectValue placeholder='Select priority' />
+   197→/home/z/my-project/src/components/crm/task-form.tsx:323:                  <SelectValue placeholder='Select type' />
+   198→/home/z/my-project/src/components/crm/task-form.tsx:339:                placeholder='Enter entity ID...'
+   199→/home/z/my-project/src/components/crm/task-form.tsx:352:                <SelectValue placeholder={loadingUsers ? 'Loading...' : 'Select owner'} />
+   200→/home/z/my-project/src/components/crm/contact-form.tsx:228:              placeholder='John'
+   201→/home/z/my-project/src/components/crm/contact-form.tsx:244:              placeholder='Doe'
+   202→/home/z/my-project/src/components/crm/contact-form.tsx:255:              placeholder='VP of Engineering'
+   203→/home/z/my-project/src/components/crm/contact-form.tsx:267:              placeholder='john@example.com'
+   204→/home/z/my-project/src/components/crm/contact-form.tsx:283:                placeholder='+1 234 567 8900'
+   205→/home/z/my-project/src/components/crm/contact-form.tsx:292:                placeholder='+1 234 567 8901'
+   206→/home/z/my-project/src/components/crm/contact-form.tsx:304:                <SelectValue placeholder={loadingOptions ? 'Loading...' : 'Select company'} />
+   207→/home/z/my-project/src/components/crm/contact-form.tsx:321:                <SelectValue placeholder={loadingOptions ? 'Loading...' : 'Select owner'} />
+   208→/home/z/my-project/src/components/crm/company-form.tsx:231:              placeholder='Acme Inc.'
+   209→/home/z/my-project/src/components/crm/company-form.tsx:245:              placeholder='Technology'
+   210→/home/z/my-project/src/components/crm/company-form.tsx:256:              placeholder='https://acme.com'
+   211→/home/z/my-project/src/components/crm/company-form.tsx:269:                placeholder='info@acme.com'
+   212→/home/z/my-project/src/components/crm/company-form.tsx:280:                placeholder='+1 234 567 8900'
+   213→/home/z/my-project/src/components/crm/company-form.tsx:292:              placeholder='123 Business St, Suite 100'
+   214→/home/z/my-project/src/components/crm/company-form.tsx:305:                placeholder='Mumbai'
+   215→/home/z/my-project/src/components/crm/company-form.tsx:314:                placeholder='Maharashtra'
+   216→/home/z/my-project/src/components/crm/company-form.tsx:323:                placeholder='India'
+   217→/home/z/my-project/src/components/crm/company-form.tsx:335:                <SelectValue placeholder={loadingUsers ? 'Loading...' : 'Select owner'} />
+   218→/home/z/my-project/src/components/ui/textarea.tsx:10:        "border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 flex field-sizing-content min-h-16 w-full rounded-md border bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+   219→/home/z/my-project/src/components/ui/input.tsx:11:        "file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+   220→/home/z/my-project/src/components/crm/deal-form.tsx:252:              placeholder='Enterprise SaaS License'
+   221→/home/z/my-project/src/components/crm/deal-form.tsx:270:                placeholder='0'
+   222→/home/z/my-project/src/components/crm/deal-form.tsx:309:                placeholder='0'
+   223→/home/z/my-project/src/components/crm/deal-form.tsx:331:                  <SelectValue placeholder={loadingOptions ? 'Loading...' : 'Select contact'} />
+   224→/home/z/my-project/src/components/crm/deal-form.tsx:346:                  <SelectValue placeholder={loadingOptions ? 'Loading...' : 'Select company'} />
+   225→/home/z/my-project/src/components/crm/deal-form.tsx:362:                <SelectValue placeholder={loadingOptions ? 'Loading...' : 'Select owner'} />
+   226→/home/z/my-project/src/components/crm/deal-form.tsx:378:                placeholder='Why was this deal lost?'
+   227→/home/z/my-project/src/components/crm/deal-form.tsx:390:              placeholder='Add any notes about this deal...'
+   228→/home/z/my-project/src/components/ui/command.tsx:76:          "placeholder:text-muted-foreground flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-hidden disabled:cursor-not-allowed disabled:opacity-50",
+   229→/home/z/my-project/src/components/ui/select.tsx:40:        "border-input data-[placeholder]:text-muted-foreground [&_svg:not([class*='text-'])]:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 dark:hover:bg-input/50 flex w-fit items-center justify-between gap-2 rounded-md border bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+   230→/home/z/my-project/src/components/crm/follow-up-form.tsx:219:              placeholder='Follow-up title...'
+   231→/home/z/my-project/src/components/crm/follow-up-form.tsx:235:              placeholder='Add notes...'
+   232→/home/z/my-project/src/components/crm/follow-up-form.tsx:269:                  <SelectValue placeholder='Select type' />
+   233→/home/z/my-project/src/components/crm/follow-up-form.tsx:285:                placeholder='Enter entity ID...'
+   234→/home/z/my-project/src/components/crm/follow-up-form.tsx:298:                <SelectValue placeholder={loadingUsers ? 'Loading...' : 'Select owner'} />

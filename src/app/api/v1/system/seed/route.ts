@@ -5,6 +5,11 @@ import { handleApiError, AuthenticationError } from '@/lib/errors';
 import { verifyAccessToken } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
+  // Block destructive seed endpoint in production
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not available in production' }, { status: 404 });
+  }
+
   try {
     // Require SUPER_ADMIN authentication for seeding
     const authHeader = request.headers.get('authorization');

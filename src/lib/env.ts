@@ -110,11 +110,20 @@ function loadEnv(): EnvironmentConfig {
     }
   }
 
+  // Generate a random dev-only secret when env var is missing.
+  // In production, the REQUIRED_VARS check above already throws.
+  // Empty-string secrets must never be used — they allow trivially forgeable JWTs.
+  const generateDevSecret = (name: string): string => {
+    const bytes = crypto.getRandomValues(new Uint8Array(32));
+    const hex = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+    return `dev-${name}-${hex}`;
+  };
+
   return {
     DATABASE_URL: process.env.DATABASE_URL || '',
-    JWT_SECRET: process.env.JWT_SECRET || '',
-    REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET || '',
-    APP_URL: process.env.APP_URL || 'http://localhost:3000',
+    JWT_SECRET: process.env.JWT_SECRET || generateDevSecret('jwt'),
+    REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET || generateDevSecret('refresh'),
+    APP_URL: process.env.APP_URL || '',
     NODE_ENV: (process.env.NODE_ENV as EnvironmentConfig['NODE_ENV']) || 'development',
 
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,

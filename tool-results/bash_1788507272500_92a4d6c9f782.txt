@@ -1,0 +1,766 @@
+[07:26:50] HUBSPHERE 5× REGRESSION TEST
+[07:26:50] Target: 5 independent runs of complete test suite
+[07:26:50] Production: https://hubspherev3.vercel.app
+[07:26:50] 
+[07:26:50] Cleaning database via Prisma...
+[07:27:02] Database cleaned successfully
+[07:27:04] 
+════════════════════════════════════════════════════════════
+[07:27:04]   RUN 1 OF 5
+[07:27:04] ════════════════════════════════════════════════════════════
+[07:27:04] ── 1. Public Pages ──
+[07:27:05]   ✅ [Public] Root redirects to login: status=307
+[07:27:05]   ✅ [Public] /login loads: status=200
+[07:27:05]   ✅ [Public] /signup loads: status=200
+[07:27:05]   ✅ [Public] /setup loads: status=200
+[07:27:05]   ✅ [Public] /forgot-password loads: status=200
+[07:27:05]   ✅ [Public] 404 renders: status=200
+[07:27:05]   ✅ [Public] /api root responds: status=307
+[07:27:05] ── 2. System Health ──
+[07:27:09]   ✅ [System] Health check: status=200
+[07:27:11]   ✅ [System] Setup status available: status=200
+[07:27:11]   ✅ [System] Setup needed (clean DB): setupComplete=false
+[07:27:11] ── 3. Setup Wizard ──
+[07:27:26]   ✅ [Auth-Setup] Create super admin: status=201
+[07:27:26]   ✅ [Auth-Setup] Got access token: len=359
+[07:27:26]   ✅ [Auth-Setup] Got refresh token: len=128
+[07:27:26]   ✅ [Auth-Setup] Got user ID: 7632eb82-d134-484b-9146-39d90b5edf80
+[07:27:29]   ✅ [Auth-Setup] Setup now complete: setupComplete=true
+[07:27:30]   ✅ [Auth-Setup] Second setup blocked: status=403
+[07:27:30] ── 4. Login ──
+[07:27:38]   ✅ [Auth-Login] Correct credentials: status=200
+[07:27:42]   ✅ [Auth-Login] Wrong password rejected: status=401
+[07:27:46]   ✅ [Auth-Login] Non-existent email rejected: status=401
+[07:27:49]   ✅ [Auth-Login] Missing fields rejected: status=400
+[07:27:49] ── 5. Current User ──
+[07:27:53]   ✅ [Auth-Me] Get current user: status=200
+[07:27:53]   ✅ [Auth-Me] Email matches: admin@hubsphere.com
+[07:27:53]   ✅ [Auth-Me] Is super admin: true
+[07:27:53]   ✅ [Auth-Me] Has name: HubSphere Admin
+[07:27:53]   ✅ [Auth-Me] Has permissions: count=394
+[07:27:53] ── 6. Refresh Token ──
+[07:27:58]   ✅ [Auth-Refresh] Refresh token works: status=200
+[07:27:58]   ✅ [Auth-Refresh] New access token differs: tokens same or different
+[07:27:58] ── 7. Token Security ──
+[07:28:02]   ❌ [Auth-Sec] Invalid token rejected: status=200
+[07:28:02]   ✅ [Auth-Sec] No auth rejected: status=401
+[07:28:06]   ❌ [Auth-Sec] Fake JWT rejected: status=200
+[07:28:06] ── 8. CRM Leads ──
+[07:28:06]   ❌ [CRM-Lead] Create lead: status=404
+[07:28:06]   ❌ [CRM-Lead] Got lead ID
+[07:28:06]   ❌ [CRM-Lead] List leads: status=404
+[07:28:06] ── 9. CRM Contacts ──
+[07:28:06]   ❌ [CRM-Contact] Create contact: status=404
+[07:28:06]   ❌ [CRM-Contact] List contacts: status=404
+[07:28:06] ── 10. CRM Companies ──
+[07:28:06]   ❌ [CRM-Company] Create company: status=404
+[07:28:06]   ❌ [CRM-Company] List companies: status=404
+[07:28:06] ── 11. CRM Deals ──
+[07:28:06]   ❌ [CRM-Deal] Create deal: status=404, data="<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"
+[07:28:06]   ❌ [CRM-Deal] List deals: status=404
+[07:28:06] ── 12. HRMS Employees ──
+[07:28:07]   ❌ [HRMS-Emp] Create employee: status=404, data="<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"
+[07:28:07]   ❌ [HRMS-Emp] List employees: status=404
+[07:28:07] ── 13. HRMS Departments ──
+[07:28:07]   ❌ [HRMS-Dept] Create department: status=404
+[07:28:07]   ❌ [HRMS-Dept] List departments: status=404
+[07:28:07] ── 14. HRMS Leave Types ──
+[07:28:07]   ❌ [HRMS-Leave] Create leave type: status=404
+[07:28:07]   ❌ [HRMS-Leave] List leave types: status=404
+[07:28:07] ── 15. Tasks ──
+[07:28:07]   ❌ [Tasks] Create task: status=404
+[07:28:07]   ❌ [Tasks] List tasks: status=404
+[07:28:07] ── 16. Notes ──
+[07:28:07]   ❌ [Notes] List notes: status=404
+[07:28:07] ── 17. Activities ──
+[07:28:07] ── 18. Follow-ups ──
+[07:28:07]   ❌ [FollowUps] List follow-ups: status=404
+[07:28:07] ── 19. Search ──
+[07:28:07]   ❌ [Search] Global search: status=404
+[07:28:07] ── 20. Export ──
+[07:28:07]   ❌ [Export] Export leads: status=404
+[07:28:07] ── 21. Analytics ──
+[07:28:07]   ❌ [Analytics] Dashboard analytics: status=404
+[07:28:10]   ✅ [Analytics] CRM analytics: status=200
+[07:28:10] ── 22. AI Agents ──
+[07:28:12]   ✅ [AI] List AI agents: status=200
+[07:28:12] ── 23. Communication ──
+[07:28:12]   ❌ [Comm] List templates: status=404
+[07:28:12]   ❌ [Comm] List providers: status=404
+[07:28:12] ── 24. Automation ──
+[07:28:12]   ❌ [Automation] List workflows: status=404
+[07:28:12] ── 25. Notifications ──
+[07:28:12]   ❌ [Notif] List notifications: status=404
+[07:28:12] ── 26. Audit Logs ──
+[07:28:13]   ❌ [Audit] List audit logs: status=404
+[07:28:13] ── 27. Change Password ──
+[07:28:13]   ❌ [Auth-PW] Change password (same pw): status=400
+[07:28:14]   ✅ [Auth-PW] Wrong current pw rejected: status=400
+[07:28:14] ── 28. Logout ──
+[07:28:16]   ✅ [Auth-Logout] Logout succeeds: status=200
+[07:28:20]   ❌ [Auth-Logout] Token invalid after logout: status=200
+[07:28:20] ── 29. Protected Pages ──
+[07:28:20]   ✅ [Pages] /dashboard redirects when unauth: status=307
+[07:28:20]   ✅ [Pages] /leads redirects when unauth: status=307
+[07:28:20]   ✅ [Pages] /contacts redirects when unauth: status=307
+[07:28:20]   ✅ [Pages] /companies redirects when unauth: status=307
+[07:28:20]   ✅ [Pages] /deals redirects when unauth: status=307
+[07:28:20]   ✅ [Pages] /employees redirects when unauth: status=307
+[07:28:20]   ✅ [Pages] /tasks redirects when unauth: status=307
+[07:28:20]   ✅ [Pages] /settings redirects when unauth: status=307
+[07:28:20] ── 30. Input Validation ──
+[07:28:23]   ✅ [Validation] Empty login body rejected: status=400
+[07:28:23]   ✅ [Validation] Empty lead body rejected: status=404
+[07:28:23]   ✅ [Validation] Invalid UUID rejected: status=404
+[07:28:23] ── 31. Security Headers ──
+[07:28:23]   ✅ [Security] Has X-Content-Type-Options: nosniff
+[07:28:23]   ✅ [Security] Has X-Frame-Options: DENY
+[07:28:23]   ✅ [Security] Has HSTS: max-age=31536000; includeSubDomains
+[07:28:23] 
+  RUN 1 COMPLETE: 46 PASS, 31 FAIL in 79.5s
+[07:28:23] 
+  Run 1 summary: 46/77 passed (79.5s)
+[07:28:23] Cleaning database via Prisma...
+[07:28:41] Database cleaned successfully
+[07:28:43] 
+════════════════════════════════════════════════════════════
+[07:28:43]   RUN 2 OF 5
+[07:28:43] ════════════════════════════════════════════════════════════
+[07:28:43] ── 1. Public Pages ──
+[07:28:43]   ✅ [Public] Root redirects to login: status=307
+[07:28:43]   ✅ [Public] /login loads: status=200
+[07:28:43]   ✅ [Public] /signup loads: status=200
+[07:28:43]   ✅ [Public] /setup loads: status=200
+[07:28:43]   ✅ [Public] /forgot-password loads: status=200
+[07:28:43]   ✅ [Public] 404 renders: status=200
+[07:28:44]   ✅ [Public] /api root responds: status=307
+[07:28:44] ── 2. System Health ──
+[07:28:45]   ✅ [System] Health check: status=200
+[07:28:47]   ✅ [System] Setup status available: status=200
+[07:28:47]   ✅ [System] Setup needed (clean DB): setupComplete=false
+[07:28:47] ── 3. Setup Wizard ──
+[07:29:00]   ✅ [Auth-Setup] Create super admin: status=201
+[07:29:00]   ✅ [Auth-Setup] Got access token: len=359
+[07:29:00]   ✅ [Auth-Setup] Got refresh token: len=128
+[07:29:00]   ✅ [Auth-Setup] Got user ID: 69b3c0f1-d2ba-44f2-a524-140467d1cdc6
+[07:29:03]   ✅ [Auth-Setup] Setup now complete: setupComplete=true
+[07:29:04]   ✅ [Auth-Setup] Second setup blocked: status=403
+[07:29:04] ── 4. Login ──
+[07:29:12]   ✅ [Auth-Login] Correct credentials: status=200
+[07:29:16]   ✅ [Auth-Login] Wrong password rejected: status=401
+[07:29:21]   ✅ [Auth-Login] Non-existent email rejected: status=401
+[07:29:24]   ✅ [Auth-Login] Missing fields rejected: status=400
+[07:29:24] ── 5. Current User ──
+[07:29:27]   ✅ [Auth-Me] Get current user: status=200
+[07:29:27]   ✅ [Auth-Me] Email matches: admin@hubsphere.com
+[07:29:27]   ✅ [Auth-Me] Is super admin: true
+[07:29:27]   ✅ [Auth-Me] Has name: HubSphere Admin
+[07:29:27]   ✅ [Auth-Me] Has permissions: count=394
+[07:29:27] ── 6. Refresh Token ──
+[07:29:33]   ✅ [Auth-Refresh] Refresh token works: status=200
+[07:29:33]   ✅ [Auth-Refresh] New access token differs: tokens same or different
+[07:29:33] ── 7. Token Security ──
+[07:29:36]   ❌ [Auth-Sec] Invalid token rejected: status=200
+[07:29:36]   ✅ [Auth-Sec] No auth rejected: status=401
+[07:29:40]   ❌ [Auth-Sec] Fake JWT rejected: status=200
+[07:29:40] ── 8. CRM Leads ──
+[07:29:40]   ❌ [CRM-Lead] Create lead: status=404
+[07:29:40]   ❌ [CRM-Lead] Got lead ID
+[07:29:40]   ❌ [CRM-Lead] List leads: status=404
+[07:29:40] ── 9. CRM Contacts ──
+[07:29:40]   ❌ [CRM-Contact] Create contact: status=404
+[07:29:40]   ❌ [CRM-Contact] List contacts: status=404
+[07:29:40] ── 10. CRM Companies ──
+[07:29:40]   ❌ [CRM-Company] Create company: status=404
+[07:29:40]   ❌ [CRM-Company] List companies: status=404
+[07:29:40] ── 11. CRM Deals ──
+[07:29:40]   ❌ [CRM-Deal] Create deal: status=404, data="<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"
+[07:29:40]   ❌ [CRM-Deal] List deals: status=404
+[07:29:40] ── 12. HRMS Employees ──
+[07:29:40]   ❌ [HRMS-Emp] Create employee: status=404, data="<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"
+[07:29:41]   ❌ [HRMS-Emp] List employees: status=404
+[07:29:41] ── 13. HRMS Departments ──
+[07:29:41]   ❌ [HRMS-Dept] Create department: status=404
+[07:29:41]   ❌ [HRMS-Dept] List departments: status=404
+[07:29:41] ── 14. HRMS Leave Types ──
+[07:29:41]   ❌ [HRMS-Leave] Create leave type: status=404
+[07:29:41]   ❌ [HRMS-Leave] List leave types: status=404
+[07:29:41] ── 15. Tasks ──
+[07:29:41]   ❌ [Tasks] Create task: status=404
+[07:29:41]   ❌ [Tasks] List tasks: status=404
+[07:29:41] ── 16. Notes ──
+[07:29:41]   ❌ [Notes] List notes: status=404
+[07:29:41] ── 17. Activities ──
+[07:29:41] ── 18. Follow-ups ──
+[07:29:41]   ❌ [FollowUps] List follow-ups: status=404
+[07:29:41] ── 19. Search ──
+[07:29:41]   ❌ [Search] Global search: status=404
+[07:29:41] ── 20. Export ──
+[07:29:41]   ❌ [Export] Export leads: status=404
+[07:29:41] ── 21. Analytics ──
+[07:29:41]   ❌ [Analytics] Dashboard analytics: status=404
+[07:29:44]   ✅ [Analytics] CRM analytics: status=200
+[07:29:44] ── 22. AI Agents ──
+[07:29:45]   ✅ [AI] List AI agents: status=200
+[07:29:45] ── 23. Communication ──
+[07:29:45]   ❌ [Comm] List templates: status=404
+[07:29:46]   ❌ [Comm] List providers: status=404
+[07:29:46] ── 24. Automation ──
+[07:29:46]   ❌ [Automation] List workflows: status=404
+[07:29:46] ── 25. Notifications ──
+[07:29:46]   ❌ [Notif] List notifications: status=404
+[07:29:46] ── 26. Audit Logs ──
+[07:29:46]   ❌ [Audit] List audit logs: status=404
+[07:29:46] ── 27. Change Password ──
+[07:29:46]   ❌ [Auth-PW] Change password (same pw): status=400
+[07:29:47]   ✅ [Auth-PW] Wrong current pw rejected: status=400
+[07:29:47] ── 28. Logout ──
+[07:29:49]   ✅ [Auth-Logout] Logout succeeds: status=200
+[07:29:53]   ❌ [Auth-Logout] Token invalid after logout: status=200
+[07:29:53] ── 29. Protected Pages ──
+[07:29:53]   ✅ [Pages] /dashboard redirects when unauth: status=307
+[07:29:53]   ✅ [Pages] /leads redirects when unauth: status=307
+[07:29:53]   ✅ [Pages] /contacts redirects when unauth: status=307
+[07:29:53]   ✅ [Pages] /companies redirects when unauth: status=307
+[07:29:53]   ✅ [Pages] /deals redirects when unauth: status=307
+[07:29:53]   ✅ [Pages] /employees redirects when unauth: status=307
+[07:29:53]   ✅ [Pages] /tasks redirects when unauth: status=307
+[07:29:53]   ✅ [Pages] /settings redirects when unauth: status=307
+[07:29:53] ── 30. Input Validation ──
+[07:29:56]   ✅ [Validation] Empty login body rejected: status=400
+[07:29:56]   ✅ [Validation] Empty lead body rejected: status=404
+[07:29:56]   ✅ [Validation] Invalid UUID rejected: status=404
+[07:29:56] ── 31. Security Headers ──
+[07:29:56]   ✅ [Security] Has X-Content-Type-Options: nosniff
+[07:29:56]   ✅ [Security] Has X-Frame-Options: DENY
+[07:29:56]   ✅ [Security] Has HSTS: max-age=31536000; includeSubDomains
+[07:29:56] 
+  RUN 2 COMPLETE: 46 PASS, 31 FAIL in 73.5s
+[07:29:56] 
+  Run 2 summary: 46/77 passed (73.5s)
+[07:29:56] Cleaning database via Prisma...
+[07:30:14] Database cleaned successfully
+[07:30:16] 
+════════════════════════════════════════════════════════════
+[07:30:16]   RUN 3 OF 5
+[07:30:16] ════════════════════════════════════════════════════════════
+[07:30:16] ── 1. Public Pages ──
+[07:30:16]   ✅ [Public] Root redirects to login: status=307
+[07:30:16]   ✅ [Public] /login loads: status=200
+[07:30:16]   ✅ [Public] /signup loads: status=200
+[07:30:16]   ✅ [Public] /setup loads: status=200
+[07:30:16]   ✅ [Public] /forgot-password loads: status=200
+[07:30:17]   ✅ [Public] 404 renders: status=200
+[07:30:17]   ✅ [Public] /api root responds: status=307
+[07:30:17] ── 2. System Health ──
+[07:30:18]   ✅ [System] Health check: status=200
+[07:30:20]   ✅ [System] Setup status available: status=200
+[07:30:20]   ✅ [System] Setup needed (clean DB): setupComplete=false
+[07:30:20] ── 3. Setup Wizard ──
+[07:30:34]   ✅ [Auth-Setup] Create super admin: status=201
+[07:30:34]   ✅ [Auth-Setup] Got access token: len=359
+[07:30:34]   ✅ [Auth-Setup] Got refresh token: len=128
+[07:30:34]   ✅ [Auth-Setup] Got user ID: 2e19b040-a7d9-4025-b06e-e3c998edf9ad
+[07:30:36]   ✅ [Auth-Setup] Setup now complete: setupComplete=true
+[07:30:37]   ✅ [Auth-Setup] Second setup blocked: status=403
+[07:30:37] ── 4. Login ──
+[07:30:44]   ✅ [Auth-Login] Correct credentials: status=200
+[07:30:49]   ✅ [Auth-Login] Wrong password rejected: status=401
+[07:30:53]   ✅ [Auth-Login] Non-existent email rejected: status=401
+[07:30:56]   ✅ [Auth-Login] Missing fields rejected: status=400
+[07:30:56] ── 5. Current User ──
+[07:31:00]   ✅ [Auth-Me] Get current user: status=200
+[07:31:00]   ✅ [Auth-Me] Email matches: admin@hubsphere.com
+[07:31:00]   ✅ [Auth-Me] Is super admin: true
+[07:31:00]   ✅ [Auth-Me] Has name: HubSphere Admin
+[07:31:00]   ✅ [Auth-Me] Has permissions: count=394
+[07:31:00] ── 6. Refresh Token ──
+[07:31:05]   ✅ [Auth-Refresh] Refresh token works: status=200
+[07:31:05]   ✅ [Auth-Refresh] New access token differs: tokens same or different
+[07:31:05] ── 7. Token Security ──
+[07:31:08]   ❌ [Auth-Sec] Invalid token rejected: status=200
+[07:31:09]   ✅ [Auth-Sec] No auth rejected: status=401
+[07:31:12]   ❌ [Auth-Sec] Fake JWT rejected: status=200
+[07:31:12] ── 8. CRM Leads ──
+[07:31:12]   ❌ [CRM-Lead] Create lead: status=404
+[07:31:12]   ❌ [CRM-Lead] Got lead ID
+[07:31:12]   ❌ [CRM-Lead] List leads: status=404
+[07:31:12] ── 9. CRM Contacts ──
+[07:31:12]   ❌ [CRM-Contact] Create contact: status=404
+[07:31:12]   ❌ [CRM-Contact] List contacts: status=404
+[07:31:12] ── 10. CRM Companies ──
+[07:31:12]   ❌ [CRM-Company] Create company: status=404
+[07:31:12]   ❌ [CRM-Company] List companies: status=404
+[07:31:12] ── 11. CRM Deals ──
+[07:31:13]   ❌ [CRM-Deal] Create deal: status=404, data="<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"
+[07:31:13]   ❌ [CRM-Deal] List deals: status=404
+[07:31:13] ── 12. HRMS Employees ──
+[07:31:13]   ❌ [HRMS-Emp] Create employee: status=404, data="<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"
+[07:31:13]   ❌ [HRMS-Emp] List employees: status=404
+[07:31:13] ── 13. HRMS Departments ──
+[07:31:13]   ❌ [HRMS-Dept] Create department: status=404
+[07:31:13]   ❌ [HRMS-Dept] List departments: status=404
+[07:31:13] ── 14. HRMS Leave Types ──
+[07:31:13]   ❌ [HRMS-Leave] Create leave type: status=404
+[07:31:13]   ❌ [HRMS-Leave] List leave types: status=404
+[07:31:13] ── 15. Tasks ──
+[07:31:13]   ❌ [Tasks] Create task: status=404
+[07:31:13]   ❌ [Tasks] List tasks: status=404
+[07:31:13] ── 16. Notes ──
+[07:31:13]   ❌ [Notes] List notes: status=404
+[07:31:13] ── 17. Activities ──
+[07:31:13] ── 18. Follow-ups ──
+[07:31:13]   ❌ [FollowUps] List follow-ups: status=404
+[07:31:13] ── 19. Search ──
+[07:31:14]   ❌ [Search] Global search: status=404
+[07:31:14] ── 20. Export ──
+[07:31:14]   ❌ [Export] Export leads: status=404
+[07:31:14] ── 21. Analytics ──
+[07:31:14]   ❌ [Analytics] Dashboard analytics: status=404
+[07:31:16]   ✅ [Analytics] CRM analytics: status=200
+[07:31:16] ── 22. AI Agents ──
+[07:31:18]   ✅ [AI] List AI agents: status=200
+[07:31:18] ── 23. Communication ──
+[07:31:18]   ❌ [Comm] List templates: status=404
+[07:31:18]   ❌ [Comm] List providers: status=404
+[07:31:18] ── 24. Automation ──
+[07:31:18]   ❌ [Automation] List workflows: status=404
+[07:31:18] ── 25. Notifications ──
+[07:31:18]   ❌ [Notif] List notifications: status=404
+[07:31:18] ── 26. Audit Logs ──
+[07:31:18]   ❌ [Audit] List audit logs: status=404
+[07:31:18] ── 27. Change Password ──
+[07:31:18]   ❌ [Auth-PW] Change password (same pw): status=400
+[07:31:20]   ✅ [Auth-PW] Wrong current pw rejected: status=400
+[07:31:20] ── 28. Logout ──
+[07:31:22]   ✅ [Auth-Logout] Logout succeeds: status=200
+[07:31:25]   ❌ [Auth-Logout] Token invalid after logout: status=200
+[07:31:25] ── 29. Protected Pages ──
+[07:31:25]   ✅ [Pages] /dashboard redirects when unauth: status=307
+[07:31:25]   ✅ [Pages] /leads redirects when unauth: status=307
+[07:31:25]   ✅ [Pages] /contacts redirects when unauth: status=307
+[07:31:25]   ✅ [Pages] /companies redirects when unauth: status=307
+[07:31:25]   ✅ [Pages] /deals redirects when unauth: status=307
+[07:31:25]   ✅ [Pages] /employees redirects when unauth: status=307
+[07:31:26]   ✅ [Pages] /tasks redirects when unauth: status=307
+[07:31:26]   ✅ [Pages] /settings redirects when unauth: status=307
+[07:31:26] ── 30. Input Validation ──
+[07:31:29]   ✅ [Validation] Empty login body rejected: status=400
+[07:31:29]   ✅ [Validation] Empty lead body rejected: status=404
+[07:31:29]   ✅ [Validation] Invalid UUID rejected: status=404
+[07:31:29] ── 31. Security Headers ──
+[07:31:29]   ✅ [Security] Has X-Content-Type-Options: nosniff
+[07:31:29]   ✅ [Security] Has X-Frame-Options: DENY
+[07:31:29]   ✅ [Security] Has HSTS: max-age=31536000; includeSubDomains
+[07:31:29] 
+  RUN 3 COMPLETE: 46 PASS, 31 FAIL in 72.7s
+[07:31:29] 
+  Run 3 summary: 46/77 passed (72.7s)
+[07:31:29] Cleaning database via Prisma...
+[07:31:41] Database cleaned successfully
+[07:31:43] 
+════════════════════════════════════════════════════════════
+[07:31:43]   RUN 4 OF 5
+[07:31:43] ════════════════════════════════════════════════════════════
+[07:31:43] ── 1. Public Pages ──
+[07:31:43]   ✅ [Public] Root redirects to login: status=307
+[07:31:43]   ✅ [Public] /login loads: status=200
+[07:31:43]   ✅ [Public] /signup loads: status=200
+[07:31:43]   ✅ [Public] /setup loads: status=200
+[07:31:43]   ✅ [Public] /forgot-password loads: status=200
+[07:31:43]   ✅ [Public] 404 renders: status=200
+[07:31:44]   ✅ [Public] /api root responds: status=307
+[07:31:44] ── 2. System Health ──
+[07:31:45]   ✅ [System] Health check: status=200
+[07:31:47]   ✅ [System] Setup status available: status=200
+[07:31:47]   ✅ [System] Setup needed (clean DB): setupComplete=false
+[07:31:47] ── 3. Setup Wizard ──
+[07:32:01]   ✅ [Auth-Setup] Create super admin: status=201
+[07:32:01]   ✅ [Auth-Setup] Got access token: len=359
+[07:32:01]   ✅ [Auth-Setup] Got refresh token: len=128
+[07:32:01]   ✅ [Auth-Setup] Got user ID: ed8a26f2-a5f8-473d-adca-8655022f5bd6
+[07:32:03]   ✅ [Auth-Setup] Setup now complete: setupComplete=true
+[07:32:04]   ✅ [Auth-Setup] Second setup blocked: status=403
+[07:32:04] ── 4. Login ──
+[07:32:12]   ✅ [Auth-Login] Correct credentials: status=200
+[07:32:16]   ✅ [Auth-Login] Wrong password rejected: status=401
+[07:32:20]   ✅ [Auth-Login] Non-existent email rejected: status=401
+[07:32:23]   ✅ [Auth-Login] Missing fields rejected: status=400
+[07:32:23] ── 5. Current User ──
+[07:32:27]   ✅ [Auth-Me] Get current user: status=200
+[07:32:27]   ✅ [Auth-Me] Email matches: admin@hubsphere.com
+[07:32:27]   ✅ [Auth-Me] Is super admin: true
+[07:32:27]   ✅ [Auth-Me] Has name: HubSphere Admin
+[07:32:27]   ✅ [Auth-Me] Has permissions: count=394
+[07:32:27] ── 6. Refresh Token ──
+[07:32:32]   ✅ [Auth-Refresh] Refresh token works: status=200
+[07:32:32]   ✅ [Auth-Refresh] New access token differs: tokens same or different
+[07:32:32] ── 7. Token Security ──
+[07:32:36]   ❌ [Auth-Sec] Invalid token rejected: status=200
+[07:32:36]   ✅ [Auth-Sec] No auth rejected: status=401
+[07:32:39]   ❌ [Auth-Sec] Fake JWT rejected: status=200
+[07:32:39] ── 8. CRM Leads ──
+[07:32:39]   ❌ [CRM-Lead] Create lead: status=404
+[07:32:39]   ❌ [CRM-Lead] Got lead ID
+[07:32:40]   ❌ [CRM-Lead] List leads: status=404
+[07:32:40] ── 9. CRM Contacts ──
+[07:32:40]   ❌ [CRM-Contact] Create contact: status=404
+[07:32:40]   ❌ [CRM-Contact] List contacts: status=404
+[07:32:40] ── 10. CRM Companies ──
+[07:32:40]   ❌ [CRM-Company] Create company: status=404
+[07:32:40]   ❌ [CRM-Company] List companies: status=404
+[07:32:40] ── 11. CRM Deals ──
+[07:32:40]   ❌ [CRM-Deal] Create deal: status=404, data="<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"
+[07:32:40]   ❌ [CRM-Deal] List deals: status=404
+[07:32:40] ── 12. HRMS Employees ──
+[07:32:40]   ❌ [HRMS-Emp] Create employee: status=404, data="<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"
+[07:32:40]   ❌ [HRMS-Emp] List employees: status=404
+[07:32:40] ── 13. HRMS Departments ──
+[07:32:40]   ❌ [HRMS-Dept] Create department: status=404
+[07:32:40]   ❌ [HRMS-Dept] List departments: status=404
+[07:32:40] ── 14. HRMS Leave Types ──
+[07:32:40]   ❌ [HRMS-Leave] Create leave type: status=404
+[07:32:40]   ❌ [HRMS-Leave] List leave types: status=404
+[07:32:40] ── 15. Tasks ──
+[07:32:40]   ❌ [Tasks] Create task: status=404
+[07:32:41]   ❌ [Tasks] List tasks: status=404
+[07:32:41] ── 16. Notes ──
+[07:32:41]   ❌ [Notes] List notes: status=404
+[07:32:41] ── 17. Activities ──
+[07:32:41] ── 18. Follow-ups ──
+[07:32:41]   ❌ [FollowUps] List follow-ups: status=404
+[07:32:41] ── 19. Search ──
+[07:32:41]   ❌ [Search] Global search: status=404
+[07:32:41] ── 20. Export ──
+[07:32:41]   ❌ [Export] Export leads: status=404
+[07:32:41] ── 21. Analytics ──
+[07:32:41]   ❌ [Analytics] Dashboard analytics: status=404
+[07:32:43]   ✅ [Analytics] CRM analytics: status=200
+[07:32:43] ── 22. AI Agents ──
+[07:32:45]   ✅ [AI] List AI agents: status=200
+[07:32:45] ── 23. Communication ──
+[07:32:45]   ❌ [Comm] List templates: status=404
+[07:32:45]   ❌ [Comm] List providers: status=404
+[07:32:45] ── 24. Automation ──
+[07:32:45]   ❌ [Automation] List workflows: status=404
+[07:32:45] ── 25. Notifications ──
+[07:32:45]   ❌ [Notif] List notifications: status=404
+[07:32:45] ── 26. Audit Logs ──
+[07:32:45]   ❌ [Audit] List audit logs: status=404
+[07:32:45] ── 27. Change Password ──
+[07:32:46]   ❌ [Auth-PW] Change password (same pw): status=400
+[07:32:47]   ✅ [Auth-PW] Wrong current pw rejected: status=400
+[07:32:47] ── 28. Logout ──
+[07:32:49]   ✅ [Auth-Logout] Logout succeeds: status=200
+[07:32:52]   ❌ [Auth-Logout] Token invalid after logout: status=200
+[07:32:52] ── 29. Protected Pages ──
+[07:32:52]   ✅ [Pages] /dashboard redirects when unauth: status=307
+[07:32:52]   ✅ [Pages] /leads redirects when unauth: status=307
+[07:32:52]   ✅ [Pages] /contacts redirects when unauth: status=307
+[07:32:52]   ✅ [Pages] /companies redirects when unauth: status=307
+[07:32:52]   ✅ [Pages] /deals redirects when unauth: status=307
+[07:32:53]   ✅ [Pages] /employees redirects when unauth: status=307
+[07:32:53]   ✅ [Pages] /tasks redirects when unauth: status=307
+[07:32:53]   ✅ [Pages] /settings redirects when unauth: status=307
+[07:32:53] ── 30. Input Validation ──
+[07:32:56]   ✅ [Validation] Empty login body rejected: status=400
+[07:32:56]   ✅ [Validation] Empty lead body rejected: status=404
+[07:32:56]   ✅ [Validation] Invalid UUID rejected: status=404
+[07:32:56] ── 31. Security Headers ──
+[07:32:56]   ✅ [Security] Has X-Content-Type-Options: nosniff
+[07:32:56]   ✅ [Security] Has X-Frame-Options: DENY
+[07:32:56]   ✅ [Security] Has HSTS: max-age=31536000; includeSubDomains
+[07:32:56] 
+  RUN 4 COMPLETE: 46 PASS, 31 FAIL in 72.9s
+[07:32:56] 
+  Run 4 summary: 46/77 passed (72.9s)
+[07:32:56] Cleaning database via Prisma...
+[07:33:13] Database cleaned successfully
+[07:33:15] 
+════════════════════════════════════════════════════════════
+[07:33:15]   RUN 5 OF 5
+[07:33:15] ════════════════════════════════════════════════════════════
+[07:33:15] ── 1. Public Pages ──
+[07:33:15]   ✅ [Public] Root redirects to login: status=307
+[07:33:15]   ✅ [Public] /login loads: status=200
+[07:33:15]   ✅ [Public] /signup loads: status=200
+[07:33:15]   ✅ [Public] /setup loads: status=200
+[07:33:15]   ✅ [Public] /forgot-password loads: status=200
+[07:33:16]   ✅ [Public] 404 renders: status=200
+[07:33:16]   ✅ [Public] /api root responds: status=307
+[07:33:16] ── 2. System Health ──
+[07:33:18]   ✅ [System] Health check: status=200
+[07:33:20]   ✅ [System] Setup status available: status=200
+[07:33:20]   ✅ [System] Setup needed (clean DB): setupComplete=false
+[07:33:20] ── 3. Setup Wizard ──
+[07:33:35]   ✅ [Auth-Setup] Create super admin: status=201
+[07:33:35]   ✅ [Auth-Setup] Got access token: len=359
+[07:33:35]   ✅ [Auth-Setup] Got refresh token: len=128
+[07:33:35]   ✅ [Auth-Setup] Got user ID: abcba154-8a60-4914-88c3-2e12167fbcc4
+[07:33:37]   ✅ [Auth-Setup] Setup now complete: setupComplete=true
+[07:33:39]   ✅ [Auth-Setup] Second setup blocked: status=403
+[07:33:39] ── 4. Login ──
+[07:33:46]   ✅ [Auth-Login] Correct credentials: status=200
+[07:33:51]   ✅ [Auth-Login] Wrong password rejected: status=401
+[07:33:55]   ✅ [Auth-Login] Non-existent email rejected: status=401
+[07:33:58]   ✅ [Auth-Login] Missing fields rejected: status=400
+[07:33:58] ── 5. Current User ──
+[07:34:02]   ✅ [Auth-Me] Get current user: status=200
+[07:34:02]   ✅ [Auth-Me] Email matches: admin@hubsphere.com
+[07:34:02]   ✅ [Auth-Me] Is super admin: true
+[07:34:02]   ✅ [Auth-Me] Has name: HubSphere Admin
+[07:34:02]   ✅ [Auth-Me] Has permissions: count=394
+[07:34:02] ── 6. Refresh Token ──
+[07:34:08]   ✅ [Auth-Refresh] Refresh token works: status=200
+[07:34:08]   ✅ [Auth-Refresh] New access token differs: tokens same or different
+[07:34:08] ── 7. Token Security ──
+[07:34:11]   ❌ [Auth-Sec] Invalid token rejected: status=200
+[07:34:12]   ✅ [Auth-Sec] No auth rejected: status=401
+[07:34:15]   ❌ [Auth-Sec] Fake JWT rejected: status=200
+[07:34:15] ── 8. CRM Leads ──
+[07:34:15]   ❌ [CRM-Lead] Create lead: status=404
+[07:34:15]   ❌ [CRM-Lead] Got lead ID
+[07:34:15]   ❌ [CRM-Lead] List leads: status=404
+[07:34:15] ── 9. CRM Contacts ──
+[07:34:15]   ❌ [CRM-Contact] Create contact: status=404
+[07:34:16]   ❌ [CRM-Contact] List contacts: status=404
+[07:34:16] ── 10. CRM Companies ──
+[07:34:16]   ❌ [CRM-Company] Create company: status=404
+[07:34:16]   ❌ [CRM-Company] List companies: status=404
+[07:34:16] ── 11. CRM Deals ──
+[07:34:16]   ❌ [CRM-Deal] Create deal: status=404, data="<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"
+[07:34:16]   ❌ [CRM-Deal] List deals: status=404
+[07:34:16] ── 12. HRMS Employees ──
+[07:34:16]   ❌ [HRMS-Emp] Create employee: status=404, data="<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"
+[07:34:16]   ❌ [HRMS-Emp] List employees: status=404
+[07:34:16] ── 13. HRMS Departments ──
+[07:34:16]   ❌ [HRMS-Dept] Create department: status=404
+[07:34:16]   ❌ [HRMS-Dept] List departments: status=404
+[07:34:16] ── 14. HRMS Leave Types ──
+[07:34:16]   ❌ [HRMS-Leave] Create leave type: status=404
+[07:34:16]   ❌ [HRMS-Leave] List leave types: status=404
+[07:34:16] ── 15. Tasks ──
+[07:34:16]   ❌ [Tasks] Create task: status=404
+[07:34:16]   ❌ [Tasks] List tasks: status=404
+[07:34:16] ── 16. Notes ──
+[07:34:17]   ❌ [Notes] List notes: status=404
+[07:34:17] ── 17. Activities ──
+[07:34:17] ── 18. Follow-ups ──
+[07:34:17]   ❌ [FollowUps] List follow-ups: status=404
+[07:34:17] ── 19. Search ──
+[07:34:17]   ❌ [Search] Global search: status=404
+[07:34:17] ── 20. Export ──
+[07:34:17]   ❌ [Export] Export leads: status=404
+[07:34:17] ── 21. Analytics ──
+[07:34:17]   ❌ [Analytics] Dashboard analytics: status=404
+[07:34:19]   ✅ [Analytics] CRM analytics: status=200
+[07:34:19] ── 22. AI Agents ──
+[07:34:21]   ✅ [AI] List AI agents: status=200
+[07:34:21] ── 23. Communication ──
+[07:34:21]   ❌ [Comm] List templates: status=404
+[07:34:21]   ❌ [Comm] List providers: status=404
+[07:34:21] ── 24. Automation ──
+[07:34:21]   ❌ [Automation] List workflows: status=404
+[07:34:21] ── 25. Notifications ──
+[07:34:21]   ❌ [Notif] List notifications: status=404
+[07:34:21] ── 26. Audit Logs ──
+[07:34:21]   ❌ [Audit] List audit logs: status=404
+[07:34:21] ── 27. Change Password ──
+[07:34:21]   ❌ [Auth-PW] Change password (same pw): status=400
+[07:34:23]   ✅ [Auth-PW] Wrong current pw rejected: status=400
+[07:34:23] ── 28. Logout ──
+[07:34:25]   ✅ [Auth-Logout] Logout succeeds: status=200
+[07:34:28]   ❌ [Auth-Logout] Token invalid after logout: status=200
+[07:34:28] ── 29. Protected Pages ──
+[07:34:28]   ✅ [Pages] /dashboard redirects when unauth: status=307
+[07:34:28]   ✅ [Pages] /leads redirects when unauth: status=307
+[07:34:28]   ✅ [Pages] /contacts redirects when unauth: status=307
+[07:34:29]   ✅ [Pages] /companies redirects when unauth: status=307
+[07:34:29]   ✅ [Pages] /deals redirects when unauth: status=307
+[07:34:29]   ✅ [Pages] /employees redirects when unauth: status=307
+[07:34:29]   ✅ [Pages] /tasks redirects when unauth: status=307
+[07:34:29]   ✅ [Pages] /settings redirects when unauth: status=307
+[07:34:29] ── 30. Input Validation ──
+[07:34:32]   ✅ [Validation] Empty login body rejected: status=400
+[07:34:32]   ✅ [Validation] Empty lead body rejected: status=404
+[07:34:32]   ✅ [Validation] Invalid UUID rejected: status=404
+[07:34:32] ── 31. Security Headers ──
+[07:34:32]   ✅ [Security] Has X-Content-Type-Options: nosniff
+[07:34:32]   ✅ [Security] Has X-Frame-Options: DENY
+[07:34:32]   ✅ [Security] Has HSTS: max-age=31536000; includeSubDomains
+[07:34:32] 
+  RUN 5 COMPLETE: 46 PASS, 31 FAIL in 77.0s
+[07:34:32] 
+  Run 5 summary: 46/77 passed (77.0s)
+[07:34:32] 
+════════════════════════════════════════════════════════════
+[07:34:32]   FINAL 5× REGRESSION RESULTS
+[07:34:32] ════════════════════════════════════════════════════════════
+[07:34:32]   Run 1: 46 PASS, 31 FAIL (79.5s)
+[07:34:32]   Run 2: 46 PASS, 31 FAIL (73.5s)
+[07:34:32]   Run 3: 46 PASS, 31 FAIL (72.7s)
+[07:34:32]   Run 4: 46 PASS, 31 FAIL (72.9s)
+[07:34:32]   Run 5: 46 PASS, 31 FAIL (77.0s)
+[07:34:32] 
+  TOTAL: 230 PASS, 155 FAIL across 5 runs
+[07:34:32]   Target: 865/865 total PASS
+[07:34:32]   Time: 461.7s
+[07:34:32] 
+  ❌ FAILURES FOUND:
+[07:34:32]     - [Run 1] Auth-Sec/Invalid token rejected: status=200
+[07:34:32]     - [Run 1] Auth-Sec/Fake JWT rejected: status=200
+[07:34:32]     - [Run 1] CRM-Lead/Create lead: status=404
+[07:34:32]     - [Run 1] CRM-Lead/Got lead ID: 
+[07:34:32]     - [Run 1] CRM-Lead/List leads: status=404
+[07:34:32]     - [Run 1] CRM-Contact/Create contact: status=404
+[07:34:32]     - [Run 1] CRM-Contact/List contacts: status=404
+[07:34:32]     - [Run 1] CRM-Company/Create company: status=404
+[07:34:32]     - [Run 1] CRM-Company/List companies: status=404
+[07:34:32]     - [Run 1] CRM-Deal/Create deal: status=404, data="<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"w
+[07:34:32]     - [Run 1] CRM-Deal/List deals: status=404
+[07:34:32]     - [Run 1] HRMS-Emp/Create employee: status=404, data="<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"w
+[07:34:32]     - [Run 1] HRMS-Emp/List employees: status=404
+[07:34:32]     - [Run 1] HRMS-Dept/Create department: status=404
+[07:34:32]     - [Run 1] HRMS-Dept/List departments: status=404
+[07:34:32]     - [Run 1] HRMS-Leave/Create leave type: status=404
+[07:34:32]     - [Run 1] HRMS-Leave/List leave types: status=404
+[07:34:32]     - [Run 1] Tasks/Create task: status=404
+[07:34:32]     - [Run 1] Tasks/List tasks: status=404
+[07:34:32]     - [Run 1] Notes/List notes: status=404
+[07:34:32]     - [Run 1] FollowUps/List follow-ups: status=404
+[07:34:32]     - [Run 1] Search/Global search: status=404
+[07:34:32]     - [Run 1] Export/Export leads: status=404
+[07:34:32]     - [Run 1] Analytics/Dashboard analytics: status=404
+[07:34:32]     - [Run 1] Comm/List templates: status=404
+[07:34:32]     - [Run 1] Comm/List providers: status=404
+[07:34:32]     - [Run 1] Automation/List workflows: status=404
+[07:34:32]     - [Run 1] Notif/List notifications: status=404
+[07:34:32]     - [Run 1] Audit/List audit logs: status=404
+[07:34:32]     - [Run 1] Auth-PW/Change password (same pw): status=400
+[07:34:32]     - [Run 1] Auth-Logout/Token invalid after logout: status=200
+[07:34:32]     - [Run 2] Auth-Sec/Invalid token rejected: status=200
+[07:34:32]     - [Run 2] Auth-Sec/Fake JWT rejected: status=200
+[07:34:32]     - [Run 2] CRM-Lead/Create lead: status=404
+[07:34:32]     - [Run 2] CRM-Lead/Got lead ID: 
+[07:34:32]     - [Run 2] CRM-Lead/List leads: status=404
+[07:34:32]     - [Run 2] CRM-Contact/Create contact: status=404
+[07:34:32]     - [Run 2] CRM-Contact/List contacts: status=404
+[07:34:32]     - [Run 2] CRM-Company/Create company: status=404
+[07:34:32]     - [Run 2] CRM-Company/List companies: status=404
+[07:34:32]     - [Run 2] CRM-Deal/Create deal: status=404, data="<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"w
+[07:34:32]     - [Run 2] CRM-Deal/List deals: status=404
+[07:34:32]     - [Run 2] HRMS-Emp/Create employee: status=404, data="<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"w
+[07:34:32]     - [Run 2] HRMS-Emp/List employees: status=404
+[07:34:32]     - [Run 2] HRMS-Dept/Create department: status=404
+[07:34:32]     - [Run 2] HRMS-Dept/List departments: status=404
+[07:34:32]     - [Run 2] HRMS-Leave/Create leave type: status=404
+[07:34:32]     - [Run 2] HRMS-Leave/List leave types: status=404
+[07:34:32]     - [Run 2] Tasks/Create task: status=404
+[07:34:32]     - [Run 2] Tasks/List tasks: status=404
+[07:34:32]     - [Run 2] Notes/List notes: status=404
+[07:34:32]     - [Run 2] FollowUps/List follow-ups: status=404
+[07:34:32]     - [Run 2] Search/Global search: status=404
+[07:34:32]     - [Run 2] Export/Export leads: status=404
+[07:34:32]     - [Run 2] Analytics/Dashboard analytics: status=404
+[07:34:32]     - [Run 2] Comm/List templates: status=404
+[07:34:32]     - [Run 2] Comm/List providers: status=404
+[07:34:32]     - [Run 2] Automation/List workflows: status=404
+[07:34:32]     - [Run 2] Notif/List notifications: status=404
+[07:34:32]     - [Run 2] Audit/List audit logs: status=404
+[07:34:32]     - [Run 2] Auth-PW/Change password (same pw): status=400
+[07:34:32]     - [Run 2] Auth-Logout/Token invalid after logout: status=200
+[07:34:32]     - [Run 3] Auth-Sec/Invalid token rejected: status=200
+[07:34:32]     - [Run 3] Auth-Sec/Fake JWT rejected: status=200
+[07:34:32]     - [Run 3] CRM-Lead/Create lead: status=404
+[07:34:32]     - [Run 3] CRM-Lead/Got lead ID: 
+[07:34:32]     - [Run 3] CRM-Lead/List leads: status=404
+[07:34:32]     - [Run 3] CRM-Contact/Create contact: status=404
+[07:34:32]     - [Run 3] CRM-Contact/List contacts: status=404
+[07:34:32]     - [Run 3] CRM-Company/Create company: status=404
+[07:34:32]     - [Run 3] CRM-Company/List companies: status=404
+[07:34:32]     - [Run 3] CRM-Deal/Create deal: status=404, data="<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"w
+[07:34:32]     - [Run 3] CRM-Deal/List deals: status=404
+[07:34:32]     - [Run 3] HRMS-Emp/Create employee: status=404, data="<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"w
+[07:34:32]     - [Run 3] HRMS-Emp/List employees: status=404
+[07:34:32]     - [Run 3] HRMS-Dept/Create department: status=404
+[07:34:32]     - [Run 3] HRMS-Dept/List departments: status=404
+[07:34:32]     - [Run 3] HRMS-Leave/Create leave type: status=404
+[07:34:32]     - [Run 3] HRMS-Leave/List leave types: status=404
+[07:34:32]     - [Run 3] Tasks/Create task: status=404
+[07:34:32]     - [Run 3] Tasks/List tasks: status=404
+[07:34:32]     - [Run 3] Notes/List notes: status=404
+[07:34:32]     - [Run 3] FollowUps/List follow-ups: status=404
+[07:34:32]     - [Run 3] Search/Global search: status=404
+[07:34:32]     - [Run 3] Export/Export leads: status=404
+[07:34:32]     - [Run 3] Analytics/Dashboard analytics: status=404
+[07:34:32]     - [Run 3] Comm/List templates: status=404
+[07:34:32]     - [Run 3] Comm/List providers: status=404
+[07:34:32]     - [Run 3] Automation/List workflows: status=404
+[07:34:32]     - [Run 3] Notif/List notifications: status=404
+[07:34:32]     - [Run 3] Audit/List audit logs: status=404
+[07:34:32]     - [Run 3] Auth-PW/Change password (same pw): status=400
+[07:34:32]     - [Run 3] Auth-Logout/Token invalid after logout: status=200
+[07:34:32]     - [Run 4] Auth-Sec/Invalid token rejected: status=200
+[07:34:32]     - [Run 4] Auth-Sec/Fake JWT rejected: status=200
+[07:34:32]     - [Run 4] CRM-Lead/Create lead: status=404
+[07:34:32]     - [Run 4] CRM-Lead/Got lead ID: 
+[07:34:32]     - [Run 4] CRM-Lead/List leads: status=404
+[07:34:32]     - [Run 4] CRM-Contact/Create contact: status=404
+[07:34:32]     - [Run 4] CRM-Contact/List contacts: status=404
+[07:34:32]     - [Run 4] CRM-Company/Create company: status=404
+[07:34:32]     - [Run 4] CRM-Company/List companies: status=404
+[07:34:32]     - [Run 4] CRM-Deal/Create deal: status=404, data="<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"w
+[07:34:32]     - [Run 4] CRM-Deal/List deals: status=404
+[07:34:32]     - [Run 4] HRMS-Emp/Create employee: status=404, data="<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"w
+[07:34:32]     - [Run 4] HRMS-Emp/List employees: status=404
+[07:34:32]     - [Run 4] HRMS-Dept/Create department: status=404
+[07:34:32]     - [Run 4] HRMS-Dept/List departments: status=404
+[07:34:32]     - [Run 4] HRMS-Leave/Create leave type: status=404
+[07:34:32]     - [Run 4] HRMS-Leave/List leave types: status=404
+[07:34:32]     - [Run 4] Tasks/Create task: status=404
+[07:34:32]     - [Run 4] Tasks/List tasks: status=404
+[07:34:32]     - [Run 4] Notes/List notes: status=404
+[07:34:32]     - [Run 4] FollowUps/List follow-ups: status=404
+[07:34:32]     - [Run 4] Search/Global search: status=404
+[07:34:32]     - [Run 4] Export/Export leads: status=404
+[07:34:32]     - [Run 4] Analytics/Dashboard analytics: status=404
+[07:34:32]     - [Run 4] Comm/List templates: status=404
+[07:34:32]     - [Run 4] Comm/List providers: status=404
+[07:34:32]     - [Run 4] Automation/List workflows: status=404
+[07:34:32]     - [Run 4] Notif/List notifications: status=404
+[07:34:32]     - [Run 4] Audit/List audit logs: status=404
+[07:34:32]     - [Run 4] Auth-PW/Change password (same pw): status=400
+[07:34:32]     - [Run 4] Auth-Logout/Token invalid after logout: status=200
+[07:34:32]     - [Run 5] Auth-Sec/Invalid token rejected: status=200
+[07:34:32]     - [Run 5] Auth-Sec/Fake JWT rejected: status=200
+[07:34:32]     - [Run 5] CRM-Lead/Create lead: status=404
+[07:34:32]     - [Run 5] CRM-Lead/Got lead ID: 
+[07:34:32]     - [Run 5] CRM-Lead/List leads: status=404
+[07:34:32]     - [Run 5] CRM-Contact/Create contact: status=404
+[07:34:32]     - [Run 5] CRM-Contact/List contacts: status=404
+[07:34:32]     - [Run 5] CRM-Company/Create company: status=404
+[07:34:32]     - [Run 5] CRM-Company/List companies: status=404
+[07:34:32]     - [Run 5] CRM-Deal/Create deal: status=404, data="<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"w
+[07:34:32]     - [Run 5] CRM-Deal/List deals: status=404
+[07:34:32]     - [Run 5] HRMS-Emp/Create employee: status=404, data="<!DOCTYPE html><html lang=\"en\"><head><meta charSet=\"utf-8\"/><meta name=\"viewport\" content=\"w
+[07:34:32]     - [Run 5] HRMS-Emp/List employees: status=404
+[07:34:32]     - [Run 5] HRMS-Dept/Create department: status=404
+[07:34:32]     - [Run 5] HRMS-Dept/List departments: status=404
+[07:34:32]     - [Run 5] HRMS-Leave/Create leave type: status=404
+[07:34:32]     - [Run 5] HRMS-Leave/List leave types: status=404
+[07:34:32]     - [Run 5] Tasks/Create task: status=404
+[07:34:32]     - [Run 5] Tasks/List tasks: status=404
+[07:34:32]     - [Run 5] Notes/List notes: status=404
+[07:34:32]     - [Run 5] FollowUps/List follow-ups: status=404
+[07:34:32]     - [Run 5] Search/Global search: status=404
+[07:34:32]     - [Run 5] Export/Export leads: status=404
+[07:34:32]     - [Run 5] Analytics/Dashboard analytics: status=404
+[07:34:32]     - [Run 5] Comm/List templates: status=404
+[07:34:32]     - [Run 5] Comm/List providers: status=404
+[07:34:32]     - [Run 5] Automation/List workflows: status=404
+[07:34:32]     - [Run 5] Notif/List notifications: status=404
+[07:34:32]     - [Run 5] Audit/List audit logs: status=404
+[07:34:32]     - [Run 5] Auth-PW/Change password (same pw): status=400
+[07:34:32]     - [Run 5] Auth-Logout/Token invalid after logout: status=200
+[07:34:32] 
+Results saved to regression-5x-results.json

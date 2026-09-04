@@ -123,7 +123,7 @@ async function dbRateLimit(
       targetType: keyHash.substring(0, 50),
       metadata: { key: keyHash.substring(0, 16) },
     },
-  }).catch(() => {}); // Ignore write failures
+  }).catch((e) => { if (process.env.NODE_ENV === 'development') console.error('[RateLimit write failed]', e.message); });
 
   return { limited: false, retryAfterMs: 0 };
 }
