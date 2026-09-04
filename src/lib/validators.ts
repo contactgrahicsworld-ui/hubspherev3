@@ -7,6 +7,35 @@ import { z } from 'zod';
 import { ValidationError } from '@/lib/errors';
 
 // ============================================
+// HTML SANITIZATION
+// ============================================
+
+/**
+ * Strip HTML tags and script content from a string to prevent stored XSS.
+ * 1. Removes all content between <script>...</script> and <style>...</style> tags
+ * 2. Removes all remaining HTML tags <...>
+ * 3. Trims whitespace
+ */
+function stripHtmlTags(str: string): string {
+  return str
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+    .replace(/<[^>]*>/g, '')
+    .trim();
+}
+
+/**
+ * Create a sanitized string schema that strips HTML tags.
+ * Usage: safeStringField(1, 200) creates z.string().trim().min(1).max(200).transform(stripHtmlTags)
+ */
+export function safeStringField(minLen?: number, maxLen: number = 5000) {
+  let schema = z.string().trim();
+  if (minLen !== undefined) schema = schema.min(minLen);
+  schema = schema.max(maxLen);
+  return schema.transform(stripHtmlTags);
+}
+
+// ============================================
 // AUTH SCHEMAS
 // ============================================
 

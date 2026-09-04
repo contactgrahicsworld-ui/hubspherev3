@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { paginationSchema, validate } from '@/lib/validators';
+import { paginationSchema, validate, safeStringField } from '@/lib/validators';
 import {
   handleApiError,
   AuthenticationError,
@@ -17,7 +17,7 @@ import { z } from 'zod';
 // ============================================
 
 const createCompanySchema = z.object({
-  name: z.string().trim().min(1, 'Company name is required').max(300),
+  name: safeStringField(1, 300),
   industry: z.string().trim().max(200).optional(),
   website: z.string().trim().max(500).optional(),
   email: z.string().email('Invalid email format').optional().or(z.literal('')),

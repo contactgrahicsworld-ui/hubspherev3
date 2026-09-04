@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { paginationSchema, validate } from '@/lib/validators';
+import { paginationSchema, validate, safeStringField } from '@/lib/validators';
 import {
   handleApiError,
   AuthenticationError,
@@ -18,8 +18,8 @@ import { success, paginated } from '@/lib/api-response';
 // ============================================
 
 const createContactSchema = z.object({
-  firstName: z.string().trim().min(1, 'First name is required').max(200),
-  lastName: z.string().trim().max(200).optional(),
+  firstName: safeStringField(1, 200),
+  lastName: safeStringField(undefined, 200).optional(),
   email: z.string().email('Invalid email format').optional().or(z.literal('')),
   mobile: z.string().trim().max(30).optional(),
   phone: z.string().trim().max(30).optional(),

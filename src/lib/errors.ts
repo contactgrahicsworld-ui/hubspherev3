@@ -204,7 +204,34 @@ export function handleApiError(error: unknown): {
     };
   }
 
-  // Handle Zod validation errors (Zod v4 uses ZodError)
+  // Handle SyntaxError (malformed JSON in request body)
+  if (error instanceof SyntaxError) {
+    return {
+      statusCode: 400,
+      body: {
+        error: 'Invalid JSON in request body',
+        code: 'VALIDATION_ERROR',
+      },
+    };
+  }
+
+  // Handle Prisma client validation errors (invalid UUID, etc.)
+  if (
+    error !== null &&
+    typeof error === 'object' &&
+    'name' in error &&
+    (error as { name: string }).name === 'PrismaClientValidationError'
+  ) {
+    return {
+      statusCode: 400,
+      body: {
+        error: 'Invalid request parameter',
+        code: 'VALIDATION_ERROR',
+      },
+    };
+  }
+
+  // Handle Zod validation errors (Zod v4 uses ZodError),
   // ZodError is exported from 'zod' and has a similar shape
   if (
     error !== null &&
@@ -267,6 +294,16 @@ export function handleApiError(error: unknown): {
           statusCode: 400,
           body: {
             error: 'Related record not found',
+            code: 'VALIDATION_ERROR',
+          },
+        };
+      }
+      case 'P2023': {
+        // Inconsistent column data — invalid UUID or malformed ID
+        return {
+          statusCode: 400,
+          body: {
+            error: 'Invalid ID format',
             code: 'VALIDATION_ERROR',
           },
         };

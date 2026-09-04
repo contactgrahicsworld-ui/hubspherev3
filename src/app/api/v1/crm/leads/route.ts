@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { paginationSchema, validate } from '@/lib/validators';
+import { paginationSchema, validate, safeStringField } from '@/lib/validators';
 import {
   handleApiError,
   AuthenticationError,
@@ -17,17 +17,17 @@ import { z } from 'zod';
 // ============================================
 
 const createLeadSchema = z.object({
-  firstName: z.string().trim().min(1, 'First name is required').max(200),
-  lastName: z.string().trim().max(200).optional(),
+  firstName: safeStringField(1, 200),
+  lastName: safeStringField(undefined, 200).optional(),
   email: z.string().email('Invalid email format').optional().or(z.literal('')),
   mobile: z.string().trim().max(30).optional(),
-  company: z.string().trim().max(300).optional(),
+  company: safeStringField(undefined, 300).optional(),
   source: z.string().trim().max(50).optional(),
   status: z.string().trim().max(50).optional(),
   priority: z.string().trim().max(20).optional(),
   ownerId: z.string().uuid().optional(),
   value: z.number().min(0).optional(),
-  description: z.string().max(5000).optional(),
+  description: safeStringField(undefined, 5000).optional(),
 });
 
 type CreateLeadInput = z.infer<typeof createLeadSchema>;

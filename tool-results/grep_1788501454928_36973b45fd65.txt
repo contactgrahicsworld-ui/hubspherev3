@@ -1,0 +1,252 @@
+/home/z/my-project/src/app/api/v1/communication/bulk/route.ts:32:  templateId: z.string().uuid().optional(),
+/home/z/my-project/src/app/api/v1/communication/bulk/route.ts:73:    // Must provide either content or templateId
+/home/z/my-project/src/app/api/v1/communication/bulk/route.ts:74:    if (!data.content && !data.templateId) {
+/home/z/my-project/src/app/api/v1/communication/bulk/route.ts:75:      throw new ValidationError('Either content or templateId is required');
+/home/z/my-project/src/app/api/v1/communication/bulk/route.ts:78:    // Resolve content from template if needed
+/home/z/my-project/src/app/api/v1/communication/bulk/route.ts:80:    if (data.templateId && !data.content) {
+/home/z/my-project/src/app/api/v1/communication/bulk/route.ts:81:      const template = await db.communicationTemplate.findFirst({
+/home/z/my-project/src/app/api/v1/communication/bulk/route.ts:82:        where: { id: data.templateId, tenantId: payload.tenantId, status: 'ACTIVE' },
+/home/z/my-project/src/app/api/v1/communication/bulk/route.ts:85:      if (!template) {
+/home/z/my-project/src/app/api/v1/communication/bulk/route.ts:86:        throw new ValidationError('Active template not found');
+/home/z/my-project/src/app/api/v1/communication/bulk/route.ts:88:      resolvedContent = template.body;
+/home/z/my-project/src/app/api/v1/communication/bulk/route.ts:114:      templateId: data.templateId ?? undefined,
+/home/z/my-project/src/app/api/v1/communication/conversations/[id]/route.ts:65:  templateId: true,
+/home/z/my-project/src/app/api/v1/communication/conversations/[id]/route.ts:121:    templateId: m.templateId,
+/home/z/my-project/src/app/api/v1/communication/conversations/[id]/messages/route.ts:27:  templateId: z.string().uuid().optional(),
+/home/z/my-project/src/app/api/v1/communication/conversations/[id]/messages/route.ts:46:  templateId: true,
+/home/z/my-project/src/app/api/v1/communication/conversations/[id]/messages/route.ts:82:    templateId: m.templateId,
+/home/z/my-project/src/app/api/v1/communication/conversations/[id]/messages/route.ts:207:    // Validate template belongs to tenant if provided
+/home/z/my-project/src/app/api/v1/communication/conversations/[id]/messages/route.ts:208:    if (data.templateId) {
+/home/z/my-project/src/app/api/v1/communication/conversations/[id]/messages/route.ts:209:      const template = await db.communicationTemplate.findFirst({
+/home/z/my-project/src/app/api/v1/communication/conversations/[id]/messages/route.ts:210:        where: { id: data.templateId, tenantId: payload.tenantId },
+/home/z/my-project/src/app/api/v1/communication/conversations/[id]/messages/route.ts:213:      if (!template) {
+/home/z/my-project/src/app/api/v1/communication/conversations/[id]/messages/route.ts:214:        throw new ValidationError('Template not found');
+/home/z/my-project/src/app/api/v1/communication/conversations/[id]/messages/route.ts:238:        templateId: data.templateId ?? null,
+/home/z/my-project/src/app/api/v1/communication/webhook/route.ts:187:    // Create/update DeliveryAttempt record
+/home/z/my-project/src/app/api/v1/communication/webhook/route.ts:188:    const existingAttempt = await db.deliveryAttempt.findFirst({
+/home/z/my-project/src/app/api/v1/communication/webhook/route.ts:190:      orderBy: { attemptedAt: 'desc' },
+/home/z/my-project/src/app/api/v1/communication/webhook/route.ts:194:    if (existingAttempt) {
+/home/z/my-project/src/app/api/v1/communication/webhook/route.ts:195:      await db.deliveryAttempt.update({
+/home/z/my-project/src/app/api/v1/communication/webhook/route.ts:196:        where: { id: existingAttempt.id },
+/home/z/my-project/src/app/api/v1/communication/webhook/route.ts:207:      await db.deliveryAttempt.create({
+/home/z/my-project/src/app/api/v1/communication/webhook/route.ts:217:          attemptedAt: now,
+/home/z/my-project/src/app/api/v1/communication/dashboard/route.ts:38:      templateStats,
+/home/z/my-project/src/app/api/v1/communication/dashboard/route.ts:112:      // Template stats
+/home/z/my-project/src/app/api/v1/communication/dashboard/route.ts:113:      db.communicationTemplate.groupBy({
+/home/z/my-project/src/app/api/v1/communication/dashboard/route.ts:132:    // Format template stats
+/home/z/my-project/src/app/api/v1/communication/dashboard/route.ts:133:    const templateStatMap: Record<string, number> = {};
+/home/z/my-project/src/app/api/v1/communication/dashboard/route.ts:134:    for (const ts of templateStats) {
+/home/z/my-project/src/app/api/v1/communication/dashboard/route.ts:135:      templateStatMap[ts.status] = ts._count;
+/home/z/my-project/src/app/api/v1/communication/dashboard/route.ts:167:        templates: {
+/home/z/my-project/src/app/api/v1/communication/dashboard/route.ts:168:          byStatus: templateStatMap,
+/home/z/my-project/src/app/api/v1/communication/dashboard/route.ts:169:          total: Object.values(templateStatMap).reduce((a, b) => a + b, 0),
+/home/z/my-project/src/app/api/v1/communication/templates/route.ts:19:const createTemplateSchema = z.object({
+/home/z/my-project/src/app/api/v1/communication/templates/route.ts:20:  name: z.string().trim().min(1, 'Template name is required').max(200),
+/home/z/my-project/src/app/api/v1/communication/templates/route.ts:23:  body: z.string().min(1, 'Template body is required'),
+/home/z/my-project/src/app/api/v1/communication/templates/route.ts:33:const templateSelect = {
+/home/z/my-project/src/app/api/v1/communication/templates/route.ts:47:function formatTemplate(t: any) {
+/home/z/my-project/src/app/api/v1/communication/templates/route.ts:64: * Extract {{variable}} placeholders from template body/subject.
+/home/z/my-project/src/app/api/v1/communication/templates/route.ts:75:// GET /api/v1/communication/templates — List
+/home/z/my-project/src/app/api/v1/communication/templates/route.ts:86:    await requirePermission(payload.roleCode ?? null, 'templates.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/communication/templates/route.ts:106:    const [templates, total] = await Promise.all([
+/home/z/my-project/src/app/api/v1/communication/templates/route.ts:107:      db.communicationTemplate.findMany({
+/home/z/my-project/src/app/api/v1/communication/templates/route.ts:112:        select: templateSelect,
+/home/z/my-project/src/app/api/v1/communication/templates/route.ts:114:      db.communicationTemplate.count({ where }),
+/home/z/my-project/src/app/api/v1/communication/templates/route.ts:117:    return NextResponse.json(paginated(templates.map(formatTemplate), total, page, limit));
+/home/z/my-project/src/app/api/v1/communication/templates/route.ts:134:// POST /api/v1/communication/templates — Create
+/home/z/my-project/src/app/api/v1/communication/templates/route.ts:145:    await requirePermission(payload.roleCode ?? null, 'templates.create', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/communication/templates/route.ts:148:    const data = validate(createTemplateSchema, body);
+/home/z/my-project/src/app/api/v1/communication/templates/route.ts:176:    const template = await db.communicationTemplate.create({
+/home/z/my-project/src/app/api/v1/communication/templates/route.ts:188:      select: templateSelect,
+/home/z/my-project/src/app/api/v1/communication/templates/route.ts:194:      action: 'template.create',
+/home/z/my-project/src/app/api/v1/communication/templates/route.ts:195:      targetType: 'CommunicationTemplate',
+/home/z/my-project/src/app/api/v1/communication/templates/route.ts:196:      targetId: template.id,
+/home/z/my-project/src/app/api/v1/communication/templates/route.ts:208:      success(formatTemplate(template as any), 'Template created successfully'),
+/home/z/my-project/src/app/api/v1/communication/templates/[id]/route.ts:20:const updateTemplateSchema = z.object({
+/home/z/my-project/src/app/api/v1/communication/templates/[id]/route.ts:33:const templateSelect = {
+/home/z/my-project/src/app/api/v1/communication/templates/[id]/route.ts:47:function formatTemplate(t: any) {
+/home/z/my-project/src/app/api/v1/communication/templates/[id]/route.ts:71:// GET /api/v1/communication/templates/:id
+/home/z/my-project/src/app/api/v1/communication/templates/[id]/route.ts:85:    await requirePermission(payload.roleCode ?? null, 'templates.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/communication/templates/[id]/route.ts:89:    const template = await db.communicationTemplate.findFirst({
+/home/z/my-project/src/app/api/v1/communication/templates/[id]/route.ts:91:      select: templateSelect,
+/home/z/my-project/src/app/api/v1/communication/templates/[id]/route.ts:94:    if (!template) {
+/home/z/my-project/src/app/api/v1/communication/templates/[id]/route.ts:95:      throw new NotFoundError('Template not found');
+/home/z/my-project/src/app/api/v1/communication/templates/[id]/route.ts:98:    return NextResponse.json(success(formatTemplate(template as any)));
+/home/z/my-project/src/app/api/v1/communication/templates/[id]/route.ts:115:// PATCH /api/v1/communication/templates/:id — Update
+/home/z/my-project/src/app/api/v1/communication/templates/[id]/route.ts:129:    await requirePermission(payload.roleCode ?? null, 'templates.edit', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/communication/templates/[id]/route.ts:133:    const existing = await db.communicationTemplate.findFirst({
+/home/z/my-project/src/app/api/v1/communication/templates/[id]/route.ts:139:      throw new NotFoundError('Template not found');
+/home/z/my-project/src/app/api/v1/communication/templates/[id]/route.ts:143:    const data = validate(updateTemplateSchema, body);
+/home/z/my-project/src/app/api/v1/communication/templates/[id]/route.ts:172:    const template = await db.communicationTemplate.update({
+/home/z/my-project/src/app/api/v1/communication/templates/[id]/route.ts:175:      select: templateSelect,
+/home/z/my-project/src/app/api/v1/communication/templates/[id]/route.ts:181:      action: 'template.update',
+/home/z/my-project/src/app/api/v1/communication/templates/[id]/route.ts:182:      targetType: 'CommunicationTemplate',
+/home/z/my-project/src/app/api/v1/communication/templates/[id]/route.ts:190:      success(formatTemplate(template as any), 'Template updated successfully'),
+/home/z/my-project/src/app/api/v1/communication/templates/[id]/route.ts:208:// DELETE /api/v1/communication/templates/:id — Archive
+/home/z/my-project/src/app/api/v1/communication/templates/[id]/route.ts:222:    await requirePermission(payload.roleCode ?? null, 'templates.delete', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/communication/templates/[id]/route.ts:226:    const existing = await db.communicationTemplate.findFirst({
+/home/z/my-project/src/app/api/v1/communication/templates/[id]/route.ts:232:      throw new NotFoundError('Template not found');
+/home/z/my-project/src/app/api/v1/communication/templates/[id]/route.ts:235:    await db.communicationTemplate.update({
+/home/z/my-project/src/app/api/v1/communication/templates/[id]/route.ts:243:      action: 'template.archive',
+/home/z/my-project/src/app/api/v1/communication/templates/[id]/route.ts:244:      targetType: 'CommunicationTemplate',
+/home/z/my-project/src/app/api/v1/communication/templates/[id]/route.ts:251:    return NextResponse.json(success(null, 'Template archived successfully'));
+/home/z/my-project/src/app/api/v1/communication/send/route.ts:26:  templateId: z.string().uuid().optional(),
+/home/z/my-project/src/app/api/v1/communication/send/route.ts:50:  templateId: true,
+/home/z/my-project/src/app/api/v1/communication/send/route.ts:92:    // Must provide either content or templateId
+/home/z/my-project/src/app/api/v1/communication/send/route.ts:93:    if (!data.content && !data.templateId) {
+/home/z/my-project/src/app/api/v1/communication/send/route.ts:94:      throw new ValidationError('Either content or templateId is required');
+/home/z/my-project/src/app/api/v1/communication/send/route.ts:97:    // Resolve content from template if needed
+/home/z/my-project/src/app/api/v1/communication/send/route.ts:99:    if (data.templateId && !data.content) {
+/home/z/my-project/src/app/api/v1/communication/send/route.ts:100:      const template = await db.communicationTemplate.findFirst({
+/home/z/my-project/src/app/api/v1/communication/send/route.ts:101:        where: { id: data.templateId, tenantId: payload.tenantId, status: 'ACTIVE' },
+/home/z/my-project/src/app/api/v1/communication/send/route.ts:104:      if (!template) {
+/home/z/my-project/src/app/api/v1/communication/send/route.ts:105:        throw new NotFoundError('Active template not found');
+/home/z/my-project/src/app/api/v1/communication/send/route.ts:107:      resolvedContent = template.body;
+/home/z/my-project/src/app/api/v1/communication/send/route.ts:153:        templateId: data.templateId ?? null,
+/home/z/my-project/src/app/api/v1/admin/users/route.ts:154:      : await hashPassword(`TempPass_${crypto.randomUUID().slice(0, 8)}!k9`);
+/home/z/my-project/src/app/api/v1/analytics/executive/route.ts:92:      // Open tasks (TODO + IN_PROGRESS)
+/home/z/my-project/src/app/api/v1/analytics/executive/route.ts:96:          status: { in: ['TODO', 'IN_PROGRESS'] },
+/home/z/my-project/src/app/(app)/communication/inbox/page.tsx:454:            <p className='text-sm font-medium text-destructive'>Service Temporarily Unavailable</p>
+/home/z/my-project/src/app/(app)/communication/inbox/page.tsx:456:              The database is not responding. This is usually a temporary issue.
+/home/z/my-project/src/app/(app)/communication/notifications/page.tsx:345:            <p className='text-sm font-medium text-destructive'>Service Temporarily Unavailable</p>
+/home/z/my-project/src/app/(app)/communication/notifications/page.tsx:347:              The database is not responding. This is usually a temporary issue.
+/home/z/my-project/src/app/(app)/communication/page.tsx:32:  activeTemplates: number
+/home/z/my-project/src/app/(app)/communication/page.tsx:257:                ? 'Service Temporarily Unavailable'
+/home/z/my-project/src/app/(app)/communication/page.tsx:262:                The database is not responding. This is usually a temporary issue.
+/home/z/my-project/src/app/(app)/communication/page.tsx:297:      label: 'Active Templates',
+/home/z/my-project/src/app/(app)/communication/page.tsx:298:      value: data.activeTemplates,
+/home/z/my-project/src/app/(app)/communication/page.tsx:300:      variant: data.activeTemplates > 0 ? 'success' : 'default',
+/home/z/my-project/src/app/(app)/communication/settings/page.tsx:384:                ? 'Service Temporarily Unavailable'
+/home/z/my-project/src/app/(app)/communication/settings/page.tsx:389:                The database is not responding. This is usually a temporary issue.
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:56:interface Template {
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:69:interface TemplatesResponse {
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:71:  data: Template[]
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:142:function TemplateCardSkeleton() {
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:168:// Template Card
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:171:function TemplateCard({
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:172:  template,
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:176:  template: Template
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:177:  onEdit: (t: Template) => void
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:178:  onDelete: (t: Template) => void
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:183:  const previewBody = template.body
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:193:              <p className='truncate text-sm font-semibold'>{template.name}</p>
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:195:            {template.subject && (
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:197:                Subject: {template.subject}
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:201:          <Badge variant='outline' className={STATUS_BADGE_STYLES[template.status] || ''}>
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:202:            {template.status}
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:211:              {template.body.length > 200 && (
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:229:          <Badge variant='outline' className={`text-[10px] ${CHANNEL_BADGE_STYLES[template.channel] || ''}`}>
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:230:            {template.channel}
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:232:          <Badge variant='outline' className={`text-[10px] ${CATEGORY_BADGE_STYLES[template.category] || ''}`}>
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:233:            {template.category}
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:235:          {template.variables.length > 0 && (
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:238:              {template.variables.length} var{template.variables.length > 1 ? 's' : ''}
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:244:        {template.variables.length > 0 && (
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:246:            {template.variables.map((v) => (
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:263:            onClick={() => onEdit(template)}
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:272:            onClick={() => onDelete(template)}
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:284:// Template Form Dialog
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:287:function TemplateFormDialog({
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:290:  template,
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:295:  template: Template | null
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:298:  const isEdit = !!template
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:309:    if (template) {
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:310:      setName(template.name)
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:311:      setChannel(template.channel)
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:312:      setCategory(template.category)
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:313:      setStatus(template.status)
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:314:      setSubject(template.subject || '')
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:315:      setBody(template.body)
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:324:  }, [template, open])
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:342:        await apiFetch(`/api/v1/communication/templates/${template!.id}`, {
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:346:        toast.success('Template updated')
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:348:        await apiFetch('/api/v1/communication/templates', {
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:352:        toast.success('Template created')
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:357:      const msg = err instanceof Error ? err.message : 'Failed to save template'
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:368:          <DialogTitle>{isEdit ? 'Edit Template' : 'Create Template'}</DialogTitle>
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:371:              ? 'Update the communication template.'
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:372:              : 'Create a new communication template.'}
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:435:          {(channel === 'EMAIL' || template?.channel === 'EMAIL') && (
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:477:export default function TemplatesPage() {
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:478:  const [templates, setTemplates] = useState<Template[]>([])
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:491:  const [editingTemplate, setEditingTemplate] = useState<Template | null>(null)
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:494:  const [deleteTarget, setDeleteTarget] = useState<Template | null>(null)
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:497:  const fetchTemplates = useCallback(async () => {
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:509:      const res = await apiFetch<TemplatesResponse>(
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:510:        `/api/v1/communication/templates?${params}`
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:512:      setTemplates(res.data)
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:514:      const msg = err instanceof Error ? err.message : 'Failed to load templates'
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:528:    fetchTemplates()
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:529:  }, [fetchTemplates])
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:531:  const handleEdit = (t: Template) => {
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:532:    setEditingTemplate(t)
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:537:    setEditingTemplate(null)
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:545:      await apiFetch(`/api/v1/communication/templates/${deleteTarget.id}`, {
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:548:      toast.success('Template deleted')
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:549:      setTemplates((prev) => prev.filter((t) => t.id !== deleteTarget.id))
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:552:      const msg = err instanceof Error ? err.message : 'Failed to delete template'
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:567:  if (dbUnavailable && !templates.length) {
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:571:          <h1 className='text-2xl font-bold tracking-tight'>Templates</h1>
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:572:          <p className='mt-1 text-muted-foreground'>Communication templates</p>
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:577:            <p className='text-sm font-medium text-destructive'>Service Temporarily Unavailable</p>
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:579:              The database is not responding. This is usually a temporary issue.
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:582:              onClick={fetchTemplates}
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:598:          <h1 className='text-2xl font-bold tracking-tight'>Templates</h1>
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:599:          <p className='mt-1 text-muted-foreground'>Manage communication templates</p>
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:603:          Create Template
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:630:            placeholder='Search templates...'
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:634:            aria-label='Search templates'
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:687:            <Button variant='outline' size='sm' onClick={fetchTemplates}>
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:698:            <TemplateCardSkeleton key={i} />
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:704:      {!loading && !error && templates.length === 0 && (
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:708:            <p className='text-sm font-medium text-muted-foreground'>No templates created</p>
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:712:                : 'Create your first communication template to get started.'}
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:717:                Create Template
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:724:      {/* Template Cards */}
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:725:      {!loading && !error && templates.length > 0 && (
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:727:          {templates.map((tpl) => (
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:728:            <TemplateCard
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:730:              template={tpl}
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:739:      <TemplateFormDialog
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:742:        template={editingTemplate}
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:743:        onSuccess={fetchTemplates}
+/home/z/my-project/src/app/(app)/communication/templates/page.tsx:750:            <AlertDialogTitle>Delete Template</AlertDialogTitle>
+/home/z/my-project/src/app/(app)/hrms/attendance/page.tsx:189:  const [employees, setEmployees] = useState<Employee[]>([])
+/home/z/my-project/src/app/(app)/hrms/attendance/page.tsx:218:      setEmployees(res.data)
+/home/z/my-project/src/app/(app)/hrms/attendance/page.tsx:327:            <p className='text-sm text-destructive'>{dbUnavailable ? 'Service temporarily unavailable.' : error}</p>
+/home/z/my-project/src/app/(app)/hrms/payroll/page.tsx:250:  const [employees, setEmployees] = useState<Employee[]>([])
+/home/z/my-project/src/app/(app)/hrms/payroll/page.tsx:279:      setEmployees(res.data)
+/home/z/my-project/src/app/(app)/hrms/payroll/page.tsx:429:            <p className='text-sm text-destructive'>{dbUnavailable ? 'Service temporarily unavailable.' : error}</p>
+/home/z/my-project/src/app/(app)/hrms/leave/page.tsx:241:  const [employees, setEmployees] = useState<Employee[]>([])
+/home/z/my-project/src/app/(app)/hrms/leave/page.tsx:281:      setEmployees(res.data)
+/home/z/my-project/src/app/(app)/hrms/employees/page.tsx:208:  const [employees, setEmployees] = useState<Employee[]>([])
+/home/z/my-project/src/app/(app)/hrms/employees/page.tsx:256:      setEmployees(data.data)
+/home/z/my-project/src/app/(app)/hrms/employees/page.tsx:500:            <p className='text-sm text-destructive'>{dbUnavailable ? 'Service temporarily unavailable. Please try again later.' : error}</p>
+/home/z/my-project/src/app/(app)/hrms/departments/page.tsx:237:            <p className='text-sm text-destructive'>{dbUnavailable ? 'Service temporarily unavailable.' : error}</p>
+/home/z/my-project/src/app/(app)/hrms/page.tsx:182:              {dbUnavailable ? 'Service Temporarily Unavailable' : error || 'Failed to load dashboard data'}
+/home/z/my-project/src/app/(app)/hrms/page.tsx:186:                The database is not responding. This is usually a temporary issue.
+/home/z/my-project/src/app/(app)/hrms/expenses/page.tsx:210:  const [employees, setEmployees] = useState<Employee[]>([])
+/home/z/my-project/src/app/(app)/hrms/expenses/page.tsx:240:      setEmployees(res.data)
+/home/z/my-project/src/app/(app)/hrms/expenses/page.tsx:377:            <p className='text-sm text-destructive'>{dbUnavailable ? 'Service temporarily unavailable.' : error}</p>
+/home/z/my-project/src/app/(app)/hrms/designations/page.tsx:255:            <p className='text-sm text-destructive'>{dbUnavailable ? 'Service temporarily unavailable.' : error}</p>
+/home/z/my-project/src/app/(app)/hrms/field-sales/page.tsx:225:  const [employees, setEmployees] = useState<Employee[]>([])
+/home/z/my-project/src/app/(app)/hrms/field-sales/page.tsx:270:      setEmployees(res.data)
+/home/z/my-project/src/app/api/v1/auth/login/route.ts:15:    // Rate limit: 10 login attempts per 15 minutes per IP (async DB-backed)
+/home/z/my-project/src/app/api/v1/auth/login/route.ts:18:      throw new RateLimitError('Too many login attempts. Please try again later.', Math.ceil(retryAfterMs / 1000));
+/home/z/my-project/src/app/(app)/crm/import/page.tsx:34:// Templates
+/home/z/my-project/src/app/(app)/crm/import/page.tsx:37:const TEMPLATES: Record<string, string> = {
+/home/z/my-project/src/app/(app)/crm/import/page.tsx:47:function downloadTemplate(entityType: string) {
+/home/z/my-project/src/app/(app)/crm/import/page.tsx:48:  const csv = TEMPLATES[entityType]
+/home/z/my-project/src/app/(app)/crm/import/page.tsx:54:  link.download = `${entityType}-template.csv`
+/home/z/my-project/src/app/(app)/crm/import/page.tsx:249:          {/* Download Template */}
+/home/z/my-project/src/app/(app)/crm/import/page.tsx:258:                  onClick={(e) => { e.stopPropagation(); downloadTemplate(entityType) }}
+/home/z/my-project/src/app/(app)/crm/import/page.tsx:260:                  Download {entityType} template
+/home/z/my-project/src/app/api/v1/auth/forgot-password/route.ts:15:      throw new RateLimitError('Too many password reset attempts. Please try again later.', Math.ceil(retryAfterMs / 1000));
+/home/z/my-project/src/app/api/v1/auth/two-factor/challenge/route.ts:23:    // Rate limit 2FA attempts
+/home/z/my-project/src/app/api/v1/auth/two-factor/challenge/route.ts:26:      throw new RateLimitError('Too many 2FA attempts. Please try again later.', Math.ceil(retryAfterMs / 1000));
+/home/z/my-project/src/app/(app)/crm/page.tsx:81:  TODO: 'To Do',
+/home/z/my-project/src/app/(app)/crm/page.tsx:88:  TODO: 'bg-muted-foreground/20 text-muted-foreground',
+/home/z/my-project/src/app/(app)/crm/tasks/page.tsx:82:  { value: 'TODO', label: 'To Do' },
+/home/z/my-project/src/app/(app)/crm/tasks/page.tsx:89:  TODO: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+
+[Showing results with pagination = limit: 250]

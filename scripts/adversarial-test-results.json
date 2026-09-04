@@ -1,0 +1,86 @@
+{
+  "timestamp": "2026-09-04T06:43:09.895Z",
+  "target": "https://hubspherev3.vercel.app",
+  "summary": {
+    "total": 178,
+    "passed": 169,
+    "failed": 9,
+    "warnings": 0,
+    "passRate": "94.9%"
+  },
+  "failures": [
+    {
+      "category": "Auth",
+      "test": "Forgot password existing email → 200",
+      "detail": "status=429",
+      "status": "FAIL"
+    },
+    {
+      "category": "Security",
+      "test": "Unauth /api/v1/auth/change-password → 401",
+      "detail": "status=405",
+      "status": "FAIL"
+    },
+    {
+      "category": "Error",
+      "test": "Malformed JSON body → 400",
+      "detail": "status=429, code=RATE_LIMIT_EXCEEDED",
+      "status": "FAIL"
+    },
+    {
+      "category": "Error",
+      "test": "Invalid UUID in HRMS URL → not 500",
+      "detail": "status=500",
+      "status": "FAIL"
+    },
+    {
+      "category": "Security",
+      "test": "Security header: x-xss-protection",
+      "detail": "value=MISSING",
+      "status": "FAIL"
+    },
+    {
+      "category": "Security",
+      "test": "Login sets auth cookies",
+      "detail": "cookieCount=0",
+      "status": "FAIL"
+    },
+    {
+      "category": "Security",
+      "test": "Cookies are httpOnly",
+      "detail": "cookies=",
+      "status": "FAIL"
+    },
+    {
+      "category": "Security",
+      "test": "Cookies use Secure flag",
+      "detail": "",
+      "status": "FAIL"
+    },
+    {
+      "category": "Security",
+      "test": "Cookies use SameSite",
+      "detail": "",
+      "status": "FAIL"
+    }
+  ],
+  "warnings": [],
+  "securityFindings": [
+    {
+      "severity": "HIGH",
+      "finding": "/api/v1/auth/change-password returns 405 without auth (expected 401)"
+    },
+    {
+      "severity": "LOW",
+      "finding": "Missing security header: x-xss-protection"
+    }
+  ],
+  "bugs": [
+    {
+      "severity": "HIGH",
+      "category": "HRMS",
+      "test": "Invalid UUID returns 500",
+      "detail": "GET /api/v1/hrms/employees/not-a-uuid → 500"
+    }
+  ]
+}

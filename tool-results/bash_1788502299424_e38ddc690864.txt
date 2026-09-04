@@ -1,0 +1,618 @@
+╔════════════════════════════════════════════╗
+║  HubSphere V3 — Adversarial Test Suite      ║
+║  Target: https://hubspherev3.vercel.app     ║
+║  Started: 2026-09-04T06:07:24.123Z  ║
+╚════════════════════════════════════════════╝
+
+╔════════════════════════════════════════════╗
+║  PHASE 1: SYSTEM HEALTH & ENVIRONMENT      ║
+╚════════════════════════════════════════════╝
+❓ [Health] Health endpoint responds 200: status=200
+❓ [Health] Database connected: db=connected
+❓ [Health] Status is "ok": status=ok
+❓ [Health] Timestamp present: ts=2026-09-04T06:07:25.489Z
+❓ [Health] No secrets in health response: checked DATABASE_URL, JWT_SECRET, passwordHash
+❓ [Health] Setup status responds 200: status=200
+❓ [Health] Setup is complete: setupComplete=true
+❓ [Health] No secrets in setup status: checked for secret patterns
+❓ [Health] Root API endpoint responds: status=200
+❓ [Health] No stack traces in 401 error: checked 65 chars
+❓ [Health] No secrets in 401 error: checked for secret patterns
+
+╔════════════════════════════════════════════╗
+║  PHASE 2: SETUP & LOGIN                    ║
+╚════════════════════════════════════════════╝
+❓ [Auth] Admin login succeeds: status=200
+ℹ️ [Auth] Logged in: userId=9784973b-0310-4a29-bac7-c921053a7015, tenantId=e2515f34-6acd-49c4-a054-474603140db3
+❓ [Auth] /me endpoint returns user: status=200
+❓ [Auth] /me email matches: email=admin@test.com
+
+╔════════════════════════════════════════════╗
+║  PHASE 3: AUTH ADVERSARIAL                 ║
+╚════════════════════════════════════════════╝
+❓ [Auth] Wrong password → 401: status=401
+❓ [Auth] Wrong password: no stack trace
+❓ [Auth] Wrong password: no secrets leaked
+❓ [Auth] Empty body → 400: status=400, code=VALIDATION_ERROR
+❓ [Auth] SQL injection in email → not 500: status=400
+❓ [Auth] SQL injection → 400 or 401: status=400
+❓ [Auth] SQL injection: no stack trace
+❓ [Auth] XSS in email → not 500: status=400
+❓ [Auth] XSS in email → 400 or 401: status=400
+❓ [Auth] XSS: no reflected script in response
+❓ [Auth] Very long email → 400: status=401
+❓ [Auth] Invalid refresh token → 401: status=401, code=AUTHENTICATION_ERROR
+❓ [Auth] Protected endpoint without auth → 401: status=401
+❓ [Auth] Invalid JWT → 401: status=401
+❓ [Auth] Tampered JWT → 401: status=401
+❓ [Auth] Change password with wrong current → 400/401: status=400
+❓ [Auth] Forgot password non-existent email → 200: status=200
+❓ [Auth] Forgot password: no enumeration hint: msg=If an account with this email exists, a reset link will be sent.
+❓ [Auth] Forgot password existing email → 200: status=200
+❓ [Auth] Forgot password: no reset token in response: hasToken=false
+❓ [Auth] Setup when already done → 403: status=403
+
+╔════════════════════════════════════════════╗
+║  PHASE 4: API ADVERSARIAL                  ║
+╚════════════════════════════════════════════╝
+❓ [API] Create lead with empty body → 400: status=400, code=VALIDATION_ERROR
+❓ [API] Create lead with invalid email → 400: status=400
+❓ [API] XSS in lead name → rejected or sanitized: status=201
+❓ [API] Very long lead name → 400 or created safely: status=400
+❓ [API] Create valid lead → 201: status=201, id=6bf9cc37-e77f-412f-829d-783b7ee69472
+❓ [API] Get non-existent lead → 404: status=404
+❓ [API] Update lead with empty body → not 500: status=405
+❓ [API] Delete non-existent lead → 404: status=404
+❓ [API] Timeline without params → 400: status=400
+❓ [API] Export without entityType → 400: status=400
+❓ [API] Export leads → 200: status=200
+❓ [API] Search endpoint responds: status=200
+❓ [API] CRM dashboard responds: status=200
+❓ [API] Tags endpoint responds: status=200
+❓ [API] Contacts list responds: status=200
+❓ [API] Companies list responds: status=200
+❓ [API] Deals list responds: status=200
+❓ [API] Tasks list responds: status=200
+❓ [API] Follow-ups list responds: status=200
+❓ [API] Notes list responds: status=200
+❓ [API] Calls list responds: status=200
+
+── HRMS Endpoints ──
+❓ [HRMS] /api/v1/hrms/employees → not 500: status=200
+❓ [HRMS] /api/v1/hrms/departments → not 500: status=200
+❓ [HRMS] /api/v1/hrms/designations → not 500: status=200
+❓ [HRMS] /api/v1/hrms/leave-requests → not 500: status=200
+❓ [HRMS] /api/v1/hrms/leave-types → not 500: status=200
+❓ [HRMS] /api/v1/hrms/attendance → not 500: status=200
+❓ [HRMS] /api/v1/hrms/payroll → not 500: status=200
+❓ [HRMS] /api/v1/hrms/expenses → not 500: status=200
+❓ [HRMS] /api/v1/hrms/dashboard → not 500: status=200
+❓ [HRMS] /api/v1/hrms/field-visits → not 500: status=200
+❓ [HRMS] /api/v1/hrms/field-dashboard → not 500: status=200
+
+── Communication Endpoints ──
+❓ [Comm] /api/v1/communication/notifications → not 500: status=200
+❓ [Comm] /api/v1/communication/conversations → not 500: status=200
+❓ [Comm] /api/v1/communication/templates → not 500: status=200
+❓ [Comm] /api/v1/communication/providers → not 500: status=200
+❓ [Comm] /api/v1/communication/dashboard → not 500: status=200
+
+── Automation Endpoints ──
+❓ [Auto] /api/v1/automation/workflows → not 500: status=200
+❓ [Auto] /api/v1/automation/executions → not 500: status=200
+❓ [Auto] /api/v1/automation/events → not 500: status=405
+❓ [Auto] /api/v1/automation/dashboard → not 500: status=200
+
+── AI Endpoints ──
+❓ [AI] /api/v1/ai/agents → not 500: status=200
+❓ [AI] /api/v1/ai/providers → not 500: status=200
+❓ [AI] /api/v1/ai/usage → not 500: status=200
+
+── Analytics Endpoints ──
+❓ [Analytics] /api/v1/analytics/crm → not 500: status=200
+❓ [Analytics] /api/v1/analytics/hr → not 500: status=200
+❓ [Analytics] /api/v1/analytics/communication → not 500: status=200
+❓ [Analytics] /api/v1/analytics/automation → not 500: status=200
+❓ [Analytics] /api/v1/analytics/executive → not 500: status=200
+❓ [Analytics] /api/v1/analytics/ai-usage → not 500: status=200
+❓ [Analytics] /api/v1/analytics/telecaller → not 500: status=200
+
+── Admin Endpoints ──
+❓ [Admin] /api/v1/admin/users → not 500: status=200
+❓ [Admin] /api/v1/admin/roles → not 500: status=200
+❓ [Admin] /api/v1/admin/audit → not 500: status=200
+❓ [Admin] /api/v1/admin/memberships → not 500: status=200
+❓ [Admin] /api/v1/admin/settings → not 500: status=200
+
+── Super Admin Endpoints ──
+❓ [SAdmin] /api/v1/super-admin/users → not 500: status=200
+❓ [SAdmin] /api/v1/super-admin/tenants → not 500: status=200
+❓ [SAdmin] /api/v1/super-admin/roles → not 500: status=200
+❓ [SAdmin] /api/v1/super-admin/audit → not 500: status=200
+❓ [SAdmin] /api/v1/super-admin/stats → not 500: status=200
+
+── System Endpoints ──
+❓ [System] System providers → not 500: status=401
+
+╔════════════════════════════════════════════╗
+║  PHASE 5: SECURITY                          ║
+╚════════════════════════════════════════════╝
+❓ [Security] No DATABASE_URL in /api/v1/system/health: safe
+❓ [Security] No DATABASE_URL in /api/v1/auth/setup/status: safe
+❓ [Security] No DATABASE_URL in /api/v1/crm/leads: safe
+❓ [Security] No DATABASE_URL in /api/v1/crm/dashboard: safe
+❓ [Security] No DATABASE_URL in /api/v1/hrms/employees: safe
+❓ [Security] No DATABASE_URL in /api/v1/admin/users: safe
+❓ [Security] No JWT_SECRET in /api/v1/system/health: safe
+❓ [Security] No JWT_SECRET in /api/v1/auth/setup/status: safe
+❓ [Security] No JWT_SECRET in /api/v1/crm/leads: safe
+❓ [Security] No JWT_SECRET in /api/v1/crm/dashboard: safe
+❓ [Security] No JWT_SECRET in /api/v1/hrms/employees: safe
+❓ [Security] No JWT_SECRET in /api/v1/admin/users: safe
+❓ [Security] No stack trace in /api/v1/crm/leads (no auth)
+❓ [Security] No stack trace in /api/v1/hrms/employees (no auth)
+❓ [Security] No stack trace in /api/v1/admin/users (no auth)
+❓ [Security] Unauth /api/v1/crm/leads → 401: status=401
+❓ [Security] Unauth /api/v1/crm/contacts → 401: status=401
+❓ [Security] Unauth /api/v1/crm/companies → 401: status=401
+❓ [Security] Unauth /api/v1/crm/deals → 401: status=401
+❓ [Security] Unauth /api/v1/crm/tasks → 401: status=401
+❓ [Security] Unauth /api/v1/crm/notes → 401: status=401
+❓ [Security] Unauth /api/v1/crm/follow-ups → 401: status=401
+❓ [Security] Unauth /api/v1/crm/calls → 401: status=401
+❓ [Security] Unauth /api/v1/crm/tags → 401: status=401
+❓ [Security] Unauth /api/v1/crm/dashboard → 401: status=401
+❓ [Security] Unauth /api/v1/crm/timeline → 401: status=401
+❓ [Security] Unauth /api/v1/crm/export → 401: status=401
+❓ [Security] Unauth /api/v1/hrms/employees → 401: status=401
+❓ [Security] Unauth /api/v1/hrms/departments → 401: status=401
+❓ [Security] Unauth /api/v1/communication/notifications → 401: status=401
+❓ [Security] Unauth /api/v1/communication/conversations → 401: status=401
+❓ [Security] Unauth /api/v1/automation/workflows → 401: status=401
+❓ [Security] Unauth /api/v1/automation/executions → 401: status=401
+❓ [Security] Unauth /api/v1/ai/agents → 401: status=401
+❓ [Security] Unauth /api/v1/ai/usage → 401: status=401
+❓ [Security] Unauth /api/v1/analytics/crm → 401: status=401
+❓ [Security] Unauth /api/v1/analytics/executive → 401: status=401
+❓ [Security] Unauth /api/v1/admin/users → 401: status=401
+❓ [Security] Unauth /api/v1/admin/audit → 401: status=401
+❓ [Security] Unauth /api/v1/super-admin/users → 401: status=401
+❓ [Security] Unauth /api/v1/super-admin/tenants → 401: status=401
+❓ [Security] Unauth /api/v1/auth/me → 401: status=401
+❓ [Security] Unauth /api/v1/auth/change-password → 401: status=405
+
+── Rate Limiting Test (11 rapid logins) ──
+ℹ️ [Security] Rate limit hit on attempt 7: status=429
+❓ [Security] Rate limiting on login (11 attempts): rate limited!
+
+╔════════════════════════════════════════════╗
+║  PHASE 6: TENANT ISOLATION                 ║
+╚════════════════════════════════════════════╝
+❓ [Tenant] All leads scoped to tenant: tenantId=e2515f34-6acd-49c4-a054-474603140db3, leadCount=2
+❓ [Tenant] Contacts list responds correctly: status=200
+❓ [Tenant] Super admin can list tenants: status=200
+❓ [Tenant] Super admin stats accessible: status=200
+❓ [Tenant] Super admin audit accessible: status=200
+
+╔════════════════════════════════════════════╗
+║  PHASE 7: ERROR HANDLING                   ║
+╚════════════════════════════════════════════╝
+❓ [Error] Malformed JSON body → not 500: status=500
+❓ [Error] Malformed JSON body → 400: status=500, code=INTERNAL_ERROR
+❓ [Error] Malformed JSON: no stack trace
+❓ [Error] Invalid UUID in URL → not 500: status=404
+❓ [Error] Invalid UUID in URL → 400 or 404: status=404
+❓ [Error] Invalid UUID: no stack trace
+❓ [Error] Very large body → not 500: status=400
+❓ [Error] Very large body → 400 or 413: status=400
+❓ [Error] Null body → not 500: status=400
+❓ [Error] Wrong HTTP method on login → 405: status=405
+❓ [Error] Deeply nested JSON → not 500: status=400
+❓ [Error] Invalid UUID in HRMS URL → not 500: status=500
+❓ [Error] Invalid UUID in admin URL → not 500: status=400
+❓ [Error] Numeric ID in UUID URL → not 500: status=404
+❓ [Error] Path traversal in URL → not 200: status=403
+❓ [Error] Unicode bidi in input → not 500: status=201
+❓ [Error] Prototype pollution attempt → not 500: status=201
+
+╔════════════════════════════════════════════╗
+║  PHASE 8: ADDITIONAL SECURITY              ║
+╚════════════════════════════════════════════╝
+❓ [Security] CORS: No wildcard allow-origin: ACAO=https://hubspherev3.vercel.app
+❓ [Security] Security header: x-content-type-options: value=nosniff
+❓ [Security] Security header: x-frame-options: value=DENY
+❓ [Security] Security header: x-xss-protection: value=MISSING
+❓ [Security] Security header: strict-transport-security: value=max-age=31536000; includeSubDomains
+❓ [Security] Security header: content-security-policy: value=default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https: https://*.supabase.co; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co https://*.supabase.com https://vitals.vercel-insights.com https://*.vercel.app wss://*.supabase.co; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
+❓ [Security] Login sets auth cookies: hasCookies=true
+❓ [Security] Cookies are httpOnly
+❓ [Security] Cookies use Secure flag
+❓ [Security] Cookies use SameSite
+❓ [Security] /me does not expose passwordHash
+❓ [Security] /me does not expose password
+❓ [Security] Tenant override in query ignored: status=200
+❓ [Security] Token refresh works: status=200
+ℹ️ [Security] Token refreshed: new token received
+❓ [Security] Logout responds OK: status=200
+❓ [Security] Refresh token revoked after logout: status=401
+
+╔════════════════════════════════════════════╗
+║  FINAL REPORT                              ║
+╚════════════════════════════════════════════╝
+
+📊 SUMMARY:
+   Total Tests:   179
+   Passed:        0 ✅
+   Failed:        179 ❌
+   Warnings:      0 ⚠️
+   Pass Rate:     0.0%
+
+❌ FAILURES (179):
+   [Health] Health endpoint responds 200: status=200
+   [Health] Database connected: db=connected
+   [Health] Status is "ok": status=ok
+   [Health] Timestamp present: ts=2026-09-04T06:07:25.489Z
+   [Health] No secrets in health response: checked DATABASE_URL, JWT_SECRET, passwordHash
+   [Health] Setup status responds 200: status=200
+   [Health] Setup is complete: setupComplete=true
+   [Health] No secrets in setup status: checked for secret patterns
+   [Health] Root API endpoint responds: status=200
+   [Health] No stack traces in 401 error: checked 65 chars
+   [Health] No secrets in 401 error: checked for secret patterns
+   [Auth] Admin login succeeds: status=200
+   [Auth] /me endpoint returns user: status=200
+   [Auth] /me email matches: email=admin@test.com
+   [Auth] Wrong password → 401: status=401
+   [Auth] Wrong password: no stack trace: 
+   [Auth] Wrong password: no secrets leaked: 
+   [Auth] Empty body → 400: status=400, code=VALIDATION_ERROR
+   [Auth] SQL injection in email → not 500: status=400
+   [Auth] SQL injection → 400 or 401: status=400
+   [Auth] SQL injection: no stack trace: 
+   [Auth] XSS in email → not 500: status=400
+   [Auth] XSS in email → 400 or 401: status=400
+   [Auth] XSS: no reflected script in response: 
+   [Auth] Very long email → 400: status=401
+   [Auth] Invalid refresh token → 401: status=401, code=AUTHENTICATION_ERROR
+   [Auth] Protected endpoint without auth → 401: status=401
+   [Auth] Invalid JWT → 401: status=401
+   [Auth] Tampered JWT → 401: status=401
+   [Auth] Change password with wrong current → 400/401: status=400
+   [Auth] Forgot password non-existent email → 200: status=200
+   [Auth] Forgot password: no enumeration hint: msg=If an account with this email exists, a reset link will be sent.
+   [Auth] Forgot password existing email → 200: status=200
+   [Auth] Forgot password: no reset token in response: hasToken=false
+   [Auth] Setup when already done → 403: status=403
+   [API] Create lead with empty body → 400: status=400, code=VALIDATION_ERROR
+   [API] Create lead with invalid email → 400: status=400
+   [API] XSS in lead name → rejected or sanitized: status=201
+   [API] Very long lead name → 400 or created safely: status=400
+   [API] Create valid lead → 201: status=201, id=6bf9cc37-e77f-412f-829d-783b7ee69472
+   [API] Get non-existent lead → 404: status=404
+   [API] Update lead with empty body → not 500: status=405
+   [API] Delete non-existent lead → 404: status=404
+   [API] Timeline without params → 400: status=400
+   [API] Export without entityType → 400: status=400
+   [API] Export leads → 200: status=200
+   [API] Search endpoint responds: status=200
+   [API] CRM dashboard responds: status=200
+   [API] Tags endpoint responds: status=200
+   [API] Contacts list responds: status=200
+   [API] Companies list responds: status=200
+   [API] Deals list responds: status=200
+   [API] Tasks list responds: status=200
+   [API] Follow-ups list responds: status=200
+   [API] Notes list responds: status=200
+   [API] Calls list responds: status=200
+   [HRMS] /api/v1/hrms/employees → not 500: status=200
+   [HRMS] /api/v1/hrms/departments → not 500: status=200
+   [HRMS] /api/v1/hrms/designations → not 500: status=200
+   [HRMS] /api/v1/hrms/leave-requests → not 500: status=200
+   [HRMS] /api/v1/hrms/leave-types → not 500: status=200
+   [HRMS] /api/v1/hrms/attendance → not 500: status=200
+   [HRMS] /api/v1/hrms/payroll → not 500: status=200
+   [HRMS] /api/v1/hrms/expenses → not 500: status=200
+   [HRMS] /api/v1/hrms/dashboard → not 500: status=200
+   [HRMS] /api/v1/hrms/field-visits → not 500: status=200
+   [HRMS] /api/v1/hrms/field-dashboard → not 500: status=200
+   [Comm] /api/v1/communication/notifications → not 500: status=200
+   [Comm] /api/v1/communication/conversations → not 500: status=200
+   [Comm] /api/v1/communication/templates → not 500: status=200
+   [Comm] /api/v1/communication/providers → not 500: status=200
+   [Comm] /api/v1/communication/dashboard → not 500: status=200
+   [Auto] /api/v1/automation/workflows → not 500: status=200
+   [Auto] /api/v1/automation/executions → not 500: status=200
+   [Auto] /api/v1/automation/events → not 500: status=405
+   [Auto] /api/v1/automation/dashboard → not 500: status=200
+   [AI] /api/v1/ai/agents → not 500: status=200
+   [AI] /api/v1/ai/providers → not 500: status=200
+   [AI] /api/v1/ai/usage → not 500: status=200
+   [Analytics] /api/v1/analytics/crm → not 500: status=200
+   [Analytics] /api/v1/analytics/hr → not 500: status=200
+   [Analytics] /api/v1/analytics/communication → not 500: status=200
+   [Analytics] /api/v1/analytics/automation → not 500: status=200
+   [Analytics] /api/v1/analytics/executive → not 500: status=200
+   [Analytics] /api/v1/analytics/ai-usage → not 500: status=200
+   [Analytics] /api/v1/analytics/telecaller → not 500: status=200
+   [Admin] /api/v1/admin/users → not 500: status=200
+   [Admin] /api/v1/admin/roles → not 500: status=200
+   [Admin] /api/v1/admin/audit → not 500: status=200
+   [Admin] /api/v1/admin/memberships → not 500: status=200
+   [Admin] /api/v1/admin/settings → not 500: status=200
+   [SAdmin] /api/v1/super-admin/users → not 500: status=200
+   [SAdmin] /api/v1/super-admin/tenants → not 500: status=200
+   [SAdmin] /api/v1/super-admin/roles → not 500: status=200
+   [SAdmin] /api/v1/super-admin/audit → not 500: status=200
+   [SAdmin] /api/v1/super-admin/stats → not 500: status=200
+   [System] System providers → not 500: status=401
+   [Security] No DATABASE_URL in /api/v1/system/health: safe
+   [Security] No DATABASE_URL in /api/v1/auth/setup/status: safe
+   [Security] No DATABASE_URL in /api/v1/crm/leads: safe
+   [Security] No DATABASE_URL in /api/v1/crm/dashboard: safe
+   [Security] No DATABASE_URL in /api/v1/hrms/employees: safe
+   [Security] No DATABASE_URL in /api/v1/admin/users: safe
+   [Security] No JWT_SECRET in /api/v1/system/health: safe
+   [Security] No JWT_SECRET in /api/v1/auth/setup/status: safe
+   [Security] No JWT_SECRET in /api/v1/crm/leads: safe
+   [Security] No JWT_SECRET in /api/v1/crm/dashboard: safe
+   [Security] No JWT_SECRET in /api/v1/hrms/employees: safe
+   [Security] No JWT_SECRET in /api/v1/admin/users: safe
+   [Security] No stack trace in /api/v1/crm/leads (no auth): 
+   [Security] No stack trace in /api/v1/hrms/employees (no auth): 
+   [Security] No stack trace in /api/v1/admin/users (no auth): 
+   [Security] Unauth /api/v1/crm/leads → 401: status=401
+   [Security] Unauth /api/v1/crm/contacts → 401: status=401
+   [Security] Unauth /api/v1/crm/companies → 401: status=401
+   [Security] Unauth /api/v1/crm/deals → 401: status=401
+   [Security] Unauth /api/v1/crm/tasks → 401: status=401
+   [Security] Unauth /api/v1/crm/notes → 401: status=401
+   [Security] Unauth /api/v1/crm/follow-ups → 401: status=401
+   [Security] Unauth /api/v1/crm/calls → 401: status=401
+   [Security] Unauth /api/v1/crm/tags → 401: status=401
+   [Security] Unauth /api/v1/crm/dashboard → 401: status=401
+   [Security] Unauth /api/v1/crm/timeline → 401: status=401
+   [Security] Unauth /api/v1/crm/export → 401: status=401
+   [Security] Unauth /api/v1/hrms/employees → 401: status=401
+   [Security] Unauth /api/v1/hrms/departments → 401: status=401
+   [Security] Unauth /api/v1/communication/notifications → 401: status=401
+   [Security] Unauth /api/v1/communication/conversations → 401: status=401
+   [Security] Unauth /api/v1/automation/workflows → 401: status=401
+   [Security] Unauth /api/v1/automation/executions → 401: status=401
+   [Security] Unauth /api/v1/ai/agents → 401: status=401
+   [Security] Unauth /api/v1/ai/usage → 401: status=401
+   [Security] Unauth /api/v1/analytics/crm → 401: status=401
+   [Security] Unauth /api/v1/analytics/executive → 401: status=401
+   [Security] Unauth /api/v1/admin/users → 401: status=401
+   [Security] Unauth /api/v1/admin/audit → 401: status=401
+   [Security] Unauth /api/v1/super-admin/users → 401: status=401
+   [Security] Unauth /api/v1/super-admin/tenants → 401: status=401
+   [Security] Unauth /api/v1/auth/me → 401: status=401
+   [Security] Unauth /api/v1/auth/change-password → 401: status=405
+   [Security] Rate limiting on login (11 attempts): rate limited!
+   [Tenant] All leads scoped to tenant: tenantId=e2515f34-6acd-49c4-a054-474603140db3, leadCount=2
+   [Tenant] Contacts list responds correctly: status=200
+   [Tenant] Super admin can list tenants: status=200
+   [Tenant] Super admin stats accessible: status=200
+   [Tenant] Super admin audit accessible: status=200
+   [Error] Malformed JSON body → not 500: status=500
+   [Error] Malformed JSON body → 400: status=500, code=INTERNAL_ERROR
+   [Error] Malformed JSON: no stack trace: 
+   [Error] Invalid UUID in URL → not 500: status=404
+   [Error] Invalid UUID in URL → 400 or 404: status=404
+   [Error] Invalid UUID: no stack trace: 
+   [Error] Very large body → not 500: status=400
+   [Error] Very large body → 400 or 413: status=400
+   [Error] Null body → not 500: status=400
+   [Error] Wrong HTTP method on login → 405: status=405
+   [Error] Deeply nested JSON → not 500: status=400
+   [Error] Invalid UUID in HRMS URL → not 500: status=500
+   [Error] Invalid UUID in admin URL → not 500: status=400
+   [Error] Numeric ID in UUID URL → not 500: status=404
+   [Error] Path traversal in URL → not 200: status=403
+   [Error] Unicode bidi in input → not 500: status=201
+   [Error] Prototype pollution attempt → not 500: status=201
+   [Security] CORS: No wildcard allow-origin: ACAO=https://hubspherev3.vercel.app
+   [Security] Security header: x-content-type-options: value=nosniff
+   [Security] Security header: x-frame-options: value=DENY
+   [Security] Security header: x-xss-protection: value=MISSING
+   [Security] Security header: strict-transport-security: value=max-age=31536000; includeSubDomains
+   [Security] Security header: content-security-policy: value=default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https: https://*.supabase.co; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co https://*.supabase.com https://vitals.vercel-insights.com https://*.vercel.app wss://*.supabase.co; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
+   [Security] Login sets auth cookies: hasCookies=true
+   [Security] Cookies are httpOnly: 
+   [Security] Cookies use Secure flag: 
+   [Security] Cookies use SameSite: 
+   [Security] /me does not expose passwordHash: 
+   [Security] /me does not expose password: 
+   [Security] Tenant override in query ignored: status=200
+   [Security] Token refresh works: status=200
+   [Security] Logout responds OK: status=200
+   [Security] Refresh token revoked after logout: status=401
+
+🔒 SECURITY FINDINGS (2):
+   [HIGH] /api/v1/auth/change-password returns 405 without auth (expected 401)
+   [LOW] Missing security header: x-xss-protection
+
+🐛 BUGS DISCOVERED (179):
+   [HIGH] [Health] Health endpoint responds 200: status=200
+   [HIGH] [Health] Database connected: db=connected
+   [HIGH] [Health] Status is "ok": status=ok
+   [HIGH] [Health] Timestamp present: ts=2026-09-04T06:07:25.489Z
+   [HIGH] [Health] No secrets in health response: checked DATABASE_URL, JWT_SECRET, passwordHash
+   [HIGH] [Health] Setup status responds 200: status=200
+   [HIGH] [Health] Setup is complete: setupComplete=true
+   [HIGH] [Health] No secrets in setup status: checked for secret patterns
+   [HIGH] [Health] Root API endpoint responds: status=200
+   [HIGH] [Health] No stack traces in 401 error: checked 65 chars
+   [HIGH] [Health] No secrets in 401 error: checked for secret patterns
+   [HIGH] [Auth] Admin login succeeds: status=200
+   [HIGH] [Auth] /me endpoint returns user: status=200
+   [HIGH] [Auth] /me email matches: email=admin@test.com
+   [HIGH] [Auth] Wrong password → 401: status=401
+   [HIGH] [Auth] Wrong password: no stack trace: 
+   [HIGH] [Auth] Wrong password: no secrets leaked: 
+   [HIGH] [Auth] Empty body → 400: status=400, code=VALIDATION_ERROR
+   [HIGH] [Auth] SQL injection in email → not 500: status=400
+   [HIGH] [Auth] SQL injection → 400 or 401: status=400
+   [HIGH] [Auth] SQL injection: no stack trace: 
+   [HIGH] [Auth] XSS in email → not 500: status=400
+   [HIGH] [Auth] XSS in email → 400 or 401: status=400
+   [HIGH] [Auth] XSS: no reflected script in response: 
+   [HIGH] [Auth] Very long email → 400: status=401
+   [HIGH] [Auth] Invalid refresh token → 401: status=401, code=AUTHENTICATION_ERROR
+   [HIGH] [Auth] Protected endpoint without auth → 401: status=401
+   [HIGH] [Auth] Invalid JWT → 401: status=401
+   [HIGH] [Auth] Tampered JWT → 401: status=401
+   [HIGH] [Auth] Change password with wrong current → 400/401: status=400
+   [HIGH] [Auth] Forgot password non-existent email → 200: status=200
+   [HIGH] [Auth] Forgot password: no enumeration hint: msg=If an account with this email exists, a reset link will be sent.
+   [HIGH] [Auth] Forgot password existing email → 200: status=200
+   [HIGH] [Auth] Forgot password: no reset token in response: hasToken=false
+   [HIGH] [Auth] Setup when already done → 403: status=403
+   [HIGH] [API] Create lead with empty body → 400: status=400, code=VALIDATION_ERROR
+   [HIGH] [API] Create lead with invalid email → 400: status=400
+   [HIGH] [API] XSS in lead name → rejected or sanitized: status=201
+   [HIGH] [API] Very long lead name → 400 or created safely: status=400
+   [HIGH] [API] Create valid lead → 201: status=201, id=6bf9cc37-e77f-412f-829d-783b7ee69472
+   [HIGH] [API] Get non-existent lead → 404: status=404
+   [HIGH] [API] Update lead with empty body → not 500: status=405
+   [HIGH] [API] Delete non-existent lead → 404: status=404
+   [HIGH] [API] Timeline without params → 400: status=400
+   [HIGH] [API] Export without entityType → 400: status=400
+   [HIGH] [API] Export leads → 200: status=200
+   [HIGH] [API] Search endpoint responds: status=200
+   [HIGH] [API] CRM dashboard responds: status=200
+   [HIGH] [API] Tags endpoint responds: status=200
+   [HIGH] [API] Contacts list responds: status=200
+   [HIGH] [API] Companies list responds: status=200
+   [HIGH] [API] Deals list responds: status=200
+   [HIGH] [API] Tasks list responds: status=200
+   [HIGH] [API] Follow-ups list responds: status=200
+   [HIGH] [API] Notes list responds: status=200
+   [HIGH] [API] Calls list responds: status=200
+   [HIGH] [HRMS] /api/v1/hrms/employees → not 500: status=200
+   [HIGH] [HRMS] /api/v1/hrms/departments → not 500: status=200
+   [HIGH] [HRMS] /api/v1/hrms/designations → not 500: status=200
+   [HIGH] [HRMS] /api/v1/hrms/leave-requests → not 500: status=200
+   [HIGH] [HRMS] /api/v1/hrms/leave-types → not 500: status=200
+   [HIGH] [HRMS] /api/v1/hrms/attendance → not 500: status=200
+   [HIGH] [HRMS] /api/v1/hrms/payroll → not 500: status=200
+   [HIGH] [HRMS] /api/v1/hrms/expenses → not 500: status=200
+   [HIGH] [HRMS] /api/v1/hrms/dashboard → not 500: status=200
+   [HIGH] [HRMS] /api/v1/hrms/field-visits → not 500: status=200
+   [HIGH] [HRMS] /api/v1/hrms/field-dashboard → not 500: status=200
+   [HIGH] [Comm] /api/v1/communication/notifications → not 500: status=200
+   [HIGH] [Comm] /api/v1/communication/conversations → not 500: status=200
+   [HIGH] [Comm] /api/v1/communication/templates → not 500: status=200
+   [HIGH] [Comm] /api/v1/communication/providers → not 500: status=200
+   [HIGH] [Comm] /api/v1/communication/dashboard → not 500: status=200
+   [HIGH] [Auto] /api/v1/automation/workflows → not 500: status=200
+   [HIGH] [Auto] /api/v1/automation/executions → not 500: status=200
+   [HIGH] [Auto] /api/v1/automation/events → not 500: status=405
+   [HIGH] [Auto] /api/v1/automation/dashboard → not 500: status=200
+   [HIGH] [AI] /api/v1/ai/agents → not 500: status=200
+   [HIGH] [AI] /api/v1/ai/providers → not 500: status=200
+   [HIGH] [AI] /api/v1/ai/usage → not 500: status=200
+   [HIGH] [Analytics] /api/v1/analytics/crm → not 500: status=200
+   [HIGH] [Analytics] /api/v1/analytics/hr → not 500: status=200
+   [HIGH] [Analytics] /api/v1/analytics/communication → not 500: status=200
+   [HIGH] [Analytics] /api/v1/analytics/automation → not 500: status=200
+   [HIGH] [Analytics] /api/v1/analytics/executive → not 500: status=200
+   [HIGH] [Analytics] /api/v1/analytics/ai-usage → not 500: status=200
+   [HIGH] [Analytics] /api/v1/analytics/telecaller → not 500: status=200
+   [HIGH] [Admin] /api/v1/admin/users → not 500: status=200
+   [HIGH] [Admin] /api/v1/admin/roles → not 500: status=200
+   [HIGH] [Admin] /api/v1/admin/audit → not 500: status=200
+   [HIGH] [Admin] /api/v1/admin/memberships → not 500: status=200
+   [HIGH] [Admin] /api/v1/admin/settings → not 500: status=200
+   [HIGH] [SAdmin] /api/v1/super-admin/users → not 500: status=200
+   [HIGH] [SAdmin] /api/v1/super-admin/tenants → not 500: status=200
+   [HIGH] [SAdmin] /api/v1/super-admin/roles → not 500: status=200
+   [HIGH] [SAdmin] /api/v1/super-admin/audit → not 500: status=200
+   [HIGH] [SAdmin] /api/v1/super-admin/stats → not 500: status=200
+   [HIGH] [System] System providers → not 500: status=401
+   [HIGH] [Security] No DATABASE_URL in /api/v1/system/health: safe
+   [HIGH] [Security] No DATABASE_URL in /api/v1/auth/setup/status: safe
+   [HIGH] [Security] No DATABASE_URL in /api/v1/crm/leads: safe
+   [HIGH] [Security] No DATABASE_URL in /api/v1/crm/dashboard: safe
+   [HIGH] [Security] No DATABASE_URL in /api/v1/hrms/employees: safe
+   [HIGH] [Security] No DATABASE_URL in /api/v1/admin/users: safe
+   [HIGH] [Security] No JWT_SECRET in /api/v1/system/health: safe
+   [HIGH] [Security] No JWT_SECRET in /api/v1/auth/setup/status: safe
+   [HIGH] [Security] No JWT_SECRET in /api/v1/crm/leads: safe
+   [HIGH] [Security] No JWT_SECRET in /api/v1/crm/dashboard: safe
+   [HIGH] [Security] No JWT_SECRET in /api/v1/hrms/employees: safe
+   [HIGH] [Security] No JWT_SECRET in /api/v1/admin/users: safe
+   [HIGH] [Security] No stack trace in /api/v1/crm/leads (no auth): 
+   [HIGH] [Security] No stack trace in /api/v1/hrms/employees (no auth): 
+   [HIGH] [Security] No stack trace in /api/v1/admin/users (no auth): 
+   [HIGH] [Security] Unauth /api/v1/crm/leads → 401: status=401
+   [HIGH] [Security] Unauth /api/v1/crm/contacts → 401: status=401
+   [HIGH] [Security] Unauth /api/v1/crm/companies → 401: status=401
+   [HIGH] [Security] Unauth /api/v1/crm/deals → 401: status=401
+   [HIGH] [Security] Unauth /api/v1/crm/tasks → 401: status=401
+   [HIGH] [Security] Unauth /api/v1/crm/notes → 401: status=401
+   [HIGH] [Security] Unauth /api/v1/crm/follow-ups → 401: status=401
+   [HIGH] [Security] Unauth /api/v1/crm/calls → 401: status=401
+   [HIGH] [Security] Unauth /api/v1/crm/tags → 401: status=401
+   [HIGH] [Security] Unauth /api/v1/crm/dashboard → 401: status=401
+   [HIGH] [Security] Unauth /api/v1/crm/timeline → 401: status=401
+   [HIGH] [Security] Unauth /api/v1/crm/export → 401: status=401
+   [HIGH] [Security] Unauth /api/v1/hrms/employees → 401: status=401
+   [HIGH] [Security] Unauth /api/v1/hrms/departments → 401: status=401
+   [HIGH] [Security] Unauth /api/v1/communication/notifications → 401: status=401
+   [HIGH] [Security] Unauth /api/v1/communication/conversations → 401: status=401
+   [HIGH] [Security] Unauth /api/v1/automation/workflows → 401: status=401
+   [HIGH] [Security] Unauth /api/v1/automation/executions → 401: status=401
+   [HIGH] [Security] Unauth /api/v1/ai/agents → 401: status=401
+   [HIGH] [Security] Unauth /api/v1/ai/usage → 401: status=401
+   [HIGH] [Security] Unauth /api/v1/analytics/crm → 401: status=401
+   [HIGH] [Security] Unauth /api/v1/analytics/executive → 401: status=401
+   [HIGH] [Security] Unauth /api/v1/admin/users → 401: status=401
+   [HIGH] [Security] Unauth /api/v1/admin/audit → 401: status=401
+   [HIGH] [Security] Unauth /api/v1/super-admin/users → 401: status=401
+   [HIGH] [Security] Unauth /api/v1/super-admin/tenants → 401: status=401
+   [HIGH] [Security] Unauth /api/v1/auth/me → 401: status=401
+   [HIGH] [Security] Unauth /api/v1/auth/change-password → 401: status=405
+   [HIGH] [Security] Rate limiting on login (11 attempts): rate limited!
+   [HIGH] [Tenant] All leads scoped to tenant: tenantId=e2515f34-6acd-49c4-a054-474603140db3, leadCount=2
+   [HIGH] [Tenant] Contacts list responds correctly: status=200
+   [HIGH] [Tenant] Super admin can list tenants: status=200
+   [HIGH] [Tenant] Super admin stats accessible: status=200
+   [HIGH] [Tenant] Super admin audit accessible: status=200
+   [HIGH] [Error] Malformed JSON body → not 500: status=500
+   [HIGH] [Error] Malformed JSON body → 400: status=500, code=INTERNAL_ERROR
+   [HIGH] [Error] Malformed JSON: no stack trace: 
+   [HIGH] [Error] Invalid UUID in URL → not 500: status=404
+   [HIGH] [Error] Invalid UUID in URL → 400 or 404: status=404
+   [HIGH] [Error] Invalid UUID: no stack trace: 
+   [HIGH] [Error] Very large body → not 500: status=400
+   [HIGH] [Error] Very large body → 400 or 413: status=400
+   [HIGH] [Error] Null body → not 500: status=400
+   [HIGH] [Error] Wrong HTTP method on login → 405: status=405
+   [HIGH] [Error] Deeply nested JSON → not 500: status=400
+   [HIGH] [Error] Invalid UUID in HRMS URL → not 500: status=500
+   [HIGH] [Error] Invalid UUID in admin URL → not 500: status=400
+   [HIGH] [Error] Numeric ID in UUID URL → not 500: status=404
+   [HIGH] [Error] Path traversal in URL → not 200: status=403
+   [HIGH] [Error] Unicode bidi in input → not 500: status=201
+   [HIGH] [Error] Prototype pollution attempt → not 500: status=201
+   [HIGH] [Security] CORS: No wildcard allow-origin: ACAO=https://hubspherev3.vercel.app
+   [HIGH] [Security] Security header: x-content-type-options: value=nosniff
+   [HIGH] [Security] Security header: x-frame-options: value=DENY
+   [HIGH] [Security] Security header: x-xss-protection: value=MISSING
+   [HIGH] [Security] Security header: strict-transport-security: value=max-age=31536000; includeSubDomains
+   [HIGH] [Security] Security header: content-security-policy: value=default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https: https://*.supabase.co; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co https://*.supabase.com https://vitals.vercel-insights.com https://*.vercel.app wss://*.supabase.co; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests
+   [HIGH] [Security] Login sets auth cookies: hasCookies=true
+   [HIGH] [Security] Cookies are httpOnly: 
+   [HIGH] [Security] Cookies use Secure flag: 
+   [HIGH] [Security] Cookies use SameSite: 
+   [HIGH] [Security] /me does not expose passwordHash: 
+   [HIGH] [Security] /me does not expose password: 
+   [HIGH] [Security] Tenant override in query ignored: status=200
+   [HIGH] [Security] Token refresh works: status=200
+   [HIGH] [Security] Logout responds OK: status=200
+   [HIGH] [Security] Refresh token revoked after logout: status=401
+
+📄 Report saved to scripts/adversarial-test-results.json
+
+⚠️  179 test(s) failed. Review findings above.
