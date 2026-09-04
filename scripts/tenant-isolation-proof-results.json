@@ -1,0 +1,409 @@
+{
+  "timestamp": "2026-09-04T10:26:56.849Z",
+  "tenantA": {
+    "id": "049caa50-74d6-4be3-9b92-92db72393aaf",
+    "name": "TENANT-A Corp"
+  },
+  "tenantB": {
+    "id": "1829d48b-a29a-43f6-8d8d-31b24cb6b201",
+    "name": "TENANT-B Corp"
+  },
+  "userA": {
+    "id": "d35a39f9-f297-4b43-86bd-0a72bd1e4c26",
+    "email": "user-a@tenant-a.com"
+  },
+  "userB": {
+    "id": "02865003-db50-4093-b5e4-f4fd312acdb8",
+    "email": "user-b@tenant-b.com"
+  },
+  "records": {
+    "tenantA": {
+      "leadId": "0af2b4f4-5921-46c1-9fc9-248ee3043d50",
+      "contactId": "9f2f1c9f-d712-4283-8d44-f3ec17b0a9ad",
+      "companyId": "e49bab80-5ff5-41ca-9646-09c27a1a9869"
+    },
+    "tenantB": {
+      "leadId": "6720ed01-5d17-43ae-9f39-9373497d4b4d",
+      "contactId": "daffed76-a91f-4b85-a961-4c494874fea2",
+      "companyId": "b72e7857-87dd-4af8-845d-d178040bc005"
+    }
+  },
+  "results": {
+    "passed": 33,
+    "blocked": 28,
+    "failed": 0,
+    "total": 61,
+    "elapsed": "130.2"
+  },
+  "crossTenantBreaches": 0,
+  "details": [
+    {
+      "category": "Setup",
+      "test": "Create TENANT-A",
+      "status": "PASS",
+      "detail": "status=201"
+    },
+    {
+      "category": "Setup",
+      "test": "Create TENANT-B",
+      "status": "PASS",
+      "detail": "status=201"
+    },
+    {
+      "category": "Setup",
+      "test": "TENANT-A ≠ TENANT-B",
+      "status": "PASS",
+      "detail": "A=049caa50-74d6-4be3-9b92-92db72393aaf B=1829d48b-a29a-43f6-8d8d-31b24cb6b201"
+    },
+    {
+      "category": "Setup",
+      "test": "User-A in TENANT-A as TENANT_OWNER",
+      "status": "PASS",
+      "detail": "userId=d35a39f9-f297-4b43-86bd-0a72bd1e4c26"
+    },
+    {
+      "category": "Setup",
+      "test": "User-B in TENANT-B as TENANT_OWNER",
+      "status": "PASS",
+      "detail": "userId=02865003-db50-4093-b5e4-f4fd312acdb8"
+    },
+    {
+      "category": "Setup",
+      "test": "User-A has NO membership in TENANT-B",
+      "status": "PASS",
+      "detail": "cross=false"
+    },
+    {
+      "category": "Setup",
+      "test": "User-B has NO membership in TENANT-A",
+      "status": "PASS",
+      "detail": "cross=false"
+    },
+    {
+      "category": "Auth",
+      "test": "User-A login",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "category": "Auth",
+      "test": "User-B login",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "category": "Auth",
+      "test": "User-A JWT → TENANT-A",
+      "status": "PASS",
+      "detail": "jwtTenant=049caa50-74d6-4be3-9b92-92db72393aaf expected=049caa50-74d6-4be3-9b92-92db72393aaf"
+    },
+    {
+      "category": "Auth",
+      "test": "User-B JWT → TENANT-B",
+      "status": "PASS",
+      "detail": "jwtTenant=1829d48b-a29a-43f6-8d8d-31b24cb6b201 expected=1829d48b-a29a-43f6-8d8d-31b24cb6b201"
+    },
+    {
+      "category": "Data",
+      "test": "Create lead in TENANT-A",
+      "status": "PASS",
+      "detail": "status=201 data={\"success\":true,\"data\":{\"id\":\"0af2b4f4-5921-46c1-9fc9-248ee3043d50\",\"firstName\":\"TENANT-A-LEAD\",\"las"
+    },
+    {
+      "category": "Data",
+      "test": "Create contact in TENANT-A",
+      "status": "PASS",
+      "detail": "status=201"
+    },
+    {
+      "category": "Data",
+      "test": "Create company in TENANT-A",
+      "status": "PASS",
+      "detail": "status=201"
+    },
+    {
+      "category": "Data",
+      "test": "Create lead in TENANT-B",
+      "status": "PASS",
+      "detail": "status=201"
+    },
+    {
+      "category": "Data",
+      "test": "Create contact in TENANT-B",
+      "status": "PASS",
+      "detail": "status=201"
+    },
+    {
+      "category": "Data",
+      "test": "Create company in TENANT-B",
+      "status": "PASS",
+      "detail": "status=201"
+    },
+    {
+      "category": "SameTenant",
+      "test": "A reads own lead by ID",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "category": "SameTenant",
+      "test": "A list contains own leads",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "category": "SameTenant",
+      "test": "B reads own lead by ID",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "category": "SameTenant",
+      "test": "B list contains own leads",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "category": "CrossRead",
+      "test": "B GET A lead by ID",
+      "status": "BLOCKED",
+      "detail": "status=404"
+    },
+    {
+      "category": "CrossRead",
+      "test": "B GET A contact by ID",
+      "status": "BLOCKED",
+      "detail": "status=404"
+    },
+    {
+      "category": "CrossRead",
+      "test": "B GET A company by ID",
+      "status": "BLOCKED",
+      "detail": "status=404"
+    },
+    {
+      "category": "CrossRead",
+      "test": "A GET B lead by ID",
+      "status": "BLOCKED",
+      "detail": "status=404"
+    },
+    {
+      "category": "CrossRead",
+      "test": "A GET B contact by ID",
+      "status": "BLOCKED",
+      "detail": "status=404"
+    },
+    {
+      "category": "CrossRead",
+      "test": "A GET B company by ID",
+      "status": "BLOCKED",
+      "detail": "status=404"
+    },
+    {
+      "category": "CrossList",
+      "test": "A leads list: no B data",
+      "status": "BLOCKED",
+      "detail": "foundB=false"
+    },
+    {
+      "category": "CrossList",
+      "test": "B leads list: no A data",
+      "status": "BLOCKED",
+      "detail": "foundA=false"
+    },
+    {
+      "category": "CrossList",
+      "test": "A contacts list: no B data",
+      "status": "BLOCKED",
+      "detail": "foundB=false"
+    },
+    {
+      "category": "CrossList",
+      "test": "B contacts list: no A data",
+      "status": "BLOCKED",
+      "detail": "foundA=false"
+    },
+    {
+      "category": "CrossList",
+      "test": "A companies list: no B data",
+      "status": "BLOCKED",
+      "detail": "foundB=false"
+    },
+    {
+      "category": "CrossList",
+      "test": "B companies list: no A data",
+      "status": "BLOCKED",
+      "detail": "foundA=false"
+    },
+    {
+      "category": "CrossCreate",
+      "test": "B cannot inject record into A via body tenantId",
+      "status": "BLOCKED",
+      "detail": "intrudeInA=false"
+    },
+    {
+      "category": "CrossUpdate",
+      "test": "B cannot UPDATE A lead",
+      "status": "BLOCKED",
+      "detail": "status=404"
+    },
+    {
+      "category": "CrossUpdate",
+      "test": "B cannot UPDATE A contact",
+      "status": "BLOCKED",
+      "detail": "status=404"
+    },
+    {
+      "category": "CrossUpdate",
+      "test": "B cannot UPDATE A company",
+      "status": "BLOCKED",
+      "detail": "status=404"
+    },
+    {
+      "category": "CrossUpdate",
+      "test": "A cannot UPDATE B lead",
+      "status": "BLOCKED",
+      "detail": "status=404"
+    },
+    {
+      "category": "CrossDelete",
+      "test": "B cannot DELETE A lead",
+      "status": "BLOCKED",
+      "detail": "status=404"
+    },
+    {
+      "category": "CrossDelete",
+      "test": "B cannot DELETE A contact",
+      "status": "BLOCKED",
+      "detail": "status=404"
+    },
+    {
+      "category": "CrossDelete",
+      "test": "B cannot DELETE A company",
+      "status": "BLOCKED",
+      "detail": "status=404"
+    },
+    {
+      "category": "CrossDelete",
+      "test": "A cannot DELETE B lead",
+      "status": "BLOCKED",
+      "detail": "status=404"
+    },
+    {
+      "category": "IDManip",
+      "test": "B + ?tenantId=A on direct ID",
+      "status": "BLOCKED",
+      "detail": "status=404"
+    },
+    {
+      "category": "IDManip",
+      "test": "B + X-Tenant-Id header=A",
+      "status": "BLOCKED",
+      "detail": "status=404"
+    },
+    {
+      "category": "QueryManip",
+      "test": "B + ?tenantId=A in leads list",
+      "status": "BLOCKED",
+      "detail": "leaked=false"
+    },
+    {
+      "category": "QueryManip",
+      "test": "B + ?tenantId=A in contacts list",
+      "status": "BLOCKED",
+      "detail": "leaked=false"
+    },
+    {
+      "category": "QueryManip",
+      "test": "B + ?tenantId=A in companies list",
+      "status": "BLOCKED",
+      "detail": "leaked=false"
+    },
+    {
+      "category": "URLManip",
+      "test": "B accesses /leads/{A_ID}",
+      "status": "BLOCKED",
+      "detail": "status=404"
+    },
+    {
+      "category": "URLManip",
+      "test": "B accesses /companies/{A_ID}/contacts",
+      "status": "BLOCKED",
+      "detail": "status=404"
+    },
+    {
+      "category": "UI-Protect",
+      "test": "Unauthenticated /dashboard → redirect",
+      "status": "PASS",
+      "detail": "status=307"
+    },
+    {
+      "category": "UI-Protect",
+      "test": "Unauthenticated /leads → redirect",
+      "status": "PASS",
+      "detail": "status=307"
+    },
+    {
+      "category": "UI-Protect",
+      "test": "Unauthenticated /contacts → redirect",
+      "status": "PASS",
+      "detail": "status=307"
+    },
+    {
+      "category": "UI-Protect",
+      "test": "Unauthenticated /companies → redirect",
+      "status": "PASS",
+      "detail": "status=307"
+    },
+    {
+      "category": "UI-Protect",
+      "test": "Unauthenticated /deals → redirect",
+      "status": "PASS",
+      "detail": "status=307"
+    },
+    {
+      "category": "UI-Protect",
+      "test": "Unauthenticated /employees → redirect",
+      "status": "PASS",
+      "detail": "status=307"
+    },
+    {
+      "category": "UI-Protect",
+      "test": "Unauthenticated /settings → redirect",
+      "status": "PASS",
+      "detail": "status=307"
+    },
+    {
+      "category": "Integrity",
+      "test": "A lead name unchanged after attacks",
+      "status": "PASS",
+      "detail": "got=\"TENANT-A-LEAD\" expected=\"TENANT-A-LEAD\""
+    },
+    {
+      "category": "Integrity",
+      "test": "A contact name unchanged after attacks",
+      "status": "PASS",
+      "detail": "got=\"TENANT-A-CONTACT\""
+    },
+    {
+      "category": "Integrity",
+      "test": "A company name unchanged after attacks",
+      "status": "PASS",
+      "detail": "got=\"TENANT-A-COMPANY\""
+    },
+    {
+      "category": "Integrity",
+      "test": "B lead name unchanged after attacks",
+      "status": "PASS",
+      "detail": "got=\"TENANT-B-LEAD\""
+    },
+    {
+      "category": "Integrity",
+      "test": "B lead still exists (not deleted by A)",
+      "status": "PASS",
+      "detail": "exists=true"
+    }
+  ],
+  "errors": [],
+  "finalStatus": "TENANT_ISOLATION_PROVEN"
+}
