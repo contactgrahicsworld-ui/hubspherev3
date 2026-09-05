@@ -16,6 +16,7 @@ const PUBLIC_API_PREFIXES = [
   '/api/v1/auth/two-factor/challenge',
   '/api/v1/system/health',
   '/api/v1/communication/webhook',
+  '/api/v1/billing/plans', // Public: plan listing (no auth required)
 ];
 
 const PUBLIC_PAGE_PATHS = new Set([
@@ -24,6 +25,7 @@ const PUBLIC_PAGE_PATHS = new Set([
   '/forgot-password',
   '/reset-password',
   '/setup',
+  '/verify-email',
 ]);
 
 // ============================================
