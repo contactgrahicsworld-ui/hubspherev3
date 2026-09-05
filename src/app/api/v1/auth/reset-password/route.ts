@@ -2,12 +2,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { hashPassword } from '@/lib/auth';
 import { resetPasswordSchema, validate } from '@/lib/validators';
-import { handleApiError, AuthenticationError, ValidationError } from '@/lib/errors';
+import { handleApiError, AuthenticationError, ValidationError, RateLimitError } from '@/lib/errors';
 import { success } from '@/lib/api-response';
 import { createAuditLog } from '@/lib/audit';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit: 5 reset attempts per 15 minutes per IP
+    const { limited, retryAfterMs } = await rateLimit(getClientIp(request) + ':reset-password', 5, 15 * 60 * 1000);
+    if (limited) {
+      throw new RateLimitError('Too many password reset attempts. Please try again later.', Math.ceil(retryAfterMs / 1000));
+    }
+
     const body = await request.json();
     const { token, password } = validate(resetPasswordSchema, body);
 

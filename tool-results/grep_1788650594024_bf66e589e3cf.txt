@@ -1,0 +1,200 @@
+/home/z/my-project/src/app/api/v1/system/providers/route.ts:13:    if (!payload.isSuperAdmin) {
+/home/z/my-project/src/app/api/v1/system/seed/route.ts:23:    if (!payload || !payload.isSuperAdmin) {
+/home/z/my-project/src/app/api/v1/hrms/expenses/[id]/route.ts:95:      await requirePermission(payload.roleCode ?? null, 'expenses.approve', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/hrms/expenses/[id]/route.ts:97:      await requirePermission(payload.roleCode ?? null, 'expenses.reject', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/hrms/expenses/route.ts:93:    await requirePermission(payload.roleCode ?? null, 'expenses.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/hrms/expenses/route.ts:159:    await requirePermission(payload.roleCode ?? null, 'expenses.create', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/hrms/departments/[id]/route.ts:79:    await requirePermission(payload.roleCode ?? null, 'departments.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/hrms/departments/[id]/route.ts:121:    await requirePermission(payload.roleCode ?? null, 'departments.edit', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/hrms/departments/[id]/route.ts:191:    await requirePermission(payload.roleCode ?? null, 'departments.delete', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/hrms/departments/route.ts:77:    await requirePermission(payload.roleCode ?? null, 'departments.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/hrms/departments/route.ts:138:    await requirePermission(payload.roleCode ?? null, 'departments.create', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/hrms/dashboard/route.ts:38:    await requirePermission(payload.roleCode ?? null, 'employees.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/hrms/designations/[id]/route.ts:74:    await requirePermission(payload.roleCode ?? null, 'designations.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/hrms/designations/[id]/route.ts:110:    await requirePermission(payload.roleCode ?? null, 'designations.edit', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/hrms/designations/[id]/route.ts:173:    await requirePermission(payload.roleCode ?? null, 'designations.delete', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/hrms/designations/route.ts:72:    await requirePermission(payload.roleCode ?? null, 'designations.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/hrms/designations/route.ts:128:    await requirePermission(payload.roleCode ?? null, 'designations.create', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/hrms/employees/[id]/route.ts:108:    await requirePermission(payload.roleCode ?? null, 'employees.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/hrms/employees/[id]/route.ts:148:    await requirePermission(payload.roleCode ?? null, 'employees.edit', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/hrms/employees/[id]/route.ts:222:    await requirePermission(payload.roleCode ?? null, 'employees.delete', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/hrms/employees/route.ts:109:    await requirePermission(payload.roleCode ?? null, 'employees.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/hrms/employees/route.ts:179:    await requirePermission(payload.roleCode ?? null, 'employees.create', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/hrms/leave-requests/[id]/route.ts:97:      await requirePermission(payload.roleCode ?? null, 'leave.approve', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/hrms/leave-requests/[id]/route.ts:99:      await requirePermission(payload.roleCode ?? null, 'leave.reject', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/hrms/leave-requests/[id]/route.ts:101:      await requirePermission(payload.roleCode ?? null, 'leave.create', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/hrms/leave-requests/route.ts:94:    await requirePermission(payload.roleCode ?? null, 'leave.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/hrms/leave-requests/route.ts:151:    await requirePermission(payload.roleCode ?? null, 'leave.create', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/leads/[id]/convert/route.ts:42:    await requirePermission(payload.roleCode ?? null, 'leads.edit', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/leads/[id]/route.ts:116:    await requirePermission(payload.roleCode ?? null, 'leads.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/leads/[id]/route.ts:165:    await requirePermission(payload.roleCode ?? null, 'leads.edit', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/leads/[id]/route.ts:255:    await requirePermission(payload.roleCode ?? null, 'leads.delete', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/leads/route.ts:120:    await requirePermission(payload.roleCode ?? null, 'leads.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/leads/route.ts:199:    await requirePermission(payload.roleCode ?? null, 'leads.create', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/dashboard/route.ts:38:    await requirePermission(payload.roleCode ?? null, 'dashboard.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/export/route.ts:53:    await requirePermission(payload.roleCode ?? null, `${entityType}.view`, payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/hrms/payroll/[id]/route.ts:127:    await requirePermission(payload.roleCode ?? null, 'payroll.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/hrms/payroll/[id]/route.ts:186:        await requirePermission(payload.roleCode ?? null, perm, payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/hrms/payroll/[id]/route.ts:189:      await requirePermission(payload.roleCode ?? null, 'payroll.edit', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/notes/[id]/route.ts:67:    await requirePermission(payload.roleCode ?? null, 'notes.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/notes/[id]/route.ts:103:    await requirePermission(payload.roleCode ?? null, 'notes.edit', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/notes/[id]/route.ts:157:    await requirePermission(payload.roleCode ?? null, 'notes.delete', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/notes/route.ts:73:    await requirePermission(payload.roleCode ?? null, 'notes.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/notes/route.ts:126:    await requirePermission(payload.roleCode ?? null, 'notes.create', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/timeline/route.ts:48:    await requirePermission(payload.roleCode ?? null, 'activities.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/hrms/payroll/route.ts:101:    await requirePermission(payload.roleCode ?? null, 'payroll.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/hrms/payroll/route.ts:165:    await requirePermission(payload.roleCode ?? null, 'payroll.create', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/companies/[id]/route.ts:110:    await requirePermission(payload.roleCode ?? null, 'companies.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/companies/[id]/route.ts:158:    await requirePermission(payload.roleCode ?? null, 'companies.edit', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/companies/[id]/route.ts:236:    await requirePermission(payload.roleCode ?? null, 'companies.delete', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/companies/route.ts:104:    await requirePermission(payload.roleCode ?? null, 'companies.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/companies/route.ts:185:    await requirePermission(payload.roleCode ?? null, 'companies.create', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/hrms/leave-types/route.ts:75:    await requirePermission(payload.roleCode ?? null, 'leave.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/hrms/leave-types/route.ts:130:    await requirePermission(payload.roleCode ?? null, 'leave.create', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/contacts/[id]/route.ts:111:    await requirePermission(payload.roleCode ?? null, 'contacts.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/contacts/[id]/route.ts:160:    await requirePermission(payload.roleCode ?? null, 'contacts.edit', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/contacts/[id]/route.ts:259:    await requirePermission(payload.roleCode ?? null, 'contacts.delete', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/contacts/route.ts:98:    await requirePermission(payload.roleCode ?? null, 'contacts.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/contacts/route.ts:174:    await requirePermission(payload.roleCode ?? null, 'contacts.create', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/search/route.ts:38:    await requirePermission(payload.roleCode ?? null, 'leads.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/hrms/field-dashboard/route.ts:38:    await requirePermission(payload.roleCode ?? null, 'field.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/tasks/[id]/route.ts:84:    await requirePermission(payload.roleCode ?? null, 'tasks.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/tasks/[id]/route.ts:121:    await requirePermission(payload.roleCode ?? null, 'tasks.edit', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/tasks/[id]/route.ts:220:    await requirePermission(payload.roleCode ?? null, 'tasks.delete', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/tasks/route.ts:73:    await requirePermission(payload.roleCode ?? null, 'tasks.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/tasks/route.ts:152:    await requirePermission(payload.roleCode ?? null, 'tasks.create', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/import/route.ts:129:    await requirePermission(payload.roleCode ?? null, `${entityType}.create`, payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/deals/[id]/route.ts:111:    await requirePermission(payload.roleCode ?? null, 'deals.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/deals/[id]/route.ts:160:    await requirePermission(payload.roleCode ?? null, 'deals.edit', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/deals/[id]/route.ts:291:    await requirePermission(payload.roleCode ?? null, 'deals.delete', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/deals/[id]/stage/route.ts:39:    await requirePermission(payload.roleCode ?? null, 'deals.edit', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/deals/route.ts:100:    await requirePermission(payload.roleCode ?? null, 'deals.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/deals/route.ts:175:    await requirePermission(payload.roleCode ?? null, 'deals.create', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/hrms/field-visits/[id]/route.ts:98:    await requirePermission(payload.roleCode ?? null, 'visits.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/hrms/field-visits/[id]/route.ts:138:    await requirePermission(payload.roleCode ?? null, 'visits.edit', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/calls/[id]/route.ts:78:    await requirePermission(payload.roleCode ?? null, 'calls.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/calls/route.ts:102:    await requirePermission(payload.roleCode ?? null, 'calls.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/calls/route.ts:163:    await requirePermission(payload.roleCode ?? null, 'calls.create', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/calls/initiate/route.ts:85:    await requirePermission(payload.roleCode ?? null, 'calls.create', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/tags/route.ts:50:    await requirePermission(payload.roleCode ?? null, 'tags.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/tags/route.ts:108:    await requirePermission(payload.roleCode ?? null, 'tags.create', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/tags/route.ts:155:    await requirePermission(payload.roleCode ?? null, 'tags.delete', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/hrms/field-visits/route.ts:95:    await requirePermission(payload.roleCode ?? null, 'visits.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/hrms/field-visits/route.ts:168:    await requirePermission(payload.roleCode ?? null, 'visits.create', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/follow-ups/[id]/route.ts:74:    await requirePermission(payload.roleCode ?? null, 'followups.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/follow-ups/[id]/route.ts:110:    await requirePermission(payload.roleCode ?? null, 'followups.edit', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/follow-ups/[id]/route.ts:182:    await requirePermission(payload.roleCode ?? null, 'followups.delete', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/follow-ups/route.ts:72:    await requirePermission(payload.roleCode ?? null, 'followups.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/crm/follow-ups/route.ts:129:    await requirePermission(payload.roleCode ?? null, 'followups.create', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/hrms/attendance/[id]/route.ts:93:    await requirePermission(payload.roleCode ?? null, 'attendance.edit', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/auth/refresh/route.ts:75:    } else if (storedToken.user.isSuperAdmin) {
+/home/z/my-project/src/app/api/v1/auth/refresh/route.ts:83:      isSuperAdmin: storedToken.user.isSuperAdmin,
+/home/z/my-project/src/app/api/v1/auth/login/route.ts:43:        id: true, email: true, name: true, isSuperAdmin: true, status: true,
+/home/z/my-project/src/app/api/v1/auth/login/route.ts:92:      isSuperAdmin: user.isSuperAdmin,
+/home/z/my-project/src/app/api/v1/auth/login/route.ts:131:          isSuperAdmin: user.isSuperAdmin,
+/home/z/my-project/src/app/api/v1/auth/login/route.ts:138:        role: user.isSuperAdmin ? 'SUPER_ADMIN' : (roleCode ?? null),
+/home/z/my-project/src/app/api/v1/hrms/attendance/route.ts:91:    await requirePermission(payload.roleCode ?? null, 'attendance.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/hrms/attendance/route.ts:155:    await requirePermission(payload.roleCode ?? null, 'attendance.create', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/analytics/hr/route.ts:38:    await requirePermission(payload.roleCode ?? null, 'employees.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/auth/two-factor/challenge/route.ts:59:      isSuperAdmin: user.isSuperAdmin,
+/home/z/my-project/src/app/api/v1/auth/two-factor/challenge/route.ts:84:        user: { id: user.id, email: user.email, name: user.name, isSuperAdmin: user.isSuperAdmin, status: user.status, avatarUrl: user.avatarUrl },
+/home/z/my-project/src/app/api/v1/analytics/telecaller/route.ts:38:    await requirePermission(payload.roleCode ?? null, 'calls.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/auth/signup/route.ts:74:          isSuperAdmin: true,
+/home/z/my-project/src/app/api/v1/auth/signup/route.ts:115:        isSuperAdmin: user.isSuperAdmin,
+/home/z/my-project/src/app/api/v1/auth/signup/route.ts:137:        metadata: { email: user.email, isSuperAdmin: true, tenantName: effectiveTenantName },
+/home/z/my-project/src/app/api/v1/auth/signup/route.ts:149:              isSuperAdmin: user.isSuperAdmin,
+/home/z/my-project/src/app/api/v1/auth/signup/route.ts:207:        isSuperAdmin: user.isSuperAdmin,
+/home/z/my-project/src/app/api/v1/auth/signup/route.ts:241:              isSuperAdmin: user.isSuperAdmin,
+/home/z/my-project/src/app/api/v1/auth/signup/route.ts:315:      isSuperAdmin: user.isSuperAdmin,
+/home/z/my-project/src/app/api/v1/auth/signup/route.ts:349:            isSuperAdmin: user.isSuperAdmin,
+/home/z/my-project/src/app/api/v1/auth/me/route.ts:19:        isSuperAdmin: true,
+/home/z/my-project/src/app/api/v1/auth/me/route.ts:74:          isSuperAdmin: user.isSuperAdmin,
+/home/z/my-project/src/app/api/v1/auth/setup/route.ts:18:      where: { isSuperAdmin: true },
+/home/z/my-project/src/app/api/v1/auth/setup/route.ts:53:          isSuperAdmin: true,
+/home/z/my-project/src/app/api/v1/auth/setup/route.ts:88:      isSuperAdmin: true,
+/home/z/my-project/src/app/api/v1/auth/setup/route.ts:128:          isSuperAdmin: user.isSuperAdmin,
+/home/z/my-project/src/app/api/v1/auth/setup/status/route.ts:24:      where: { isSuperAdmin: true },
+/home/z/my-project/src/app/api/v1/analytics/crm/route.ts:38:    await requirePermission(payload.roleCode ?? null, 'leads.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/admin/memberships/route.ts:19:    await requirePermission(payload.roleCode ?? null, 'users.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/admin/memberships/route.ts:78:    await requirePermission(payload.roleCode ?? null, 'users.edit', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/admin/roles/route.ts:18:    await requirePermission(payload.roleCode ?? null, 'roles.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/admin/roles/route.ts:80:    await requirePermission(payload.roleCode ?? null, 'roles.create', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/admin/roles/[code]/route.ts:21:    await requirePermission(payload.roleCode ?? null, 'roles.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/admin/roles/[code]/route.ts:75:    await requirePermission(payload.roleCode ?? null, 'roles.edit', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/admin/roles/[code]/route.ts:159:    await requirePermission(payload.roleCode ?? null, 'roles.delete', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/admin/invites/route.ts:32:    await requirePermission(auth.roleCode ?? null, 'users.create', auth.tenantId, auth.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/admin/invites/route.ts:139:    await requirePermission(auth.roleCode ?? null, 'users.view', auth.tenantId, auth.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/analytics/report/route.ts:127:    await requirePermission(payload.roleCode ?? null, `${reportModule}.export`, payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/admin/users/[id]/route.ts:22:    await requirePermission(payload.roleCode ?? null, 'users.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/admin/users/[id]/route.ts:87:    await requirePermission(payload.roleCode ?? null, 'users.edit', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/admin/users/[id]/route.ts:164:    await requirePermission(payload.roleCode ?? null, 'users.delete', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/admin/users/route.ts:19:    await requirePermission(payload.roleCode ?? null, 'users.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/admin/users/route.ts:92:    await requirePermission(payload.roleCode ?? null, 'users.create', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/admin/audit/route.ts:18:    await requirePermission(payload.roleCode ?? null, 'audit.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/admin/settings/route.ts:25:    await requirePermission(payload.roleCode ?? null, 'settings.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/admin/settings/route.ts:66:    await requirePermission(payload.roleCode ?? null, 'settings.edit', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/billing/subscription/route.ts:23:    await requirePermission(auth.roleCode ?? null, 'subscriptions.view', auth.tenantId, auth.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/billing/subscription/route.ts:52:    await requirePermission(auth.roleCode ?? null, 'subscriptions.manage', auth.tenantId, auth.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/billing/subscription/route.ts:80:    await requirePermission(auth.roleCode ?? null, 'subscriptions.manage', auth.tenantId, auth.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/analytics/automation/route.ts:38:    await requirePermission(payload.roleCode ?? null, 'automation.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/super-admin/roles/route.ts:11:    if (!payload.isSuperAdmin) {
+/home/z/my-project/src/app/api/v1/analytics/ai-usage/route.ts:47:    await requirePermission(payload.roleCode ?? null, 'ai.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/super-admin/tenants/[id]/route.ts:16:    if (!payload.isSuperAdmin) {
+/home/z/my-project/src/app/api/v1/super-admin/tenants/[id]/route.ts:91:    if (!payload.isSuperAdmin) {
+/home/z/my-project/src/app/api/v1/super-admin/tenants/[id]/route.ts:153:    if (!payload.isSuperAdmin) {
+/home/z/my-project/src/app/api/v1/super-admin/tenants/route.ts:13:    if (!payload.isSuperAdmin) {
+/home/z/my-project/src/app/api/v1/super-admin/tenants/route.ts:59:    if (!payload.isSuperAdmin) {
+/home/z/my-project/src/app/api/v1/super-admin/users/[id]/route.ts:17:    if (!payload.isSuperAdmin) {
+/home/z/my-project/src/app/api/v1/super-admin/users/[id]/route.ts:30:        isSuperAdmin: true,
+/home/z/my-project/src/app/api/v1/super-admin/users/[id]/route.ts:76:    if (!payload.isSuperAdmin) {
+/home/z/my-project/src/app/api/v1/super-admin/users/[id]/route.ts:104:    if (typeof body.isSuperAdmin === 'boolean') updateData.isSuperAdmin = body.isSuperAdmin;
+/home/z/my-project/src/app/api/v1/super-admin/users/[id]/route.ts:115:        isSuperAdmin: true,
+/home/z/my-project/src/app/api/v1/super-admin/users/[id]/route.ts:147:    if (!payload.isSuperAdmin) {
+/home/z/my-project/src/app/api/v1/super-admin/users/route.ts:12:    if (!payload.isSuperAdmin) {
+/home/z/my-project/src/app/api/v1/super-admin/users/route.ts:44:          isSuperAdmin: true,
+/home/z/my-project/src/app/api/v1/analytics/executive/route.ts:38:    await requirePermission(payload.roleCode ?? null, 'dashboard.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/super-admin/audit/route.ts:13:    if (!payload.isSuperAdmin) {
+/home/z/my-project/src/app/api/v1/super-admin/stats/route.ts:11:    if (!payload.isSuperAdmin) {
+/home/z/my-project/src/app/api/v1/analytics/communication/route.ts:38:    await requirePermission(payload.roleCode ?? null, 'messages.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/automation/dashboard/route.ts:17:    await requirePermission(payload.roleCode ?? null, 'automation.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/automation/executions/[id]/route.ts:20:    await requirePermission(payload.roleCode ?? null, 'automation.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/automation/executions/route.ts:18:    await requirePermission(payload.roleCode ?? null, 'automation.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/automation/events/route.ts:201:    await requirePermission(payload.roleCode ?? null, 'automation.execute', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/automation/workflows/route.ts:93:    await requirePermission(payload.roleCode ?? null, 'automation.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/automation/workflows/route.ts:147:    await requirePermission(payload.roleCode ?? null, 'automation.create', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/ai/providers/route.ts:22:    await requirePermission(payload.roleCode ?? null, 'ai.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/ai/agents/route.ts:39:    await requirePermission(payload.roleCode ?? null, 'ai.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/automation/workflows/[id]/pause/route.ts:21:    await requirePermission(payload.roleCode ?? null, 'automation.edit', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/ai/usage/route.ts:21:    await requirePermission(payload.roleCode ?? null, 'ai.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/automation/workflows/[id]/route.ts:89:    await requirePermission(payload.roleCode ?? null, 'automation.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/automation/workflows/[id]/route.ts:126:    await requirePermission(payload.roleCode ?? null, 'automation.edit', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/automation/workflows/[id]/route.ts:254:    await requirePermission(payload.roleCode ?? null, 'automation.delete', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/communication/conversations/[id]/route.ts:150:    await requirePermission(payload.roleCode ?? null, 'conversations.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/communication/conversations/[id]/route.ts:225:    await requirePermission(payload.roleCode ?? null, 'conversations.edit', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/communication/conversations/[id]/route.ts:313:    await requirePermission(payload.roleCode ?? null, 'conversations.delete', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/communication/conversations/[id]/messages/route.ts:111:    await requirePermission(payload.roleCode ?? null, 'messages.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/communication/conversations/[id]/messages/route.ts:183:    await requirePermission(payload.roleCode ?? null, 'messages.create', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/communication/conversations/[id]/read/route.ts:27:    await requirePermission(payload.roleCode ?? null, 'conversations.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/communication/conversations/route.ts:88:    await requirePermission(payload.roleCode ?? null, 'conversations.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/communication/conversations/route.ts:178:    await requirePermission(payload.roleCode ?? null, 'conversations.create', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/automation/workflows/[id]/executions/route.ts:21:    await requirePermission(payload.roleCode ?? null, 'automation.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/communication/providers/[id]/route.ts:71:    await requirePermission(payload.roleCode ?? null, 'communication_settings.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/communication/providers/[id]/route.ts:115:    await requirePermission(payload.roleCode ?? null, 'communication_settings.manage', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/communication/providers/route.ts:92:    await requirePermission(payload.roleCode ?? null, 'communication_settings.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/communication/providers/route.ts:147:    await requirePermission(payload.roleCode ?? null, 'communication_settings.manage', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/communication/providers/route.ts:237:    await requirePermission(payload.roleCode ?? null, 'communication_settings.manage', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/communication/cancel/route.ts:53:    await requirePermission(payload.roleCode ?? null, 'messages.update', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/communication/dashboard/route.ts:20:    await requirePermission(payload.roleCode ?? null, 'conversations.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/communication/notifications/[id]/route.ts:28:    await requirePermission(payload.roleCode ?? null, 'notifications.delete', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/communication/notifications/route.ts:82:    await requirePermission(payload.roleCode ?? null, 'notifications.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/communication/notifications/route.ts:168:    await requirePermission(payload.roleCode ?? null, 'notifications.create', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/communication/notifications/route.ts:255:    await requirePermission(payload.roleCode ?? null, 'notifications.edit', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/automation/workflows/[id]/activate/route.ts:21:    await requirePermission(payload.roleCode ?? null, 'automation.edit', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/communication/bulk/route.ts:68:    await requirePermission(payload.roleCode ?? null, 'messages.create', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/communication/bulk/route.ts:172:    await requirePermission(payload.roleCode ?? null, 'messages.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/communication/send/route.ts:87:    await requirePermission(payload.roleCode ?? null, 'messages.create', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/communication/templates/[id]/route.ts:85:    await requirePermission(payload.roleCode ?? null, 'templates.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/communication/templates/[id]/route.ts:129:    await requirePermission(payload.roleCode ?? null, 'templates.edit', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/communication/templates/[id]/route.ts:222:    await requirePermission(payload.roleCode ?? null, 'templates.delete', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/communication/templates/route.ts:86:    await requirePermission(payload.roleCode ?? null, 'templates.view', payload.tenantId, payload.isSuperAdmin);
+/home/z/my-project/src/app/api/v1/communication/templates/route.ts:145:    await requirePermission(payload.roleCode ?? null, 'templates.create', payload.tenantId, payload.isSuperAdmin);

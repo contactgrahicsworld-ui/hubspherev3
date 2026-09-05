@@ -1,0 +1,1453 @@
+{
+  "total": 206,
+  "passed": 158,
+  "failed": 46,
+  "skipped": 2,
+  "tests": [
+    {
+      "category": "Auth",
+      "name": "Signup with new tenant creation",
+      "status": "PASS",
+      "detail": "uid=562461c5-bd02-4db7-98d1-133610e74043",
+      "ms": 0
+    },
+    {
+      "category": "Auth",
+      "name": "Login with correct credentials",
+      "status": "PASS",
+      "detail": "status=200",
+      "ms": 0
+    },
+    {
+      "category": "Auth",
+      "name": "Login with wrong password",
+      "status": "PASS",
+      "detail": "status=401",
+      "ms": 0
+    },
+    {
+      "category": "Auth",
+      "name": "Login with non-existent email",
+      "status": "PASS",
+      "detail": "status=401",
+      "ms": 0
+    },
+    {
+      "category": "Auth",
+      "name": "Token refresh",
+      "status": "PASS",
+      "detail": "New access token received",
+      "ms": 0
+    },
+    {
+      "category": "Auth",
+      "name": "Access token lifetime is 15 minutes",
+      "status": "PASS",
+      "detail": "lifetime=900s expected=900s",
+      "ms": 0
+    },
+    {
+      "category": "Auth",
+      "name": "Logout",
+      "status": "PASS",
+      "detail": "status=200",
+      "ms": 0
+    },
+    {
+      "category": "Auth",
+      "name": "Auth cookie set on login",
+      "status": "PASS",
+      "detail": "Set-Cookie present",
+      "ms": 0
+    },
+    {
+      "category": "Auth",
+      "name": "Rate limiting on signup",
+      "status": "PASS",
+      "detail": "Rate limit endpoint responds (429 possible)",
+      "ms": 0
+    },
+    {
+      "category": "Auth",
+      "name": "Rate limiting on login",
+      "status": "PASS",
+      "detail": "429 received",
+      "ms": 0
+    },
+    {
+      "category": "Auth",
+      "name": "Change password",
+      "status": "PASS",
+      "detail": "status=200",
+      "ms": 0
+    },
+    {
+      "category": "Auth",
+      "name": "Login after password change",
+      "status": "FAIL",
+      "detail": "Login failed",
+      "ms": 0
+    },
+    {
+      "category": "Auth",
+      "name": "Forgot password request",
+      "status": "PASS",
+      "detail": "status=200",
+      "ms": 0
+    },
+    {
+      "category": "Auth",
+      "name": "Concurrent login attempts",
+      "status": "FAIL",
+      "detail": "0/5 succeeded",
+      "ms": 0
+    },
+    {
+      "category": "Auth",
+      "name": "Duplicate email signup rejected",
+      "status": "PASS",
+      "detail": "status=400",
+      "ms": 0
+    },
+    {
+      "category": "Auth",
+      "name": "GET /auth/me with valid token",
+      "status": "PASS",
+      "detail": "status=200",
+      "ms": 0
+    },
+    {
+      "category": "Auth",
+      "name": "GET /auth/me without token",
+      "status": "PASS",
+      "detail": "status=401",
+      "ms": 0
+    },
+    {
+      "category": "Auth",
+      "name": "Login with empty body",
+      "status": "PASS",
+      "detail": "status=429",
+      "ms": 0
+    },
+    {
+      "category": "Auth",
+      "name": "Signup with mismatched passwords",
+      "status": "PASS",
+      "detail": "status=400",
+      "ms": 0
+    },
+    {
+      "category": "Auth",
+      "name": "Refresh with invalid token",
+      "status": "PASS",
+      "detail": "status=401",
+      "ms": 0
+    },
+    {
+      "category": "Auth",
+      "name": "Signup with short password rejected",
+      "status": "PASS",
+      "detail": "status=429",
+      "ms": 0
+    },
+    {
+      "category": "Onboarding",
+      "name": "New signup creates own tenant",
+      "status": "PASS",
+      "detail": "role=VIEWER",
+      "ms": 0
+    },
+    {
+      "category": "Onboarding",
+      "name": "New signup becomes TENANT_OWNER",
+      "status": "FAIL",
+      "detail": "role=VIEWER",
+      "ms": 0
+    },
+    {
+      "category": "Onboarding",
+      "name": "New signup gets FREE subscription",
+      "status": "FAIL",
+      "detail": "plan=undefined",
+      "ms": 0
+    },
+    {
+      "category": "Onboarding",
+      "name": "New signup gets TRIALING status",
+      "status": "FAIL",
+      "detail": "status=undefined",
+      "ms": 0
+    },
+    {
+      "category": "Onboarding",
+      "name": "Subscription created on signup",
+      "status": "FAIL",
+      "detail": "status=404",
+      "ms": 0
+    },
+    {
+      "category": "Onboarding",
+      "name": "Plan is FREE initially",
+      "status": "FAIL",
+      "detail": "plan=undefined",
+      "ms": 0
+    },
+    {
+      "category": "Onboarding",
+      "name": "Trial period is 14 days",
+      "status": "FAIL",
+      "detail": "No period dates in billing response",
+      "ms": 0
+    },
+    {
+      "category": "Onboarding",
+      "name": "Audit log records signup event",
+      "status": "PASS",
+      "detail": "status=200",
+      "ms": 0
+    },
+    {
+      "category": "Onboarding",
+      "name": "User status is ACTIVE after signup",
+      "status": "PASS",
+      "detail": "status=ACTIVE",
+      "ms": 0
+    },
+    {
+      "category": "Onboarding",
+      "name": "Membership status is ACTIVE",
+      "status": "FAIL",
+      "detail": "status=undefined",
+      "ms": 0
+    },
+    {
+      "category": "Onboarding",
+      "name": "isSuperAdmin is false for normal signup",
+      "status": "PASS",
+      "detail": "isSuperAdmin=false",
+      "ms": 0
+    },
+    {
+      "category": "Onboarding",
+      "name": "User can access CRM leads after signup",
+      "status": "PASS",
+      "detail": "status=200",
+      "ms": 0
+    },
+    {
+      "category": "Onboarding",
+      "name": "Tenant name matches signup",
+      "status": "FAIL",
+      "detail": "name=undefined",
+      "ms": 0
+    },
+    {
+      "category": "Onboarding",
+      "name": "Billing status has required fields",
+      "status": "FAIL",
+      "detail": "plan=undefined status=undefined maxUsers=undefined",
+      "ms": 0
+    },
+    {
+      "category": "CRM",
+      "name": "Create lead",
+      "status": "FAIL",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "CRM",
+      "name": "List leads",
+      "status": "PASS",
+      "detail": "status=200",
+      "ms": 0
+    },
+    {
+      "category": "CRM",
+      "name": "Create contact",
+      "status": "FAIL",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "CRM",
+      "name": "List contacts",
+      "status": "PASS",
+      "detail": "status=200",
+      "ms": 0
+    },
+    {
+      "category": "CRM",
+      "name": "Create company",
+      "status": "FAIL",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "CRM",
+      "name": "List companies",
+      "status": "PASS",
+      "detail": "status=200",
+      "ms": 0
+    },
+    {
+      "category": "CRM",
+      "name": "Create deal",
+      "status": "FAIL",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "CRM",
+      "name": "List deals",
+      "status": "PASS",
+      "detail": "status=200",
+      "ms": 0
+    },
+    {
+      "category": "CRM",
+      "name": "Create task",
+      "status": "FAIL",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "CRM",
+      "name": "List tasks",
+      "status": "PASS",
+      "detail": "status=200",
+      "ms": 0
+    },
+    {
+      "category": "CRM",
+      "name": "Create follow-up",
+      "status": "FAIL",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "CRM",
+      "name": "CRM search",
+      "status": "PASS",
+      "detail": "status=200",
+      "ms": 0
+    },
+    {
+      "category": "CRM",
+      "name": "Lead conversion",
+      "status": "SKIP",
+      "detail": "Could not create lead for conversion",
+      "ms": 0
+    },
+    {
+      "category": "CRM",
+      "name": "Import endpoint responds",
+      "status": "PASS",
+      "detail": "status=500",
+      "ms": 0
+    },
+    {
+      "category": "CRM",
+      "name": "Export endpoint responds",
+      "status": "PASS",
+      "detail": "status=200",
+      "ms": 0
+    },
+    {
+      "category": "HRMS",
+      "name": "Create department",
+      "status": "PASS",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "HRMS",
+      "name": "List departments",
+      "status": "PASS",
+      "detail": "status=200",
+      "ms": 0
+    },
+    {
+      "category": "HRMS",
+      "name": "Create designation",
+      "status": "PASS",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "HRMS",
+      "name": "List designations",
+      "status": "PASS",
+      "detail": "status=200",
+      "ms": 0
+    },
+    {
+      "category": "HRMS",
+      "name": "List employees",
+      "status": "PASS",
+      "detail": "status=200",
+      "ms": 0
+    },
+    {
+      "category": "HRMS",
+      "name": "List attendance",
+      "status": "PASS",
+      "detail": "status=200",
+      "ms": 0
+    },
+    {
+      "category": "HRMS",
+      "name": "Create attendance record",
+      "status": "PASS",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "HRMS",
+      "name": "List leave requests",
+      "status": "PASS",
+      "detail": "status=200",
+      "ms": 0
+    },
+    {
+      "category": "HRMS",
+      "name": "List payroll",
+      "status": "PASS",
+      "detail": "status=200",
+      "ms": 0
+    },
+    {
+      "category": "HRMS",
+      "name": "List expenses",
+      "status": "PASS",
+      "detail": "status=200",
+      "ms": 0
+    },
+    {
+      "category": "HRMS",
+      "name": "Create expense",
+      "status": "PASS",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "HRMS",
+      "name": "HRMS dashboard",
+      "status": "PASS",
+      "detail": "status=200",
+      "ms": 0
+    },
+    {
+      "category": "HRMS",
+      "name": "List leave types",
+      "status": "PASS",
+      "detail": "status=200",
+      "ms": 0
+    },
+    {
+      "category": "HRMS",
+      "name": "Field sales dashboard",
+      "status": "PASS",
+      "detail": "status=200",
+      "ms": 0
+    },
+    {
+      "category": "HRMS",
+      "name": "List field visits",
+      "status": "PASS",
+      "detail": "status=200",
+      "ms": 0
+    },
+    {
+      "category": "HRMS",
+      "name": "Create leave request",
+      "status": "PASS",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "HRMS",
+      "name": "Payroll endpoint responds",
+      "status": "PASS",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "Admin",
+      "name": "User listing (tenant-scoped)",
+      "status": "PASS",
+      "detail": "status=200",
+      "ms": 0
+    },
+    {
+      "category": "Admin",
+      "name": "Users are tenant-scoped",
+      "status": "PASS",
+      "detail": "count=?",
+      "ms": 0
+    },
+    {
+      "category": "Admin",
+      "name": "Role listing",
+      "status": "PASS",
+      "detail": "status=200",
+      "ms": 0
+    },
+    {
+      "category": "Admin",
+      "name": "Membership listing",
+      "status": "PASS",
+      "detail": "status=200",
+      "ms": 0
+    },
+    {
+      "category": "Admin",
+      "name": "Audit log access",
+      "status": "PASS",
+      "detail": "status=200",
+      "ms": 0
+    },
+    {
+      "category": "Admin",
+      "name": "Get settings",
+      "status": "PASS",
+      "detail": "status=200",
+      "ms": 0
+    },
+    {
+      "category": "Admin",
+      "name": "Update settings",
+      "status": "FAIL",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "Admin",
+      "name": "Create user via admin",
+      "status": "FAIL",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "Admin",
+      "name": "Get role by code",
+      "status": "PASS",
+      "detail": "status=200",
+      "ms": 0
+    },
+    {
+      "category": "Admin",
+      "name": "Invite user endpoint",
+      "status": "FAIL",
+      "detail": "status=404",
+      "ms": 0
+    },
+    {
+      "category": "Admin",
+      "name": "Audit log with pagination",
+      "status": "PASS",
+      "detail": "status=200",
+      "ms": 0
+    },
+    {
+      "category": "Admin",
+      "name": "Users with pagination",
+      "status": "PASS",
+      "detail": "status=200",
+      "ms": 0
+    },
+    {
+      "category": "Admin",
+      "name": "System roles present",
+      "status": "PASS",
+      "detail": "TENANT_OWNER found=true",
+      "ms": 0
+    },
+    {
+      "category": "Admin",
+      "name": "User search",
+      "status": "PASS",
+      "detail": "status=200",
+      "ms": 0
+    },
+    {
+      "category": "Admin",
+      "name": "Audit log search",
+      "status": "PASS",
+      "detail": "status=200",
+      "ms": 0
+    },
+    {
+      "category": "Admin",
+      "name": "Memberships with pagination",
+      "status": "PASS",
+      "detail": "status=200",
+      "ms": 0
+    },
+    {
+      "category": "Admin",
+      "name": "Settings update timezone",
+      "status": "FAIL",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "Billing",
+      "name": "Get billing status",
+      "status": "FAIL",
+      "detail": "status=404",
+      "ms": 0
+    },
+    {
+      "category": "Billing",
+      "name": "List available plans (public)",
+      "status": "FAIL",
+      "detail": "status=404",
+      "ms": 0
+    },
+    {
+      "category": "Billing",
+      "name": "Plan change FREE → STARTER",
+      "status": "FAIL",
+      "detail": "status=404",
+      "ms": 0
+    },
+    {
+      "category": "Billing",
+      "name": "Plan is now STARTER",
+      "status": "FAIL",
+      "detail": "plan=undefined",
+      "ms": 0
+    },
+    {
+      "category": "Billing",
+      "name": "Seat limit reflects plan (STARTER=10)",
+      "status": "FAIL",
+      "detail": "maxUsers=undefined",
+      "ms": 0
+    },
+    {
+      "category": "Billing",
+      "name": "Subscription cancellation",
+      "status": "FAIL",
+      "detail": "status=404",
+      "ms": 0
+    },
+    {
+      "category": "Billing",
+      "name": "Invalid plan rejected",
+      "status": "PASS",
+      "detail": "status=404",
+      "ms": 0
+    },
+    {
+      "category": "Billing",
+      "name": "Downgrade to FREE",
+      "status": "FAIL",
+      "detail": "status=404",
+      "ms": 0
+    },
+    {
+      "category": "Billing",
+      "name": "Billing without auth rejected",
+      "status": "FAIL",
+      "detail": "status=404",
+      "ms": 0
+    },
+    {
+      "category": "Billing",
+      "name": "Plans endpoint is public",
+      "status": "FAIL",
+      "detail": "status=404",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Unauth GET /api/v1/crm/leads → 401",
+      "status": "PASS",
+      "detail": "status=401",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Unauth GET /api/v1/crm/contacts → 401",
+      "status": "PASS",
+      "detail": "status=401",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Unauth GET /api/v1/crm/companies → 401",
+      "status": "PASS",
+      "detail": "status=401",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Unauth GET /api/v1/crm/deals → 401",
+      "status": "PASS",
+      "detail": "status=401",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Unauth GET /api/v1/crm/tasks → 401",
+      "status": "PASS",
+      "detail": "status=401",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Unauth GET /api/v1/crm/follow-ups → 401",
+      "status": "PASS",
+      "detail": "status=401",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Unauth GET /api/v1/hrms/employees → 401",
+      "status": "PASS",
+      "detail": "status=401",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Unauth GET /api/v1/hrms/departments → 401",
+      "status": "PASS",
+      "detail": "status=401",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Unauth GET /api/v1/hrms/attendance → 401",
+      "status": "PASS",
+      "detail": "status=401",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Unauth GET /api/v1/hrms/leave-requests → 401",
+      "status": "PASS",
+      "detail": "status=401",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Unauth GET /api/v1/admin/users → 401",
+      "status": "PASS",
+      "detail": "status=401",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Unauth GET /api/v1/admin/roles → 401",
+      "status": "PASS",
+      "detail": "status=401",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Unauth GET /api/v1/admin/audit → 401",
+      "status": "PASS",
+      "detail": "status=401",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Unauth GET /api/v1/admin/settings → 401",
+      "status": "PASS",
+      "detail": "status=401",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Unauth GET /api/v1/billing/subscription → 401",
+      "status": "FAIL",
+      "detail": "status=404",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Invalid JWT token rejected",
+      "status": "PASS",
+      "detail": "status=401",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Expired JWT token rejected",
+      "status": "PASS",
+      "detail": "status=401",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Tampered JWT payload rejected",
+      "status": "PASS",
+      "detail": "status=401",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Role escalation attempt blocked",
+      "status": "PASS",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Super-admin access as normal user blocked",
+      "status": "PASS",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "SQL injection in search",
+      "status": "PASS",
+      "detail": "status=200",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "XSS in text fields sanitized",
+      "status": "FAIL",
+      "detail": "status=403 sanitized=false",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Path traversal rejected",
+      "status": "PASS",
+      "detail": "status=404",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "General rate limit not blocking normal requests",
+      "status": "FAIL",
+      "detail": "status=404",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Missing authorization header → 401",
+      "status": "PASS",
+      "detail": "status=401",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Wrong content type handled",
+      "status": "PASS",
+      "detail": "status=400",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Oversized payload rejected",
+      "status": "PASS",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Empty body on create rejected",
+      "status": "PASS",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Null bytes in input handled",
+      "status": "PASS",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Very long string rejected",
+      "status": "PASS",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Special characters in email rejected",
+      "status": "PASS",
+      "detail": "status=400",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Numeric ID handled (not UUID)",
+      "status": "PASS",
+      "detail": "status=404",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Super admin stats protected",
+      "status": "PASS",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Super admin users protected",
+      "status": "PASS",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Super admin audit protected",
+      "status": "PASS",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Super admin roles protected",
+      "status": "PASS",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Cross-origin request handled",
+      "status": "PASS",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "SQL injection in company name",
+      "status": "PASS",
+      "detail": "status=403 (no crash)",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "XSS in company name sanitized",
+      "status": "PASS",
+      "detail": "name=undefined",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Negative deal value handled",
+      "status": "PASS",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Invalid UUID rejected",
+      "status": "PASS",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Email with spaces rejected",
+      "status": "PASS",
+      "detail": "status=400",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Password without uppercase rejected",
+      "status": "PASS",
+      "detail": "status=429",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Password without number rejected",
+      "status": "PASS",
+      "detail": "status=400",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Double signup race condition",
+      "status": "PASS",
+      "detail": "0 succeeded",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "JWT alg=none attack rejected",
+      "status": "FAIL",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Super-admin tenant update as normal user blocked",
+      "status": "PASS",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Mass assignment (tenantId) not injected",
+      "status": "PASS",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Invalid HTTP method handled",
+      "status": "PASS",
+      "detail": "status=405",
+      "ms": 0
+    },
+    {
+      "category": "Security",
+      "name": "Malformed JWT (4 parts) rejected",
+      "status": "PASS",
+      "detail": "status=401",
+      "ms": 0
+    },
+    {
+      "category": "TenantIsolation",
+      "name": "Signup tenant 1",
+      "status": "PASS",
+      "detail": "role=VIEWER",
+      "ms": 0
+    },
+    {
+      "category": "TenantIsolation",
+      "name": "Signup tenant 2",
+      "status": "FAIL",
+      "detail": "Failed",
+      "ms": 0
+    },
+    {
+      "category": "TenantIsolation",
+      "name": "Signup tenant 3",
+      "status": "FAIL",
+      "detail": "Failed",
+      "ms": 0
+    },
+    {
+      "category": "TenantIsolation",
+      "name": "All 3 tenants are different",
+      "status": "FAIL",
+      "detail": "ids=,,",
+      "ms": 0
+    },
+    {
+      "category": "TenantIsolation",
+      "name": "User listing is tenant-scoped",
+      "status": "FAIL",
+      "detail": "T0=0 T1=0 users",
+      "ms": 0
+    },
+    {
+      "category": "TenantIsolation",
+      "name": "Search is tenant-scoped",
+      "status": "FAIL",
+      "detail": "T0=200 T1=401",
+      "ms": 0
+    },
+    {
+      "category": "TenantIsolation",
+      "name": "Employee listing is tenant-scoped",
+      "status": "FAIL",
+      "detail": "T0=200 T1=401",
+      "ms": 0
+    },
+    {
+      "category": "TenantIsolation",
+      "name": "Billing is tenant-scoped",
+      "status": "FAIL",
+      "detail": "T0=404 T1=404",
+      "ms": 0
+    },
+    {
+      "category": "TenantIsolation",
+      "name": "Audit log is tenant-scoped",
+      "status": "FAIL",
+      "detail": "T0=200 T1=401",
+      "ms": 0
+    },
+    {
+      "category": "FeatureFlags",
+      "name": "All feature flag tests",
+      "status": "SKIP",
+      "detail": "No token",
+      "ms": 0
+    },
+    {
+      "category": "Validation",
+      "name": "Lead: missing firstName rejected",
+      "status": "PASS",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "Validation",
+      "name": "Invalid email format rejected",
+      "status": "PASS",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "Validation",
+      "name": "Password too short rejected",
+      "status": "PASS",
+      "detail": "status=429",
+      "ms": 0
+    },
+    {
+      "category": "Validation",
+      "name": "Invalid enum value (deal stage) rejected",
+      "status": "PASS",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "Validation",
+      "name": "Negative deal value handled",
+      "status": "PASS",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "Validation",
+      "name": "String for numeric field rejected",
+      "status": "PASS",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "Validation",
+      "name": "Duplicate email signup rejected",
+      "status": "FAIL",
+      "detail": "status=429",
+      "ms": 0
+    },
+    {
+      "category": "Validation",
+      "name": "Invalid UUID format in path",
+      "status": "PASS",
+      "detail": "status=404",
+      "ms": 0
+    },
+    {
+      "category": "Validation",
+      "name": "Pagination parameters work",
+      "status": "PASS",
+      "detail": "status=200",
+      "ms": 0
+    },
+    {
+      "category": "Validation",
+      "name": "Invalid limit=0 handled",
+      "status": "PASS",
+      "detail": "status=400 (no crash)",
+      "ms": 0
+    },
+    {
+      "category": "Validation",
+      "name": "Negative pagination handled",
+      "status": "PASS",
+      "detail": "status=400 (no crash)",
+      "ms": 0
+    },
+    {
+      "category": "Validation",
+      "name": "Search parameters work",
+      "status": "PASS",
+      "detail": "status=200",
+      "ms": 0
+    },
+    {
+      "category": "Validation",
+      "name": "Company: missing name rejected",
+      "status": "PASS",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "Validation",
+      "name": "Contact: missing firstName rejected",
+      "status": "PASS",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "Validation",
+      "name": "Deal: missing title rejected",
+      "status": "PASS",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "Validation",
+      "name": "Task: missing title rejected",
+      "status": "PASS",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "Validation",
+      "name": "Signup: missing email rejected",
+      "status": "PASS",
+      "detail": "status=429",
+      "ms": 0
+    },
+    {
+      "category": "Validation",
+      "name": "Signup: missing password rejected",
+      "status": "PASS",
+      "detail": "status=429",
+      "ms": 0
+    },
+    {
+      "category": "Validation",
+      "name": "Login: missing email rejected",
+      "status": "PASS",
+      "detail": "status=429",
+      "ms": 0
+    },
+    {
+      "category": "Validation",
+      "name": "Login: missing password rejected",
+      "status": "PASS",
+      "detail": "status=400",
+      "ms": 0
+    },
+    {
+      "category": "Validation",
+      "name": "Change password: missing current rejected",
+      "status": "PASS",
+      "detail": "status=400",
+      "ms": 0
+    },
+    {
+      "category": "Validation",
+      "name": "Forgot password: invalid email rejected",
+      "status": "PASS",
+      "detail": "status=400",
+      "ms": 0
+    },
+    {
+      "category": "Validation",
+      "name": "Admin create user: invalid email rejected",
+      "status": "PASS",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "Validation",
+      "name": "Admin create user: invalid role rejected",
+      "status": "PASS",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "Validation",
+      "name": "Plan change: invalid plan rejected",
+      "status": "PASS",
+      "detail": "status=404",
+      "ms": 0
+    },
+    {
+      "category": "Validation",
+      "name": "Whitespace-only firstName rejected",
+      "status": "PASS",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "Validation",
+      "name": "Email with spaces handled",
+      "status": "PASS",
+      "detail": "status=429 (should trim or reject)",
+      "ms": 0
+    },
+    {
+      "category": "Validation",
+      "name": "Boolean for numeric field rejected",
+      "status": "PASS",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "Validation",
+      "name": "Array for string field rejected",
+      "status": "PASS",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "Validation",
+      "name": "Null for required field rejected",
+      "status": "PASS",
+      "detail": "status=403",
+      "ms": 0
+    },
+    {
+      "category": "Health",
+      "name": "Health endpoint",
+      "status": "PASS",
+      "detail": "status=200 data={\"status\":\"ok\",\"timestamp\":\"2026-09-05T23:19:23.552Z\",\"uptime\":439,\"database\":\"connected\"}",
+      "ms": 0
+    },
+    {
+      "category": "Health",
+      "name": "Database connectivity",
+      "status": "PASS",
+      "detail": "database=connected",
+      "ms": 0
+    },
+    {
+      "category": "Health",
+      "name": "Response time GET /api/v1/system/health",
+      "status": "PASS",
+      "detail": "57ms",
+      "ms": 0
+    },
+    {
+      "category": "Health",
+      "name": "Response time GET /api/v1/billing/plans",
+      "status": "PASS",
+      "detail": "62ms",
+      "ms": 0
+    },
+    {
+      "category": "Health",
+      "name": "CORS headers present",
+      "status": "PASS",
+      "detail": "access-control-allow-origin=https://hubspherev3.vercel.app",
+      "ms": 0
+    },
+    {
+      "category": "Health",
+      "name": "Security headers",
+      "status": "PASS",
+      "detail": "{\"x-content-type-options\":\"nosniff\",\"x-frame-options\":\"DENY\",\"x-xss-protection\":null,\"strict-transport-security\":\"max-age=31536000; includeSubDomains\"}",
+      "ms": 0
+    },
+    {
+      "category": "Health",
+      "name": "Content-Type is application/json",
+      "status": "PASS",
+      "detail": "content-type=application/json",
+      "ms": 0
+    },
+    {
+      "category": "Health",
+      "name": "API root endpoint",
+      "status": "PASS",
+      "detail": "status=200",
+      "ms": 0
+    },
+    {
+      "category": "Health",
+      "name": "Non-existent route returns 404",
+      "status": "PASS",
+      "detail": "status=404",
+      "ms": 0
+    },
+    {
+      "category": "Health",
+      "name": "Health status is \"ok\"",
+      "status": "PASS",
+      "detail": "status=ok",
+      "ms": 0
+    },
+    {
+      "category": "Health",
+      "name": "Health has timestamp",
+      "status": "PASS",
+      "detail": "timestamp=2026-09-05T23:19:23.552Z",
+      "ms": 0
+    },
+    {
+      "category": "Health",
+      "name": "Health has uptime",
+      "status": "PASS",
+      "detail": "uptime=439",
+      "ms": 0
+    },
+    {
+      "category": "Health",
+      "name": "Health has cache-control",
+      "status": "PASS",
+      "detail": "cache-control=public, max-age=10",
+      "ms": 0
+    },
+    {
+      "category": "Critical",
+      "name": "Health check (run 1/3)",
+      "status": "PASS",
+      "detail": "",
+      "ms": 0
+    },
+    {
+      "category": "Critical",
+      "name": "Health check (run 2/3)",
+      "status": "PASS",
+      "detail": "",
+      "ms": 0
+    },
+    {
+      "category": "Critical",
+      "name": "Health check (run 3/3)",
+      "status": "PASS",
+      "detail": "",
+      "ms": 0
+    },
+    {
+      "category": "Critical",
+      "name": "Lead list (run 1/3)",
+      "status": "PASS",
+      "detail": "",
+      "ms": 0
+    },
+    {
+      "category": "Critical",
+      "name": "Lead list (run 2/3)",
+      "status": "PASS",
+      "detail": "",
+      "ms": 0
+    },
+    {
+      "category": "Critical",
+      "name": "Lead list (run 3/3)",
+      "status": "PASS",
+      "detail": "",
+      "ms": 0
+    },
+    {
+      "category": "Critical",
+      "name": "Billing status (run 1/3)",
+      "status": "FAIL",
+      "detail": "",
+      "ms": 0
+    },
+    {
+      "category": "Critical",
+      "name": "Billing status (run 2/3)",
+      "status": "FAIL",
+      "detail": "",
+      "ms": 0
+    },
+    {
+      "category": "Critical",
+      "name": "Billing status (run 3/3)",
+      "status": "FAIL",
+      "detail": "",
+      "ms": 0
+    }
+  ],
+  "startTime": 1788649806368,
+  "endTime": 1788650375231,
+  "durationMs": 568863
+}

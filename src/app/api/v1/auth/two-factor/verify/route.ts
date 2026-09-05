@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthUser } from '@/lib/api-auth';
-import { handleApiError, ValidationError, AuthenticationError } from '@/lib/errors';
+import { handleApiError, ValidationError, AuthenticationError, RateLimitError } from '@/lib/errors';
 import { success } from '@/lib/api-response';
 import { verifyTOTP, enable2FA, generateTOTPSecret, generateRecoveryCodes, generateTOTPUri, requires2FA } from '@/lib/two-factor';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { z } from 'zod';
 
 const verifySchema = z.object({
@@ -17,6 +18,12 @@ const verifySchema = z.object({
  */
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit: 5 verification attempts per 5 minutes per IP
+    const { limited, retryAfterMs } = await rateLimit(getClientIp(request) + ':2fa-verify', 5, 5 * 60 * 1000);
+    if (limited) {
+      throw new RateLimitError('Too many 2FA verification attempts. Please try again later.', Math.ceil(retryAfterMs / 1000));
+    }
+
     const payload = await getAuthUser(request);
 
     const body = await request.json();
