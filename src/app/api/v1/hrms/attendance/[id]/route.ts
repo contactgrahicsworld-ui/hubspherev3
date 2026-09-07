@@ -13,6 +13,7 @@ import { createAuditLog } from '@/lib/audit';
 import { validate } from '@/lib/validators';
 import { Prisma } from '@prisma/client';
 import { z } from 'zod';
+import { requireFeature } from '@/lib/feature-flags';
 
 // ============================================
 // HELPERS
@@ -91,6 +92,8 @@ export async function PUT(
     }
 
     await requirePermission(payload.roleCode ?? null, 'attendance.edit', payload.tenantId, payload.isSuperAdmin);
+
+    if (payload.tenantId) { await requireFeature('hrms', payload.tenantId); }
 
     const { id } = await params;
 

@@ -14,6 +14,7 @@ import { createAuditLog } from '@/lib/audit';
 import { dispatchMessage } from '@/lib/communication/dispatcher';
 import { Prisma } from '@prisma/client';
 import { z } from 'zod';
+import { requireFeature } from '@/lib/feature-flags';
 
 // ============================================
 // SCHEMAS
@@ -85,6 +86,8 @@ export async function POST(request: NextRequest) {
     }
 
     await requirePermission(payload.roleCode ?? null, 'messages.create', payload.tenantId, payload.isSuperAdmin);
+
+    if (payload.tenantId) { await requireFeature('communication', payload.tenantId); }
 
     const body = await request.json();
     const data = validate(sendMessageSchema, body);

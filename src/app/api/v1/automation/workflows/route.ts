@@ -7,6 +7,7 @@ import { getAuthUser } from '@/lib/api-auth';
 import { requirePermission } from '@/lib/rbac';
 import { createAuditLog } from '@/lib/audit';
 import { z } from 'zod';
+import { requireFeature } from '@/lib/feature-flags';
 
 // ============================================
 // SCHEMAS
@@ -92,6 +93,8 @@ export async function GET(request: NextRequest) {
     if (!payload.tenantId) throw new AuthenticationError('Tenant context required');
     await requirePermission(payload.roleCode ?? null, 'automation.view', payload.tenantId, payload.isSuperAdmin);
 
+    if (payload.tenantId) { await requireFeature('automation', payload.tenantId); }
+
     const { searchParams } = new URL(request.url);
     const { page, limit, status, triggerType, search } = validate(workflowListSchema, {
       page: searchParams.get('page') ?? '1',
@@ -145,6 +148,8 @@ export async function POST(request: NextRequest) {
     const payload = await getAuthUser(request);
     if (!payload.tenantId) throw new AuthenticationError('Tenant context required');
     await requirePermission(payload.roleCode ?? null, 'automation.create', payload.tenantId, payload.isSuperAdmin);
+
+    if (payload.tenantId) { await requireFeature('automation', payload.tenantId); }
 
     const body = await request.json();
     const data = validate(createWorkflowSchema, body);

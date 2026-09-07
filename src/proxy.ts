@@ -135,6 +135,22 @@ export function proxy(request: NextRequest): NextResponse {
     }
   }
 
+  // For API routes (not public), check for auth token presence early
+  // This prevents obviously unauthenticated requests from reaching route handlers
+  if (isApi) {
+    const hasToken = request.cookies.get('hs-access-token')?.value ||
+                     request.cookies.get('accessToken')?.value ||
+                     request.headers.get('authorization');
+    if (!hasToken) {
+      const res = NextResponse.json(
+        { success: false, error: 'Authentication required', code: 'UNAUTHENTICATED' },
+        { status: 401 }
+      );
+      applyHeaders(res, true, request);
+      return res;
+    }
+  }
+
   // All other routes: pass through with security headers
   // Actual auth verification happens in each route handler
   const res = NextResponse.next();

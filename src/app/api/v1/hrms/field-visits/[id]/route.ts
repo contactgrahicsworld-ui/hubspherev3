@@ -12,6 +12,7 @@ import { getAuthUser } from '@/lib/api-auth';
 import { requirePermission } from '@/lib/rbac';
 import { createAuditLog } from '@/lib/audit';
 import { z } from 'zod';
+import { requireFeature } from '@/lib/feature-flags';
 
 // ============================================
 // HELPERS
@@ -97,6 +98,8 @@ export async function GET(
 
     await requirePermission(payload.roleCode ?? null, 'visits.view', payload.tenantId, payload.isSuperAdmin);
 
+    if (payload.tenantId) { await requireFeature('hrms', payload.tenantId); }
+
     const { id } = await params;
 
     if (!z.string().uuid().safeParse(id).success) {
@@ -136,6 +139,8 @@ export async function PUT(
     }
 
     await requirePermission(payload.roleCode ?? null, 'visits.edit', payload.tenantId, payload.isSuperAdmin);
+
+    if (payload.tenantId) { await requireFeature('hrms', payload.tenantId); }
 
     const { id } = await params;
 

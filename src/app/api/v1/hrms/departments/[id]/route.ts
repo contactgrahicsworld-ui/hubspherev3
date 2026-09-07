@@ -11,6 +11,7 @@ import { getAuthUser } from '@/lib/api-auth';
 import { requirePermission } from '@/lib/rbac';
 import { createAuditLog } from '@/lib/audit';
 import { z } from 'zod';
+import { requireFeature } from '@/lib/feature-flags';
 
 // ============================================
 // HELPERS
@@ -78,6 +79,8 @@ export async function GET(
 
     await requirePermission(payload.roleCode ?? null, 'departments.view', payload.tenantId, payload.isSuperAdmin);
 
+    if (payload.tenantId) { await requireFeature('hrms', payload.tenantId); }
+
     const { id } = await params;
 
     const department = await db.department.findFirst({
@@ -119,6 +122,8 @@ export async function PUT(
     }
 
     await requirePermission(payload.roleCode ?? null, 'departments.edit', payload.tenantId, payload.isSuperAdmin);
+
+    if (payload.tenantId) { await requireFeature('hrms', payload.tenantId); }
 
     const { id } = await params;
 
@@ -189,6 +194,8 @@ export async function DELETE(
     }
 
     await requirePermission(payload.roleCode ?? null, 'departments.delete', payload.tenantId, payload.isSuperAdmin);
+
+    if (payload.tenantId) { await requireFeature('hrms', payload.tenantId); }
 
     const { id } = await params;
 

@@ -5,6 +5,7 @@ import { success } from '@/lib/api-response';
 import { requirePermission } from '@/lib/rbac';
 import { db } from '@/lib/db';
 import { Prisma } from '@prisma/client';
+import { requireFeature } from '@/lib/feature-flags';
 
 // ============================================
 // GET /api/v1/ai/usage — AI usage stats
@@ -19,6 +20,8 @@ export async function GET(request: NextRequest) {
     }
 
     await requirePermission(payload.roleCode ?? null, 'ai.view', payload.tenantId, payload.isSuperAdmin);
+
+    if (payload.tenantId) { await requireFeature('ai', payload.tenantId); }
 
     const where: Prisma.AiUsageLogWhereInput = {
       tenantId: payload.tenantId,

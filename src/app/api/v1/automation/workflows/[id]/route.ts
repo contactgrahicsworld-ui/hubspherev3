@@ -7,6 +7,7 @@ import { requirePermission } from '@/lib/rbac';
 import { createAuditLog } from '@/lib/audit';
 import { z } from 'zod';
 import { validate } from '@/lib/validators';
+import { requireFeature } from '@/lib/feature-flags';
 
 // ============================================
 // SCHEMAS
@@ -88,6 +89,8 @@ export async function GET(
     if (!payload.tenantId) throw new AuthenticationError('Tenant context required');
     await requirePermission(payload.roleCode ?? null, 'automation.view', payload.tenantId, payload.isSuperAdmin);
 
+    if (payload.tenantId) { await requireFeature('automation', payload.tenantId); }
+
     const { id } = await params;
 
     const workflow = await db.automationWorkflow.findFirst({
@@ -124,6 +127,8 @@ export async function PATCH(
     const payload = await getAuthUser(request);
     if (!payload.tenantId) throw new AuthenticationError('Tenant context required');
     await requirePermission(payload.roleCode ?? null, 'automation.edit', payload.tenantId, payload.isSuperAdmin);
+
+    if (payload.tenantId) { await requireFeature('automation', payload.tenantId); }
 
     const { id } = await params;
     const body = await request.json();
@@ -252,6 +257,8 @@ export async function DELETE(
     const payload = await getAuthUser(request);
     if (!payload.tenantId) throw new AuthenticationError('Tenant context required');
     await requirePermission(payload.roleCode ?? null, 'automation.delete', payload.tenantId, payload.isSuperAdmin);
+
+    if (payload.tenantId) { await requireFeature('automation', payload.tenantId); }
 
     const { id } = await params;
 

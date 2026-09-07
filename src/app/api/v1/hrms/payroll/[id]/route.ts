@@ -12,6 +12,7 @@ import { getAuthUser } from '@/lib/api-auth';
 import { requirePermission } from '@/lib/rbac';
 import { createAuditLog } from '@/lib/audit';
 import { z } from 'zod';
+import { requireFeature } from '@/lib/feature-flags';
 
 // ============================================
 // HELPERS
@@ -126,6 +127,8 @@ export async function GET(
 
     await requirePermission(payload.roleCode ?? null, 'payroll.view', payload.tenantId, payload.isSuperAdmin);
 
+    if (payload.tenantId) { await requireFeature('hrms', payload.tenantId); }
+
     const { id } = await params;
 
     const record = await db.payrollRecord.findFirst({
@@ -159,6 +162,8 @@ export async function PUT(
     if (!payload.tenantId) {
       throw new AuthenticationError('Tenant context required');
     }
+
+    if (payload.tenantId) { await requireFeature('hrms', payload.tenantId); }
 
     const { id } = await params;
 

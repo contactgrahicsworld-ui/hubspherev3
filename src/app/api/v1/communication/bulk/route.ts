@@ -15,6 +15,7 @@ import {
   getCampaignProgress,
 } from '@/lib/communication/campaign-service';
 import { z } from 'zod';
+import { requireFeature } from '@/lib/feature-flags';
 
 // ============================================
 // SCHEMAS
@@ -66,6 +67,8 @@ export async function POST(request: NextRequest) {
     }
 
     await requirePermission(payload.roleCode ?? null, 'messages.create', payload.tenantId, payload.isSuperAdmin);
+
+    if (payload.tenantId) { await requireFeature('communication', payload.tenantId); }
 
     const body = await request.json();
     const data = validate(createBulkSchema, body);
@@ -170,6 +173,8 @@ export async function GET(request: NextRequest) {
     }
 
     await requirePermission(payload.roleCode ?? null, 'messages.view', payload.tenantId, payload.isSuperAdmin);
+
+    if (payload.tenantId) { await requireFeature('communication', payload.tenantId); }
 
     const { searchParams } = new URL(request.url);
     const batchId = searchParams.get('batchId');

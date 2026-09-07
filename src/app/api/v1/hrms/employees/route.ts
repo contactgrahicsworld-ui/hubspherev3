@@ -11,6 +11,7 @@ import { getAuthUser } from '@/lib/api-auth';
 import { requirePermission } from '@/lib/rbac';
 import { createAuditLog } from '@/lib/audit';
 import { z } from 'zod';
+import { requireFeature } from '@/lib/feature-flags';
 
 // ============================================
 // HELPERS
@@ -108,6 +109,8 @@ export async function GET(request: NextRequest) {
 
     await requirePermission(payload.roleCode ?? null, 'employees.view', payload.tenantId, payload.isSuperAdmin);
 
+    if (payload.tenantId) { await requireFeature('hrms', payload.tenantId); }
+
     const { searchParams } = new URL(request.url);
     const { page, limit } = validate(paginationSchema, {
       page: searchParams.get('page') ?? '1',
@@ -177,6 +180,8 @@ export async function POST(request: NextRequest) {
     }
 
     await requirePermission(payload.roleCode ?? null, 'employees.create', payload.tenantId, payload.isSuperAdmin);
+
+    if (payload.tenantId) { await requireFeature('hrms', payload.tenantId); }
 
     const body = await request.json();
     const data = validate(createEmployeeSchema, body);

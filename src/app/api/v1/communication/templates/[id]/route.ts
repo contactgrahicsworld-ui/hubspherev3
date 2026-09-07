@@ -12,6 +12,7 @@ import { getAuthUser } from '@/lib/api-auth';
 import { requirePermission } from '@/lib/rbac';
 import { createAuditLog } from '@/lib/audit';
 import { z } from 'zod';
+import { requireFeature } from '@/lib/feature-flags';
 
 // ============================================
 // SCHEMAS
@@ -84,6 +85,8 @@ export async function GET(
 
     await requirePermission(payload.roleCode ?? null, 'templates.view', payload.tenantId, payload.isSuperAdmin);
 
+    if (payload.tenantId) { await requireFeature('communication', payload.tenantId); }
+
     const { id } = await params;
 
     const template = await db.communicationTemplate.findFirst({
@@ -127,6 +130,8 @@ export async function PATCH(
     }
 
     await requirePermission(payload.roleCode ?? null, 'templates.edit', payload.tenantId, payload.isSuperAdmin);
+
+    if (payload.tenantId) { await requireFeature('communication', payload.tenantId); }
 
     const { id } = await params;
 
@@ -220,6 +225,8 @@ export async function DELETE(
     }
 
     await requirePermission(payload.roleCode ?? null, 'templates.delete', payload.tenantId, payload.isSuperAdmin);
+
+    if (payload.tenantId) { await requireFeature('communication', payload.tenantId); }
 
     const { id } = await params;
 

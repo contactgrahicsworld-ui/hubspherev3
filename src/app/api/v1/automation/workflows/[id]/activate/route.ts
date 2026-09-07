@@ -6,6 +6,7 @@ import { getAuthUser } from '@/lib/api-auth';
 import { requirePermission } from '@/lib/rbac';
 import { createAuditLog } from '@/lib/audit';
 import { z } from 'zod';
+import { requireFeature } from '@/lib/feature-flags';
 
 // ============================================
 // POST /api/v1/automation/workflows/:id/activate
@@ -19,6 +20,8 @@ export async function POST(
     const payload = await getAuthUser(request);
     if (!payload.tenantId) throw new AuthenticationError('Tenant context required');
     await requirePermission(payload.roleCode ?? null, 'automation.edit', payload.tenantId, payload.isSuperAdmin);
+
+    if (payload.tenantId) { await requireFeature('automation', payload.tenantId); }
 
     const { id } = await params;
 

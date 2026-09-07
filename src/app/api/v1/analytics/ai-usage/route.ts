@@ -4,6 +4,7 @@ import { handleApiError, AuthenticationError } from '@/lib/errors';
 import { success } from '@/lib/api-response';
 import { getAuthUser } from '@/lib/api-auth';
 import { requirePermission } from '@/lib/rbac';
+import { requireFeature } from '@/lib/feature-flags';
 
 // ============================================
 // HELPERS
@@ -45,6 +46,8 @@ export async function GET(request: NextRequest) {
     }
 
     await requirePermission(payload.roleCode ?? null, 'ai.view', payload.tenantId, payload.isSuperAdmin);
+
+    if (payload.tenantId) { await requireFeature('analytics', payload.tenantId); }
 
     const tenantId = payload.tenantId;
 

@@ -123,18 +123,19 @@ export function requires2FA(roleCode: string | null | undefined): boolean {
   return PRIVILEGED_ROLES.has(roleCode);
 }
 
-/** Enable 2FA for a user — stores encrypted secret and hashed recovery codes */
+/** Enable 2FA for a user — stores AES-256-GCM encrypted secret and hashed recovery codes */
 export async function enable2FA(
   userId: string,
   secret: string,
   recoveryCodes: string[]
 ): Promise<void> {
   const hashedCodes = await Promise.all(recoveryCodes.map(hashRecoveryCode));
+  const encryptedSecret = await encrypt2FASecret(secret);
   await db.user.update({
     where: { id: userId },
     data: {
       twoFactorEnabled: true,
-      twoFactorSecret: secret, // In production, encrypt with a server-side key
+      twoFactorSecret: encryptedSecret,
       twoFactorRecoveryCodes: hashedCodes,
     },
   });
@@ -166,8 +167,11 @@ export async function verify2FADuringLogin(
     return { verified: true, usedRecoveryCode: false }; // 2FA not enabled, skip
   }
 
+  // Decrypt the stored TOTP secret before verification
+  const decryptedSecret = await decrypt2FASecret(user.twoFactorSecret);
+
   // Try TOTP first
-  const totpValid = await verifyTOTP(user.twoFactorSecret, code);
+  const totpValid = await verifyTOTP(decryptedSecret, code);
   if (totpValid) {
     return { verified: true, usedRecoveryCode: false };
   }
@@ -187,6 +191,60 @@ export async function verify2FADuringLogin(
   }
 
   return { verified: false, usedRecoveryCode: false };
+}
+
+// ============================================
+// 2FA SECRET ENCRYPTION (AES-256-GCM)
+// ============================================
+
+/** Derive an AES-256 key from the app's JWT secret for 2FA secret encryption */
+async function get2FAEncryptionKey(): Promise<CryptoKey> {
+  // Use JWT_SECRET as the master key (already required, min 32 chars)
+  const masterKey = process.env.JWT_SECRET || 'dev-2fa-encryption-key-change-in-prod';
+  const encoder = new TextEncoder();
+  // Derive a 256-bit key using SHA-256 hash of the master key
+  const hash = await crypto.subtle.digest('SHA-256', encoder.encode(masterKey));
+  return crypto.subtle.importKey(
+    'raw',
+    hash,
+    { name: 'AES-GCM' },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
+/** Encrypt a 2FA TOTP secret using AES-256-GCM */
+async function encrypt2FASecret(plaintext: string): Promise<string> {
+  const key = await get2FAEncryptionKey();
+  const encoder = new TextEncoder();
+  const iv = crypto.getRandomValues(new Uint8Array(12)); // 96-bit IV for GCM
+  const encrypted = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    encoder.encode(plaintext)
+  );
+  // Format: base64(iv):base64(ciphertext)
+  const ivB64 = btoa(String.fromCharCode(...iv));
+  const ctB64 = btoa(String.fromCharCode(...new Uint8Array(encrypted)));
+  return `${ivB64}:${ctB64}`;
+}
+
+/** Decrypt a 2FA TOTP secret */
+async function decrypt2FASecret(encrypted: string): Promise<string> {
+  // If not encrypted (legacy plaintext), return as-is
+  if (!encrypted.includes(':')) {
+    return encrypted;
+  }
+  const key = await get2FAEncryptionKey();
+  const [ivB64, ctB64] = encrypted.split(':');
+  const iv = Uint8Array.from(atob(ivB64), c => c.charCodeAt(0));
+  const ciphertext = Uint8Array.from(atob(ctB64), c => c.charCodeAt(0));
+  const decrypted = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    ciphertext
+  );
+  return new TextDecoder().decode(decrypted);
 }
 
 /** Get 2FA status for a user (never exposes the secret) */

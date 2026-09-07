@@ -4,6 +4,7 @@ import { handleApiError, AuthenticationError } from '@/lib/errors';
 import { success } from '@/lib/api-response';
 import { getAuthUser } from '@/lib/api-auth';
 import { requirePermission } from '@/lib/rbac';
+import { requireFeature } from '@/lib/feature-flags';
 
 // ============================================
 // GET /api/v1/communication/dashboard — Aggregated stats
@@ -18,6 +19,8 @@ export async function GET(request: NextRequest) {
     }
 
     await requirePermission(payload.roleCode ?? null, 'conversations.view', payload.tenantId, payload.isSuperAdmin);
+
+    if (payload.tenantId) { await requireFeature('communication', payload.tenantId); }
 
     const tenantId = payload.tenantId;
 

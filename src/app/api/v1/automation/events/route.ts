@@ -8,6 +8,7 @@ import { createAuditLog } from '@/lib/audit';
 import { validate } from '@/lib/validators';
 import { z } from 'zod';
 import { randomUUID } from 'crypto';
+import { requireFeature } from '@/lib/feature-flags';
 
 // ============================================
 // SCHEMAS
@@ -199,6 +200,8 @@ export async function POST(request: NextRequest) {
     const payload = await getAuthUser(request);
     if (!payload.tenantId) throw new AuthenticationError('Tenant context required');
     await requirePermission(payload.roleCode ?? null, 'automation.execute', payload.tenantId, payload.isSuperAdmin);
+
+    if (payload.tenantId) { await requireFeature('automation', payload.tenantId); }
 
     const body = await request.json();
     const { eventType, entityId, entityType, data } = validate(eventSchema, body);

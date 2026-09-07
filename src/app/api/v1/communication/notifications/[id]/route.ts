@@ -9,6 +9,7 @@ import { success } from '@/lib/api-response';
 import { getAuthUser } from '@/lib/api-auth';
 import { requirePermission } from '@/lib/rbac';
 import { createAuditLog } from '@/lib/audit';
+import { requireFeature } from '@/lib/feature-flags';
 
 // ============================================
 // DELETE /api/v1/communication/notifications/:id — Archive
@@ -26,6 +27,8 @@ export async function DELETE(
     }
 
     await requirePermission(payload.roleCode ?? null, 'notifications.delete', payload.tenantId, payload.isSuperAdmin);
+
+    if (payload.tenantId) { await requireFeature('communication', payload.tenantId); }
 
     const { id } = await params;
 

@@ -5,6 +5,7 @@ import { getAuthUser } from '@/lib/api-auth';
 import { requirePermission, getUserPermissions } from '@/lib/rbac';
 import { listAgents } from '@/lib/ai';
 import { aiGateway } from '@/lib/providers/ai-gateway';
+import { requireFeature } from '@/lib/feature-flags';
 
 // ============================================
 // HELPERS
@@ -37,6 +38,8 @@ export async function GET(request: NextRequest) {
     }
 
     await requirePermission(payload.roleCode ?? null, 'ai.view', payload.tenantId, payload.isSuperAdmin);
+
+    if (payload.tenantId) { await requireFeature('ai', payload.tenantId); }
 
     const tenantId = payload.tenantId;
     const roleCode = payload.roleCode ?? null;

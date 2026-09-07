@@ -6,6 +6,7 @@ import { requirePermission, getUserPermissions } from '@/lib/rbac';
 import { createAuditLog } from '@/lib/audit';
 import { getAgent, VALID_AGENT_NAMES } from '@/lib/ai';
 import { z } from 'zod';
+import { requireFeature } from '@/lib/feature-flags';
 
 // ============================================
 // SCHEMA
@@ -36,6 +37,8 @@ export async function POST(request: NextRequest) {
     if (!payload.tenantId) {
       throw new AuthenticationError('Tenant context required');
     }
+
+    if (payload.tenantId) { await requireFeature('ai', payload.tenantId); }
 
     // Parse and validate body
     const body = await request.json();

@@ -7,6 +7,7 @@ import { getAuthUser } from '@/lib/api-auth';
 import { requirePermission } from '@/lib/rbac';
 import { createAuditLog } from '@/lib/audit';
 import { hashPassword } from '@/lib/auth';
+import { enforceSeatLimit } from '@/lib/billing';
 
 export async function GET(request: NextRequest) {
   try {
@@ -90,6 +91,15 @@ export async function POST(request: NextRequest) {
     }
 
     await requirePermission(payload.roleCode ?? null, 'users.create', payload.tenantId, payload.isSuperAdmin);
+
+    // Enforce seat/billing limits before creating user
+    const seatCheck = await enforceSeatLimit(payload.tenantId);
+    if (!seatCheck.allowed) {
+      return NextResponse.json(
+        { success: false, error: `Seat limit reached (${seatCheck.current}/${seatCheck.max}). Upgrade your plan to add more users.`, code: 'SEAT_LIMIT' },
+        { status: 403 }
+      );
+    }
 
     const body = await request.json();
     const data = validate(createUserSchema, body);

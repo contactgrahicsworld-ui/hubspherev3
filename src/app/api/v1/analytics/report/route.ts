@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { handleApiError, AuthenticationError, ValidationError } from '@/lib/errors';
 import { getAuthUser } from '@/lib/api-auth';
 import { requirePermission } from '@/lib/rbac';
+import { requireFeature } from '@/lib/feature-flags';
 
 // ============================================
 // HELPERS
@@ -101,6 +102,8 @@ export async function GET(request: NextRequest) {
     if (!payload.tenantId) {
       throw new AuthenticationError('Tenant context required');
     }
+
+    if (payload.tenantId) { await requireFeature('analytics', payload.tenantId); }
 
     const { searchParams } = new URL(request.url);
     const moduleName = searchParams.get('module');

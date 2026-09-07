@@ -12,6 +12,7 @@ import { getAuthUser } from '@/lib/api-auth';
 import { requirePermission } from '@/lib/rbac';
 import { createAuditLog } from '@/lib/audit';
 import { z } from 'zod';
+import { requireFeature } from '@/lib/feature-flags';
 
 // ============================================
 // HELPERS
@@ -88,6 +89,8 @@ export async function PUT(
     if (!payload.tenantId) {
       throw new AuthenticationError('Tenant context required');
     }
+
+    if (payload.tenantId) { await requireFeature('hrms', payload.tenantId); }
 
     const body = await request.json();
     const data = validate(actionSchema, body);

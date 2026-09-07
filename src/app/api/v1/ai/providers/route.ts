@@ -6,6 +6,7 @@ import { requirePermission } from '@/lib/rbac';
 import { providerRegistry } from '@/lib/providers/registry';
 import { db } from '@/lib/db';
 import { aiGateway } from '@/lib/providers/ai-gateway';
+import { requireFeature } from '@/lib/feature-flags';
 
 // ============================================
 // GET /api/v1/ai/providers — AI provider status
@@ -20,6 +21,8 @@ export async function GET(request: NextRequest) {
     }
 
     await requirePermission(payload.roleCode ?? null, 'ai.view', payload.tenantId, payload.isSuperAdmin);
+
+    if (payload.tenantId) { await requireFeature('ai', payload.tenantId); }
 
     // Get all AI provider info from the registry
     const registryProviders = providerRegistry.getProvidersByCategory('AIProvider');

@@ -6,6 +6,7 @@ import { paginated } from '@/lib/api-response';
 import { getAuthUser } from '@/lib/api-auth';
 import { requirePermission } from '@/lib/rbac';
 import { z } from 'zod';
+import { requireFeature } from '@/lib/feature-flags';
 
 // ============================================
 // GET /api/v1/automation/executions — List all executions
@@ -16,6 +17,8 @@ export async function GET(request: NextRequest) {
     const payload = await getAuthUser(request);
     if (!payload.tenantId) throw new AuthenticationError('Tenant context required');
     await requirePermission(payload.roleCode ?? null, 'automation.view', payload.tenantId, payload.isSuperAdmin);
+
+    if (payload.tenantId) { await requireFeature('automation', payload.tenantId); }
 
     const { searchParams } = new URL(request.url);
     const { page, limit } = validate(paginationSchema, {

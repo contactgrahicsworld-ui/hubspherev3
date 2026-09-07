@@ -1,0 +1,212 @@
+{
+  "timestamp": "2026-09-07T05:01:41.373Z",
+  "url": "https://hubspherev3.vercel.app",
+  "total": 91,
+  "passed": 29,
+  "failed": 58,
+  "skipped": 4,
+  "passRate": "31.9%",
+  "duration": "51.7s",
+  "failures": [
+    {
+      "testId": "SMOKE-04",
+      "message": "Plans endpoint returns 200"
+    },
+    {
+      "testId": "SMOKE-05",
+      "message": "Plans returns array"
+    },
+    {
+      "testId": "AUTH-GATE-chat",
+      "message": "Unauthenticated GET /api/v1/ai/chat → 401"
+    },
+    {
+      "testId": "AUTH-GATE-subscription",
+      "message": "Unauthenticated GET /api/v1/billing/subscription → 401"
+    },
+    {
+      "testId": "SIGNUP-DUP",
+      "message": "Signup duplicate handled properly"
+    },
+    {
+      "testId": "SIGNUP-T1-STATUS",
+      "message": "Tenant1 signup: 400"
+    },
+    {
+      "testId": "SIGNUP-T1-TOKEN",
+      "message": "Tenant1 has access token"
+    },
+    {
+      "testId": "SIGNUP-T1-OWNER",
+      "message": "Tenant1 is TENANT_OWNER"
+    },
+    {
+      "testId": "SIGNUP-T2-STATUS",
+      "message": "Tenant2 signup: 400"
+    },
+    {
+      "testId": "SIGNUP-T2-SEPARATE",
+      "message": "Tenant2 is a DIFFERENT tenant from Tenant1"
+    },
+    {
+      "testId": "SIGNUP-T3-STATUS",
+      "message": "Tenant3 signup: 400"
+    },
+    {
+      "testId": "SIGNUP-T3-SEPARATE",
+      "message": "Tenant3 is unique from Tenant1 and Tenant2"
+    },
+    {
+      "testId": "AUTH-LOGIN-OK",
+      "message": "Login returns 200: 401"
+    },
+    {
+      "testId": "AUTH-LOGIN-TOKEN",
+      "message": "Login returns access token"
+    },
+    {
+      "testId": "AUTH-ME-OK",
+      "message": "/me returns 200"
+    },
+    {
+      "testId": "AUTH-ME-EMAIL",
+      "message": "/me returns correct email"
+    },
+    {
+      "testId": "ISO-T1-LEAD",
+      "message": "T1 creates lead: 401"
+    },
+    {
+      "testId": "ISO-T1-CONTACT",
+      "message": "T1 creates contact: 401"
+    },
+    {
+      "testId": "ISO-T2-LEAD",
+      "message": "T2 creates lead: 401"
+    },
+    {
+      "testId": "CRM-COMP-CREATE",
+      "message": "Create company: 401"
+    },
+    {
+      "testId": "CRM-COMP-LIST",
+      "message": "List companies: 401"
+    },
+    {
+      "testId": "CRM-LEAD-LIST",
+      "message": "List leads: 401"
+    },
+    {
+      "testId": "CRM-CONTACT-LIST",
+      "message": "List contacts: 401"
+    },
+    {
+      "testId": "CRM-DEAL-CREATE",
+      "message": "Create deal: 401"
+    },
+    {
+      "testId": "CRM-TASK-CREATE",
+      "message": "Create task: 401"
+    },
+    {
+      "testId": "BILL-STATUS",
+      "message": "Get billing: 404"
+    },
+    {
+      "testId": "BILL-FREE-PLAN",
+      "message": "New tenant starts on FREE plan"
+    },
+    {
+      "testId": "BILL-TRIAL",
+      "message": "New tenant is in trial"
+    },
+    {
+      "testId": "BILL-PLANS",
+      "message": "Plans endpoint accessible"
+    },
+    {
+      "testId": "BILL-4-PLANS",
+      "message": "At least 4 plans available: 0"
+    },
+    {
+      "testId": "BILL-CAN-ADD",
+      "message": "Can add users on FREE plan"
+    },
+    {
+      "testId": "FF-HRMS-FREE",
+      "message": "HRMS blocked on FREE plan: 401"
+    },
+    {
+      "testId": "FF-DEPT-FREE",
+      "message": "Departments blocked on FREE: 401"
+    },
+    {
+      "testId": "FF-AI-FREE",
+      "message": "AI blocked on FREE plan: 401"
+    },
+    {
+      "testId": "FF-AUTO-FREE",
+      "message": "Automation blocked on FREE: 401"
+    },
+    {
+      "testId": "SEC-RATE-SIGNUP",
+      "message": "Signup rate limit proper: 400"
+    },
+    {
+      "testId": "VAL-EMPTY-LEAD",
+      "message": "Empty lead data rejected: 401"
+    },
+    {
+      "testId": "2FA-SETUP-OK",
+      "message": "2FA setup works: 401"
+    },
+    {
+      "testId": "2FA-SECRET",
+      "message": "2FA returns TOTP secret"
+    },
+    {
+      "testId": "2FA-URI",
+      "message": "2FA returns otpauth URI"
+    },
+    {
+      "testId": "2FA-RECOVERY",
+      "message": "2FA returns recovery codes"
+    },
+    {
+      "testId": "2FA-10-CODES",
+      "message": "2FA provides 10 recovery codes"
+    },
+    {
+      "testId": "2FA-STATUS",
+      "message": "2FA status works: 401"
+    },
+    {
+      "testId": "UPGRADE-STARTER",
+      "message": "Upgrade to STARTER: 404"
+    },
+    {
+      "testId": "HRMS-AFTER-UPGRADE",
+      "message": "HRMS accessible after upgrade: 401"
+    },
+    {
+      "testId": "HRMS-DEPT-CREATE",
+      "message": "Create department: 401"
+    },
+    {
+      "testId": "HRMS-DESIG-CREATE",
+      "message": "Create designation: 401"
+    },
+    {
+      "testId": "COMM-CONV-LIST",
+      "message": "List conversations: 401"
+    },
+    {
+      "testId": "COMM-PROV-LIST",
+      "message": "List providers: 401"
+    },
+    {
+      "testId": "ANALYTICS-CRM",
+      "message": "CRM analytics: 401"
+    }
+  ]
+}

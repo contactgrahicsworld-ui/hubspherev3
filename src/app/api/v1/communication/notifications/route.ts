@@ -11,6 +11,7 @@ import { getAuthUser } from '@/lib/api-auth';
 import { requirePermission } from '@/lib/rbac';
 import { createAuditLog } from '@/lib/audit';
 import { z } from 'zod';
+import { requireFeature } from '@/lib/feature-flags';
 
 // ============================================
 // SCHEMAS
@@ -80,6 +81,8 @@ export async function GET(request: NextRequest) {
     }
 
     await requirePermission(payload.roleCode ?? null, 'notifications.view', payload.tenantId, payload.isSuperAdmin);
+
+    if (payload.tenantId) { await requireFeature('communication', payload.tenantId); }
 
     const { searchParams } = new URL(request.url);
     const { page, limit } = validate(paginationSchema, {
@@ -167,6 +170,8 @@ export async function POST(request: NextRequest) {
 
     await requirePermission(payload.roleCode ?? null, 'notifications.create', payload.tenantId, payload.isSuperAdmin);
 
+    if (payload.tenantId) { await requireFeature('communication', payload.tenantId); }
+
     const body = await request.json();
     const data = validate(createNotificationSchema, body);
 
@@ -253,6 +258,8 @@ export async function PATCH(request: NextRequest) {
     }
 
     await requirePermission(payload.roleCode ?? null, 'notifications.edit', payload.tenantId, payload.isSuperAdmin);
+
+    if (payload.tenantId) { await requireFeature('communication', payload.tenantId); }
 
     const body = await request.json();
     const data = validate(markNotificationSchema, body);

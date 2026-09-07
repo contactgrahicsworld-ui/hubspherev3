@@ -9,6 +9,7 @@ import { success } from '@/lib/api-response';
 import { getAuthUser } from '@/lib/api-auth';
 import { requirePermission } from '@/lib/rbac';
 import { createAuditLog } from '@/lib/audit';
+import { requireFeature } from '@/lib/feature-flags';
 
 // ============================================
 // HELPERS
@@ -70,6 +71,8 @@ export async function GET(
 
     await requirePermission(payload.roleCode ?? null, 'communication_settings.view', payload.tenantId, payload.isSuperAdmin);
 
+    if (payload.tenantId) { await requireFeature('communication', payload.tenantId); }
+
     const { id } = await params;
 
     const providerConfig = await db.communicationProviderConfig.findFirst({
@@ -113,6 +116,8 @@ export async function DELETE(
     }
 
     await requirePermission(payload.roleCode ?? null, 'communication_settings.manage', payload.tenantId, payload.isSuperAdmin);
+
+    if (payload.tenantId) { await requireFeature('communication', payload.tenantId); }
 
     const { id } = await params;
 

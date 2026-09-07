@@ -12,6 +12,7 @@ import { getAuthUser } from '@/lib/api-auth';
 import { requirePermission } from '@/lib/rbac';
 import { createAuditLog } from '@/lib/audit';
 import { z } from 'zod';
+import { requireFeature } from '@/lib/feature-flags';
 
 // ============================================
 // SCHEMAS
@@ -110,6 +111,8 @@ export async function GET(
 
     await requirePermission(payload.roleCode ?? null, 'messages.view', payload.tenantId, payload.isSuperAdmin);
 
+    if (payload.tenantId) { await requireFeature('communication', payload.tenantId); }
+
     const { id: conversationId } = await params;
 
     // Verify conversation belongs to tenant
@@ -181,6 +184,8 @@ export async function POST(
     }
 
     await requirePermission(payload.roleCode ?? null, 'messages.create', payload.tenantId, payload.isSuperAdmin);
+
+    if (payload.tenantId) { await requireFeature('communication', payload.tenantId); }
 
     const { id: conversationId } = await params;
 

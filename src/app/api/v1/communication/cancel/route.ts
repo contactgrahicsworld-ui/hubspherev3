@@ -11,6 +11,7 @@ import { createAuditLog } from '@/lib/audit';
 import { cancelPendingMessages } from '@/lib/communication/campaign-service';
 import { db } from '@/lib/db';
 import { z } from 'zod';
+import { requireFeature } from '@/lib/feature-flags';
 
 // ============================================
 // SCHEMAS
@@ -51,6 +52,8 @@ export async function POST(request: NextRequest) {
     }
 
     await requirePermission(payload.roleCode ?? null, 'messages.update', payload.tenantId, payload.isSuperAdmin);
+
+    if (payload.tenantId) { await requireFeature('communication', payload.tenantId); }
 
     const body = await request.json();
     const data = validate(cancelMessagesSchema, body);
