@@ -4,7 +4,7 @@
  * tenant isolation, security, 2FA, API validation, and smoke tests.
  */
 
-const BASE_URL = 'https://hubspherev3.vercel.app';
+const BASE_URL = process.env.TEST_URL || 'https://hubspherev3.vercel.app';
 const DB_URL = 'postgresql://postgres.nhgijoqgekhhoonmrsru:ipgroup%409301056006@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres';
 
 let passed = 0, failed = 0, skipped = 0, total = 0;
@@ -43,7 +43,7 @@ async function api(method, path, body, token, extraHeaders = {}) {
     const text = await res.text();
     let data;
     try { data = JSON.parse(text); } catch { data = text; }
-    return { status: res.status, data, headers: res.headers };
+    return { status: res.status, data, headers: Object.fromEntries(res.headers.entries()) };
   } catch (e) {
     return { status: 0, data: { error: e.message }, headers: {} };
   }
@@ -468,13 +468,13 @@ async function runTests() {
 
   // Security headers present
   const healthHeaders = await api('GET', '/api/v1/system/health');
-  assert('SEC-HDR-XCTO', healthHeaders.headers.get('x-content-type-options') === 'nosniff',
+  assert('SEC-HDR-XCTO', healthHeaders.headers['x-content-type-options'] === 'nosniff',
     'X-Content-Type-Options: nosniff present');
-  assert('SEC-HDR-XFO', healthHeaders.headers.get('x-frame-options') === 'DENY',
+  assert('SEC-HDR-XFO', healthHeaders.headers['x-frame-options'] === 'DENY',
     'X-Frame-Options: DENY present');
-  assert('SEC-HDR-HSTS', !!healthHeaders.headers.get('strict-transport-security'),
+  assert('SEC-HDR-HSTS', !!healthHeaders.headers['strict-transport-security'],
     'HSTS header present');
-  assert('SEC-HDR-CSP', !!healthHeaders.headers.get('content-security-policy'),
+  assert('SEC-HDR-CSP', !!healthHeaders.headers['content-security-policy'],
     'CSP header present');
 
   // ═══════════════════════════════════════
