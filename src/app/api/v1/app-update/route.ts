@@ -189,7 +189,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function validate(schema: z.ZodSchema, data: unknown) {
+function validate<T>(schema: z.ZodSchema<T>, data: unknown): T {
   const result = schema.safeParse(data);
   if (!result.success) {
     throw new ValidationError(result.error.issues.map(i => i.message).join(', '));

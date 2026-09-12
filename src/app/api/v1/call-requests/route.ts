@@ -185,7 +185,7 @@ export async function POST(request: NextRequest) {
         status: 'PENDING',
         priority: data.priority ?? 0,
         expiresAt,
-        metadata: (data.metadata ?? {}) as Record<string, unknown>,
+        metadata: (data.metadata ?? {}) as any,
       },
       select: callRequestSelect,
     });

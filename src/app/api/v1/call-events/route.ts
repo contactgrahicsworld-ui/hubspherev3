@@ -373,7 +373,7 @@ export async function POST(request: NextRequest) {
         failureReason: data.failureReason ?? null,
         recordingAvailable: data.recordingAvailable ?? false,
         recordingUrl: data.recordingUrl ?? null,
-        eventData: (data.eventData ?? {}) as Record<string, unknown>,
+        eventData: (data.eventData ?? {}) as any,
       },
       select: callEventSelect,
     });

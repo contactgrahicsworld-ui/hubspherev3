@@ -63,6 +63,8 @@ export type SignupInput = z.infer<typeof signupSchema>;
 export const loginSchema = z.object({
   email: z.string().trim().min(1, 'Email is required').email('Invalid email format'),
   password: z.string().min(1, 'Password is required'),
+  deviceType: z.enum(['WEB', 'ANDROID', 'IOS']).optional(),
+  deviceInfo: z.string().max(500).optional(),
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;
