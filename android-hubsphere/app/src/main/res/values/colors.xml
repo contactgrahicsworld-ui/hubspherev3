@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary">#1565C0</color>
+    <color name="primary_dark">#0D47A1</color>
+    <color name="primary_light">#1E88E5</color>
+    <color name="accent">#0D47A1</color>
+    <color name="background">#F5F5F5</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="text_primary">#212121</color>
+    <color name="text_secondary">#757575</color>
+    <color name="status_active">#4CAF50</color>
+    <color name="status_pending">#FF9800</color>
+    <color name="status_revoked">#F44336</color>
+    <color name="status_pairing">#FFC107</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+</resources>

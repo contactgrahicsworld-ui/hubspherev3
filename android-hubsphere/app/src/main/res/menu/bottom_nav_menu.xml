@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/dashboardFragment" android:icon="@android:drawable/ic_menu_today" android:title="@string/nav_dashboard" />
+    <item android:id="@+id/contactsFragment" android:icon="@android:drawable/ic_menu_myplaces" android:title="@string/nav_contacts" />
+    <item android:id="@+id/leadsFragment" android:icon="@android:drawable/ic_menu_sort_by_size" android:title="@string/nav_leads" />
+    <item android:id="@+id/callsFragment" android:icon="@android:drawable/ic_menu_call" android:title="@string/nav_calls" />
+    <item android:id="@+id/profileFragment" android:icon="@android:drawable/ic_menu_preferences" android:title="@string/nav_more" />
+</menu>

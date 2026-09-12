@@ -1,0 +1,915 @@
+     1→'use client'
+     2→
+     3→import { useEffect, useState, useCallback, useRef } from 'react'
+     4→import { useRouter } from 'next/navigation'
+     5→import { apiFetch, getAccessToken } from '@/lib/auth-client'
+     6→import { toast } from 'sonner'
+     7→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+     8→import { Skeleton } from '@/components/ui/skeleton'
+     9→import { Input } from '@/components/ui/input'
+    10→import { Button } from '@/components/ui/button'
+    11→import { Badge } from '@/components/ui/badge'
+    12→import { Textarea } from '@/components/ui/textarea'
+    13→import { ScrollArea } from '@/components/ui/scroll-area'
+    14→import {
+    15→  Dialog,
+    16→  DialogContent,
+    17→  DialogDescription,
+    18→  DialogFooter,
+    19→  DialogHeader,
+    20→  DialogTitle,
+    21→} from '@/components/ui/dialog'
+    22→import {
+    23→  Select,
+    24→  SelectContent,
+    25→  SelectItem,
+    26→  SelectTrigger,
+    27→  SelectValue,
+    28→} from '@/components/ui/select'
+    29→import {
+    30→  Phone,
+    31→  Search,
+    32→  AlertCircle,
+    33→  Users,
+    34→  Mail,
+    35→  Building,
+    36→  User,
+    37→  FileText,
+    38→  CalendarClock,
+    39→  ExternalLink,
+    40→  PhoneCall,
+    41→  PhoneOff,
+    42→  Clock,
+    43→  PhoneMissed,
+    44→  Info,
+    45→  Loader2,
+    46→  StickyNote,
+    47→} from 'lucide-react'
+    48→
+    49→// ============================================
+    50→// Types
+    51→// ============================================
+    52→
+    53→interface LeadOwner {
+    54→  id: string
+    55→  name: string | null
+    56→  email: string | null
+    57→}
+    58→
+    59→interface Lead {
+    60→  id: string
+    61→  firstName: string
+    62→  lastName: string | null
+    63→  email: string | null
+    64→  mobile: string | null
+    65→  company: string | null
+    66→  source: string | null
+    67→  status: string | null
+    68→  priority: string | null
+    69→  ownerId: string | null
+    70→  owner: LeadOwner | null
+    71→  notes: string | null
+    72→  createdAt: string
+    73→  updatedAt: string
+    74→}
+    75→
+    76→interface CallRecord {
+    77→  id: string
+    78→  direction: string | null
+    79→  callStatus: string | null
+    80→  callType: string | null
+    81→  duration: number | null
+    82→  createdAt: string
+    83→  agentId: string | null
+    84→  agent: { id: string; name: string | null; email: string | null } | null
+    85→  recordingStatus: string | null
+    86→  notes: string | null
+    87→  contactInfo: string | null
+    88→}
+    89→
+    90→interface UserOption {
+    91→  id: string
+    92→  name: string
+    93→  email: string
+    94→}
+    95→
+    96→// ============================================
+    97→// Constants
+    98→// ============================================
+    99→
+   100→const STATUS_BADGE_STYLES: Record<string, string> = {
+   101→  NEW: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+   102→  CONTACTED: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+   103→  QUALIFIED: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',
+   104→  PROPOSAL: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+   105→  NEGOTIATION: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+   106→  WON: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+   107→  LOST: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+   108→  CONVERTED: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+   109→}
+   110→
+   111→const PRIORITY_BADGE_STYLES: Record<string, string> = {
+   112→  LOW: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
+   113→  MEDIUM: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
+   114→  HIGH: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+   115→  URGENT: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+   116→}
+   117→
+   118→const DISPOSITION_OPTIONS = [
+   119→  { value: 'CONNECTED', label: 'Connected' },
+   120→  { value: 'NOT_REACHED', label: 'Not Reached' },
+   121→  { value: 'LEFT_VOICEMAIL', label: 'Left Voicemail' },
+   122→  { value: 'CALLBACK_LATER', label: 'Callback Later' },
+   123→]
+   124→
+   125→// ============================================
+   126→// Helpers
+   127→// ============================================
+   128→
+   129→function getLeadName(lead: Lead): string {
+   130→  return [lead.firstName, lead.lastName].filter(Boolean).join(' ') || '-'
+   131→}
+   132→
+   133→function formatDateTime(dateStr: string) {
+   134→  if (!dateStr) return '-'
+   135→  try {
+   136→    return new Date(dateStr).toLocaleString('en-US', {
+   137→      month: 'short',
+   138→      day: 'numeric',
+   139→      year: 'numeric',
+   140→      hour: 'numeric',
+   141→      minute: '2-digit',
+   142→    })
+   143→  } catch {
+   144→    return '-'
+   145→  }
+   146→}
+   147→
+   148→function formatDuration(seconds: number | null): string {
+   149→  if (seconds == null) return '-'
+   150→  const m = Math.floor(seconds / 60)
+   151→  const s = seconds % 60
+   152→  return m > 0 ? `${m}m ${s}s` : `${s}s`
+   153→}
+   154→
+   155→function decodeToken(token: string): { userId: string; email: string } | null {
+   156→  try {
+   157→    const parts = token.split('.')
+   158→    if (parts.length < 2) return null
+   159→    const payload = JSON.parse(atob(parts[1]))
+   160→    return {
+   161→      userId: payload.sub || payload.userId || payload.id || '',
+   162→      email: payload.email || '',
+   163→    }
+   164→  } catch {
+   165→    return null
+   166→  }
+   167→}
+   168→
+   169→// ============================================
+   170→// Lead List Skeleton
+   171→// ============================================
+   172→
+   173→function LeadListSkeleton() {
+   174→  return (
+   175→    <div className='space-y-2 p-3'>
+   176→      {Array.from({ length: 8 }).map((_, i) => (
+   177→        <div key={i} className='flex items-center gap-3 rounded-lg p-2'>
+   178→          <Skeleton className='size-8 rounded-full' />
+   179→          <div className='flex-1 space-y-1.5'>
+   180→            <Skeleton className='h-4 w-3/4' />
+   181→            <Skeleton className='h-3 w-1/2' />
+   182→          </div>
+   183→        </div>
+   184→      ))}
+   185→    </div>
+   186→  )
+   187→}
+   188→
+   189→// ============================================
+   190→// Main Page
+   191→// ============================================
+   192→
+   193→export default function TelecallerConsole() {
+   194→  const router = useRouter()
+   195→
+   196→  // Leads state
+   197→  const [leads, setLeads] = useState<Lead[]>([])
+   198→  const [loadingLeads, setLoadingLeads] = useState(true)
+   199→  const [leadsError, setLeadsError] = useState<string | null>(null)
+   200→  const [search, setSearch] = useState('')
+   201→  const [debouncedSearch, setDebouncedSearch] = useState('')
+   202→  const [selectedLead, setSelectedLead] = useState<Lead | null>(null)
+   203→  const searchRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+   204→
+   205→  // Calls state
+   206→  const [leadCalls, setLeadCalls] = useState<CallRecord[]>([])
+   207→  const [loadingCalls, setLoadingCalls] = useState(false)
+   208→
+   209→  // Call dialog state
+   210→  const [callDialogOpen, setCallDialogOpen] = useState(false)
+   211→  const [creatingCall, setCreatingCall] = useState(false)
+   212→  const [activeCall, setActiveCall] = useState<CallRecord | null>(null)
+   213→  const [disposition, setDisposition] = useState('')
+   214→  const [callNotes, setCallNotes] = useState('')
+   215→  const [endingCall, setEndingCall] = useState(false)
+   216→
+   217→  // Note dialog state
+   218→  const [noteDialogOpen, setNoteDialogOpen] = useState(false)
+   219→  const [noteText, setNoteText] = useState('')
+   220→  const [savingNote, setSavingNote] = useState(false)
+   221→
+   222→  // Follow-up dialog
+   223→  const [followUpDialogOpen, setFollowUpDialogOpen] = useState(false)
+   224→  const [followUpTitle, setFollowUpTitle] = useState('')
+   225→  const [followUpDate, setFollowUpDate] = useState('')
+   226→  const [savingFollowUp, setSavingFollowUp] = useState(false)
+   227→
+   228→  // Recording config
+   229→  const [recordingAvailable, setRecordingAvailable] = useState(true)
+   230→
+   231→  // Debounce search
+   232→  useEffect(() => {
+   233→    searchRef.current = setTimeout(() => {
+   234→      setDebouncedSearch(search)
+   235→    }, 300)
+   236→    return () => {
+   237→      if (searchRef.current) clearTimeout(searchRef.current)
+   238→    }
+   239→  }, [search])
+   240→
+   241→  // Fetch leads
+   242→  const fetchLeads = useCallback(async () => {
+   243→    try {
+   244→      setLoadingLeads(true)
+   245→      setLeadsError(null)
+   246→
+   247→      const params = new URLSearchParams({
+   248→        status: 'NEW,CONTACTED,QUALIFIED',
+   249→        limit: '50',
+   250→      })
+   251→      if (debouncedSearch) params.set('search', debouncedSearch)
+   252→
+   253→      const data = await apiFetch<{ success: boolean; data: Lead[] }>(
+   254→        `/api/v1/crm/leads?${params}`
+   255→      )
+   256→      setLeads(data.data ?? [])
+   257→    } catch (err) {
+   258→      const message = err instanceof Error ? err.message : 'Failed to load leads'
+   259→      setLeadsError(message)
+   260→      toast.error(message)
+   261→    } finally {
+   262→      setLoadingLeads(false)
+   263→    }
+   264→  }, [debouncedSearch])
+   265→
+   266→  useEffect(() => {
+   267→    fetchLeads()
+   268→  }, [fetchLeads])
+   269→
+   270→  // Fetch call history for selected lead
+   271→  const fetchLeadCalls = useCallback(async (lead: Lead) => {
+   272→    setLoadingCalls(true)
+   273→    try {
+   274→      const params = new URLSearchParams({ limit: '20' })
+   275→      if (lead.mobile) params.set('contactInfo', lead.mobile)
+   276→      if (lead.email) params.set('contactInfo', lead.email)
+   277→
+   278→      const data = await apiFetch<{ success: boolean; data: CallRecord[]; pagination: { total: number } }>(
+   279→        `/api/v1/crm/calls?${params}`
+   280→      )
+   281→      setLeadCalls(data.data ?? [])
+   282→    } catch {
+   283→      setLeadCalls([])
+   284→    } finally {
+   285→      setLoadingCalls(false)
+   286→    }
+   287→  }, [])
+   288→
+   289→  // When a lead is selected, fetch its call history
+   290→  useEffect(() => {
+   291→    if (selectedLead) {
+   292→      fetchLeadCalls(selectedLead)
+   293→    } else {
+   294→      setLeadCalls([])
+   295→    }
+   296→  }, [selectedLead, fetchLeadCalls])
+   297→
+   298→  // Check recording provider
+   299→  useEffect(() => {
+   300→    apiFetch<{ success: boolean; configured: boolean }>(
+   301→      '/api/v1/crm/calls/recording-status'
+   302→    ).then((res) => {
+   303→      setRecordingAvailable(res.configured ?? false)
+   304→    }).catch(() => {
+   305→      setRecordingAvailable(false)
+   306→    })
+   307→  }, [])
+   308→
+   309→  // Start call - creates a call record
+   310→  const handleStartCall = async () => {
+   311→    if (!selectedLead) return
+   312→
+   313→    try {
+   314→      setCreatingCall(true)
+   315→      const token = getAccessToken()
+   316→      const decoded = decodeToken(token || '')
+   317→
+   318→      const payload: Record<string, unknown> = {
+   319→        direction: 'OUTBOUND',
+   320→        callType: 'WEBRTC',
+   321→        contactInfo: selectedLead.mobile || selectedLead.email || '',
+   322→        leadId: selectedLead.id,
+   323→      }
+   324→      if (decoded?.userId) payload.agentId = decoded.userId
+   325→
+   326→      const call = await apiFetch<CallRecord>('/api/v1/crm/calls', {
+   327→        method: 'POST',
+   328→        body: JSON.stringify(payload),
+   329→      })
+   330→
+   331→      setActiveCall(call)
+   332→      setDisposition('')
+   333→      setCallNotes('')
+   334→      setCallDialogOpen(true)
+   335→    } catch (err) {
+   336→      const message = err instanceof Error ? err.message : 'Failed to start call'
+   337→      toast.error(message)
+   338→    } finally {
+   339→      setCreatingCall(false)
+   340→    }
+   341→  }
+   342→
+   343→  // End call with disposition
+   344→  const handleEndCall = async () => {
+   345→    if (!activeCall) return
+   346→
+   347→    try {
+   348→      setEndingCall(true)
+   349→
+   350→      await apiFetch(`/api/v1/crm/calls/${activeCall.id}`, {
+   351→        method: 'PUT',
+   352→        body: JSON.stringify({
+   353→          callStatus: 'ENDED',
+   354→          disposition,
+   355→          notes: callNotes.trim() || undefined,
+   356→        }),
+   357→      })
+   358→
+   359→      toast.success('Call ended successfully')
+   360→      setCallDialogOpen(false)
+   361→      setActiveCall(null)
+   362→      if (selectedLead) fetchLeadCalls(selectedLead)
+   363→    } catch (err) {
+   364→      const message = err instanceof Error ? err.message : 'Failed to end call'
+   365→      toast.error(message)
+   366→    } finally {
+   367→      setEndingCall(false)
+   368→    }
+   369→  }
+   370→
+   371→  // Save note
+   372→  const handleSaveNote = async () => {
+   373→    if (!selectedLead || !noteText.trim()) return
+   374→
+   375→    try {
+   376→      setSavingNote(true)
+   377→      await apiFetch(`/api/v1/crm/leads/${selectedLead.id}`, {
+   378→        method: 'PUT',
+   379→        body: JSON.stringify({
+   380→          notes: selectedLead.notes
+   381→            ? `${selectedLead.notes}\n\n${noteText.trim()}`
+   382→            : noteText.trim(),
+   383→        }),
+   384→      })
+   385→      toast.success('Note added')
+   386→      setNoteDialogOpen(false)
+   387→      setNoteText('')
+   388→      // Update local state
+   389→      setSelectedLead({
+   390→        ...selectedLead,
+   391→        notes: selectedLead.notes
+   392→          ? `${selectedLead.notes}\n\n${noteText.trim()}`
+   393→          : noteText.trim(),
+   394→      })
+   395→      fetchLeads()
+   396→    } catch (err) {
+   397→      const message = err instanceof Error ? err.message : 'Failed to save note'
+   398→      toast.error(message)
+   399→    } finally {
+   400→      setSavingNote(false)
+   401→    }
+   402→  }
+   403→
+   404→  // Schedule follow-up
+   405→  const handleScheduleFollowUp = async () => {
+   406→    if (!selectedLead || !followUpTitle.trim() || !followUpDate) return
+   407→
+   408→    try {
+   409→      setSavingFollowUp(true)
+   410→      await apiFetch('/api/v1/crm/follow-ups', {
+   411→        method: 'POST',
+   412→        body: JSON.stringify({
+   413→          title: followUpTitle.trim(),
+   414→          followUpDate,
+   415→          entityType: 'LEAD',
+   416→          entityId: selectedLead.id,
+   417→        }),
+   418→      })
+   419→      toast.success('Follow-up scheduled')
+   420→      setFollowUpDialogOpen(false)
+   421→      setFollowUpTitle('')
+   422→      setFollowUpDate('')
+   423→    } catch (err) {
+   424→      const message = err instanceof Error ? err.message : 'Failed to schedule follow-up'
+   425→      toast.error(message)
+   426→    } finally {
+   427→      setSavingFollowUp(false)
+   428→    }
+   429→  }
+   430→
+   431→  const filteredLeads = debouncedSearch
+   432→    ? leads.filter(
+   433→        (l) =>
+   434→          getLeadName(l).toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+   435→          l.email?.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+   436→          l.mobile?.includes(debouncedSearch) ||
+   437→          l.company?.toLowerCase().includes(debouncedSearch.toLowerCase())
+   438→      )
+   439→    : leads
+   440→
+   441→  return (
+   442→    <div className='space-y-6'>
+   443→      {/* Header */}
+   444→      <div>
+   445→        <h1 className='text-2xl font-bold tracking-tight'>Telecaller Console</h1>
+   446→        <p className='mt-1 text-muted-foreground'>
+   447→          Make calls and manage lead outreach
+   448→        </p>
+   449→      </div>
+   450→
+   451→      {/* Main Layout */}
+   452→      <div className='grid gap-4 lg:grid-cols-[340px_1fr]'>
+   453→        {/* Left Panel: Lead List */}
+   454→        <Card className='flex flex-col overflow-hidden'>
+   455→          <CardHeader className='pb-3'>
+   456→            <CardTitle className='text-base'>Leads</CardTitle>
+   457→            <div className='relative mt-2'>
+   458→              <Search className='absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground' />
+   459→              <Input
+   460→                placeholder='Search leads...'
+   461→                value={search}
+   462→                onChange={(e) => setSearch(e.target.value)}
+   463→                className='pl-9'
+   464→                aria-label='Search leads'
+   465→              />
+   466→            </div>
+   467→          </CardHeader>
+   468→
+   469→          <div className='flex-1 overflow-hidden'>
+   470→            {loadingLeads ? (
+   471→              <LeadListSkeleton />
+   472→            ) : leadsError ? (
+   473→              <div className='flex flex-col items-center justify-center gap-2 p-6 text-center'>
+   474→                <AlertCircle className='size-8 text-destructive/60' />
+   475→                <p className='text-sm text-destructive'>{leadsError}</p>
+   476→                <Button size='sm' variant='outline' onClick={fetchLeads}>
+   477→                  Retry
+   478→                </Button>
+   479→              </div>
+   480→            ) : filteredLeads.length === 0 ? (
+   481→              <div className='flex flex-col items-center justify-center gap-2 p-6 text-center'>
+   482→                <Users className='size-8 text-muted-foreground/40' />
+   483→                <p className='text-sm text-muted-foreground'>No leads found</p>
+   484→              </div>
+   485→            ) : (
+   486→              <ScrollArea className='h-[calc(100vh-320px)] min-h-[300px] lg:h-[calc(100vh-280px)]'>
+   487→                <div className='space-y-1 p-2'>
+   488→                  {filteredLeads.map((lead) => (
+   489→                    <button
+   490→                      key={lead.id}
+   491→                      onClick={() => setSelectedLead(lead)}
+   492→                      className={`w-full rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-muted/80 ${
+   493→                        selectedLead?.id === lead.id
+   494→                          ? 'bg-primary/10 ring-1 ring-primary/20'
+   495→                          : ''
+   496→                      }`}
+   497→                    >
+   498→                      <div className='flex items-center gap-3'>
+   499→                        <div className='flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium'>
+   500→                          {lead.firstName?.charAt(0)?.toUpperCase() || '?'}
+   501→                        </div>
+   502→                        <div className='min-w-0 flex-1'>
+   503→                          <p className='truncate text-sm font-medium'>{getLeadName(lead)}</p>
+   504→                          <div className='flex items-center gap-2 text-xs text-muted-foreground'>
+   505→                            {lead.company && (
+   506→                              <span className='truncate'>{lead.company}</span>
+   507→                            )}
+   508→                            {lead.mobile && (
+   509→                              <span className='truncate'>{lead.mobile}</span>
+   510→                            )}
+   511→                          </div>
+   512→                        </div>
+   513→                      </div>
+   514→                    </button>
+   515→                  ))}
+   516→                </div>
+   517→              </ScrollArea>
+   518→            )}
+   519→          </div>
+   520→
+   521→          <div className='border-t px-4 py-2 text-xs text-muted-foreground'>
+   522→            {filteredLeads.length} lead{filteredLeads.length !== 1 ? 's' : ''}
+   523→          </div>
+   524→        </Card>
+   525→
+   526→        {/* Right Panel: Lead Details */}
+   527→        <div className='space-y-4'>
+   528→          {!selectedLead ? (
+   529→            <Card>
+   530→              <CardContent className='flex flex-col items-center justify-center py-16 text-center'>
+   531→                <PhoneCall className='mb-3 size-12 text-muted-foreground/30' />
+   532→                <p className='text-sm font-medium text-muted-foreground'>
+   533→                  Select a lead to view details
+   534→                </p>
+   535→                <p className='mt-1 text-xs text-muted-foreground'>
+   536→                  Choose a lead from the list to start
+   537→                </p>
+   538→              </CardContent>
+   539→            </Card>
+   540→          ) : (
+   541→            <>
+   542→              {/* Lead Info Card */}
+   543→              <Card>
+   544→                <CardHeader className='pb-3'>
+   545→                  <div className='flex items-start justify-between'>
+   546→                    <div>
+   547→                      <CardTitle className='text-lg'>
+   548→                        {getLeadName(selectedLead)}
+   549→                      </CardTitle>
+   550→                      {selectedLead.company && (
+   551→                        <p className='mt-0.5 text-sm text-muted-foreground'>
+   552→                          {selectedLead.company}
+   553→                        </p>
+   554→                      )}
+   555→                    </div>
+   556→                    <div className='flex gap-1.5'>
+   557→                      <Badge variant='outline' className={STATUS_BADGE_STYLES[selectedLead.status || ''] || ''}>
+   558→                        {selectedLead.status}
+   559→                      </Badge>
+   560→                      <Badge variant='outline' className={PRIORITY_BADGE_STYLES[selectedLead.priority || ''] || ''}>
+   561→                        {selectedLead.priority}
+   562→                      </Badge>
+   563→                    </div>
+   564→                  </div>
+   565→                </CardHeader>
+   566→                <CardContent className='space-y-3'>
+   567→                  <div className='grid gap-3 sm:grid-cols-2'>
+   568→                    {selectedLead.email && (
+   569→                      <div className='flex items-center gap-2 text-sm'>
+   570→                        <Mail className='size-4 shrink-0 text-muted-foreground' />
+   571→                        <a
+   572→                          href={`mailto:${selectedLead.email}`}
+   573→                          className='truncate text-muted-foreground hover:text-foreground'
+   574→                        >
+   575→                          {selectedLead.email}
+   576→                        </a>
+   577→                      </div>
+   578→                    )}
+   579→                    {selectedLead.mobile && (
+   580→                      <div className='flex items-center gap-2 text-sm'>
+   581→                        <Phone className='size-4 shrink-0 text-muted-foreground' />
+   582→                        <a
+   583→                          href={`tel:${selectedLead.mobile}`}
+   584→                          className='text-muted-foreground hover:text-foreground'
+   585→                        >
+   586→                          {selectedLead.mobile}
+   587→                        </a>
+   588→                      </div>
+   589→                    )}
+   590→                    {selectedLead.company && (
+   591→                      <div className='flex items-center gap-2 text-sm'>
+   592→                        <Building className='size-4 shrink-0 text-muted-foreground' />
+   593→                        <span className='text-muted-foreground'>{selectedLead.company}</span>
+   594→                      </div>
+   595→                    )}
+   596→                    {selectedLead.source && (
+   597→                      <div className='flex items-center gap-2 text-sm'>
+   598→                        <FileText className='size-4 shrink-0 text-muted-foreground' />
+   599→                        <span className='text-muted-foreground'>{selectedLead.source}</span>
+   600→                      </div>
+   601→                    )}
+   602→                    {selectedLead.owner && (
+   603→                      <div className='flex items-center gap-2 text-sm'>
+   604→                        <User className='size-4 shrink-0 text-muted-foreground' />
+   605→                        <span className='text-muted-foreground'>
+   606→                          {selectedLead.owner.name || selectedLead.owner.email}
+   607→                        </span>
+   608→                      </div>
+   609→                    )}
+   610→                  </div>
+   611→
+   612→                  {/* Notes */}
+   613→                  {selectedLead.notes && (
+   614→                    <div className='rounded-lg border bg-muted/30 p-3'>
+   615→                      <p className='mb-1 text-xs font-medium text-muted-foreground'>Notes</p>
+   616→                      <p className='whitespace-pre-wrap text-sm'>{selectedLead.notes}</p>
+   617→                    </div>
+   618→                  )}
+   619→
+   620→                  {/* Recording notice */}
+   621→                  {!recordingAvailable && (
+   622→                    <div className='flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-400'>
+   623→                      <Info className='size-3.5 shrink-0' />
+   624→                      Call recording unavailable - provider not configured
+   625→                    </div>
+   626→                  )}
+   627→                </CardContent>
+   628→              </Card>
+   629→
+   630→              {/* Action Buttons - Bottom on mobile, inline on desktop */}
+   631→              <Card>
+   632→                <CardContent className='p-4'>
+   633→                  <div className='flex flex-wrap gap-2'>
+   634→                    <Button
+   635→                      onClick={handleStartCall}
+   636→                      disabled={creatingCall || !selectedLead.mobile}
+   637→                      className='flex-1 sm:flex-none'
+   638→                    >
+   639→                      {creatingCall ? (
+   640→                        <Loader2 className='size-4 animate-spin' />
+   641→                      ) : (
+   642→                        <Phone className='size-4' />
+   643→                      )}
+   644→                      Call
+   645→                    </Button>
+   646→                    <Button
+   647→                      variant='outline'
+   648→                      onClick={() => {
+   649→                        setNoteText('')
+   650→                        setNoteDialogOpen(true)
+   651→                      }}
+   652→                      className='flex-1 sm:flex-none'
+   653→                    >
+   654→                      <StickyNote className='size-4' />
+   655→                      Add Note
+   656→                    </Button>
+   657→                    <Button
+   658→                      variant='outline'
+   659→                      onClick={() => {
+   660→                        setFollowUpTitle(`Follow up with ${getLeadName(selectedLead)}`)
+   661→                        setFollowUpDate('')
+   662→                        setFollowUpDialogOpen(true)
+   663→                      }}
+   664→                      className='flex-1 sm:flex-none'
+   665→                    >
+   666→                      <CalendarClock className='size-4' />
+   667→                      Schedule Follow-up
+   668→                    </Button>
+   669→                    <Button
+   670→                      variant='ghost'
+   671→                      onClick={() => router.push(`/crm/leads/${selectedLead.id}`)}
+   672→                      className='flex-1 sm:flex-none'
+   673→                    >
+   674→                      <ExternalLink className='size-4' />
+   675→                      View Details
+   676→                    </Button>
+   677→                  </div>
+   678→                </CardContent>
+   679→              </Card>
+   680→
+   681→              {/* Recent Call History */}
+   682→              <Card>
+   683→                <CardHeader className='pb-3'>
+   684→                  <CardTitle className='flex items-center gap-2 text-base'>
+   685→                    <PhoneCall className='size-4' />
+   686→                    Recent Calls
+   687→                  </CardTitle>
+   688→                </CardHeader>
+   689→                <CardContent>
+   690→                  {loadingCalls ? (
+   691→                    <div className='space-y-2'>
+   692→                      {Array.from({ length: 3 }).map((_, i) => (
+   693→                        <Skeleton key={i} className='h-12 w-full' />
+   694→                      ))}
+   695→                    </div>
+   696→                  ) : leadCalls.length === 0 ? (
+   697→                    <p className='text-center text-sm text-muted-foreground'>
+   698→                      No call history found
+   699→                    </p>
+   700→                  ) : (
+   701→                    <ScrollArea className='max-h-64'>
+   702→                      <div className='space-y-2'>
+   703→                        {leadCalls.map((call) => (
+   704→                          <div
+   705→                            key={call.id}
+   706→                            className='flex items-center justify-between gap-3 rounded-lg border p-3'
+   707→                          >
+   708→                            <div className='flex items-center gap-3'>
+   709→                              {call.direction === 'OUTBOUND' ? (
+   710→                                <PhoneOff className='size-4 text-muted-foreground' />
+   711→                              ) : (
+   712→                                <Phone className='size-4 text-muted-foreground' />
+   713→                              )}
+   714→                              <div>
+   715→                                <p className='text-sm font-medium'>
+   716→                                  {call.direction === 'OUTBOUND' ? 'Outbound' : 'Inbound'}
+   717→                                </p>
+   718→                                <p className='text-xs text-muted-foreground'>
+   719→                                  {formatDateTime(call.createdAt)}
+   720→                                </p>
+   721→                              </div>
+   722→                            </div>
+   723→                            <div className='flex items-center gap-2 text-xs text-muted-foreground'>
+   724→                              {call.callStatus === 'MISSED' && (
+   725→                                <Badge variant='outline' className='border-red-200 text-red-600'>
+   726→                                  Missed
+   727→                                </Badge>
+   728→                              )}
+   729→                              <span>{formatDuration(call.duration)}</span>
+   730→                            </div>
+   731→                          </div>
+   732→                        ))}
+   733→                      </div>
+   734→                    </ScrollArea>
+   735→                  )}
+   736→                </CardContent>
+   737→              </Card>
+   738→            </>
+   739→          )}
+   740→        </div>
+   741→      </div>
+   742→
+   743→      {/* Call Dialog */}
+   744→      <Dialog open={callDialogOpen} onOpenChange={(open) => {
+   745→        if (!open && !endingCall) {
+   746→          setCallDialogOpen(false)
+   747→          setActiveCall(null)
+   748→        }
+   749→      }}>
+   750→        <DialogContent className='sm:max-w-md'>
+   751→          <DialogHeader>
+   752→            <DialogTitle className='flex items-center gap-2'>
+   753→              <Phone className='size-5 text-green-600' />
+   754→              Call in Progress
+   755→            </DialogTitle>
+   756→            <DialogDescription>
+   757→              Calling {selectedLead ? getLeadName(selectedLead) : 'lead'}...
+   758→            </DialogDescription>
+   759→          </DialogHeader>
+   760→
+   761→          <div className='space-y-4'>
+   762→            {/* Contact Info */}
+   763→            {selectedLead && (
+   764→              <div className='rounded-lg bg-muted/50 p-3 text-sm'>
+   765→                <p className='font-medium'>{getLeadName(selectedLead)}</p>
+   766→                {selectedLead.mobile && (
+   767→                  <p className='mt-1 text-muted-foreground'>{selectedLead.mobile}</p>
+   768→                )}
+   769→                {selectedLead.email && (
+   770→                  <p className='text-muted-foreground'>{selectedLead.email}</p>
+   771→                )}
+   772→              </div>
+   773→            )}
+   774→
+   775→            {/* Disposition */}
+   776→            <div className='space-y-2'>
+   777→              <label className='text-sm font-medium'>Call Disposition</label>
+   778→              <div className='grid grid-cols-2 gap-2'>
+   779→                {DISPOSITION_OPTIONS.map((opt) => (
+   780→                  <button
+   781→                    key={opt.value}
+   782→                    onClick={() => setDisposition(opt.value)}
+   783→                    className={`rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+   784→                      disposition === opt.value
+   785→                        ? 'border-primary bg-primary/10 text-primary'
+   786→                        : 'hover:bg-muted'
+   787→                    }`}
+   788→                  >
+   789→                    {opt.label}
+   790→                  </button>
+   791→                ))}
+   792→              </div>
+   793→            </div>
+   794→
+   795→            {/* Call Notes */}
+   796→            <div className='space-y-2'>
+   797→              <label htmlFor='call-notes' className='text-sm font-medium'>
+   798→                Call Notes
+   799→              </label>
+   800→              <Textarea
+   801→                id='call-notes'
+   802→                placeholder='Add notes about this call...'
+   803→                value={callNotes}
+   804→                onChange={(e) => setCallNotes(e.target.value)}
+   805→                rows={3}
+   806→              />
+   807→            </div>
+   808→
+   809→            {!recordingAvailable && (
+   810→              <div className='flex items-center gap-2 text-xs text-amber-600'>
+   811→                <Info className='size-3.5 shrink-0' />
+   812→                Call recording unavailable - provider not configured
+   813→              </div>
+   814→            )}
+   815→          </div>
+   816→
+   817→          <DialogFooter className='gap-2'>
+   818→            <Button
+   819→              variant='destructive'
+   820→              onClick={handleEndCall}
+   821→              disabled={endingCall}
+   822→            >
+   823→              {endingCall ? (
+   824→                <Loader2 className='size-4 animate-spin' />
+   825→              ) : (
+   826→                <PhoneOff className='size-4' />
+   827→              )}
+   828→              End Call
+   829→            </Button>
+   830→          </DialogFooter>
+   831→        </DialogContent>
+   832→      </Dialog>
+   833→
+   834→      {/* Note Dialog */}
+   835→      <Dialog open={noteDialogOpen} onOpenChange={setNoteDialogOpen}>
+   836→        <DialogContent className='sm:max-w-md'>
+   837→          <DialogHeader>
+   838→            <DialogTitle>Add Note</DialogTitle>
+   839→            <DialogDescription>
+   840→              Add a note for {selectedLead ? getLeadName(selectedLead) : 'this lead'}
+   841→            </DialogDescription>
+   842→          </DialogHeader>
+   843→          <Textarea
+   844→            placeholder='Enter your note...'
+   845→            value={noteText}
+   846→            onChange={(e) => setNoteText(e.target.value)}
+   847→            rows={5}
+   848→            autoFocus
+   849→          />
+   850→          <DialogFooter className='gap-2'>
+   851→            <Button variant='outline' onClick={() => setNoteDialogOpen(false)}>
+   852→              Cancel
+   853→            </Button>
+   854→            <Button
+   855→              onClick={handleSaveNote}
+   856→              disabled={savingNote || !noteText.trim()}
+   857→            >
+   858→              {savingNote && <Loader2 className='size-4 animate-spin' />}
+   859→              Save Note
+   860→            </Button>
+   861→          </DialogFooter>
+   862→        </DialogContent>
+   863→      </Dialog>
+   864→
+   865→      {/* Follow-up Dialog */}
+   866→      <Dialog open={followUpDialogOpen} onOpenChange={setFollowUpDialogOpen}>
+   867→        <DialogContent className='sm:max-w-md'>
+   868→          <DialogHeader>
+   869→            <DialogTitle>Schedule Follow-up</DialogTitle>
+   870→            <DialogDescription>
+   871→              Schedule a follow-up for {selectedLead ? getLeadName(selectedLead) : 'this lead'}
+   872→            </DialogDescription>
+   873→          </DialogHeader>
+   874→          <div className='space-y-4'>
+   875→            <div className='space-y-2'>
+   876→              <label htmlFor='fu-title' className='text-sm font-medium'>
+   877→                Title <span className='text-destructive'>*</span>
+   878→              </label>
+   879→              <Input
+   880→                id='fu-title'
+   881→                placeholder='Follow-up title...'
+   882→                value={followUpTitle}
+   883→                onChange={(e) => setFollowUpTitle(e.target.value)}
+   884→              />
+   885→            </div>
+   886→            <div className='space-y-2'>
+   887→              <label htmlFor='fu-date' className='text-sm font-medium'>
+   888→                Date & Time <span className='text-destructive'>*</span>
+   889→              </label>
+   890→              <Input
+   891→                id='fu-date'
+   892→                type='datetime-local'
+   893→                value={followUpDate}
+   894→                onChange={(e) => setFollowUpDate(e.target.value)}
+   895→              />
+   896→            </div>
+   897→          </div>
+   898→          <DialogFooter className='gap-2'>
+   899→            <Button variant='outline' onClick={() => setFollowUpDialogOpen(false)}>
+   900→              Cancel
+   901→            </Button>
+   902→            <Button
+   903→              onClick={handleScheduleFollowUp}
+   904→              disabled={savingFollowUp || !followUpTitle.trim() || !followUpDate}
+   905→            >
+   906→              {savingFollowUp && <Loader2 className='size-4 animate-spin' />}
+   907→              Schedule
+   908→            </Button>
+   909→          </DialogFooter>
+   910→        </DialogContent>
+   911→      </Dialog>
+   912→    </div>
+   913→  )
+   914→}
+   915→

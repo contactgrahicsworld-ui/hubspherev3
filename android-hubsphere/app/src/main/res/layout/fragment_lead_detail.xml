@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:padding="16dp">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+        <TextView android:id="@+id/tvLeadName" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="22sp" android:textColor="@color/text_primary" android:textStyle="bold" />
+        <TextView android:id="@+id/tvLeadCompany" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="14sp" android:textColor="@color/text_secondary" android:layout_marginTop="4dp" />
+        <TextView android:id="@+id/tvLeadPhone" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="16sp" android:textColor="@color/primary" android:layout_marginTop="12dp" />
+        <TextView android:id="@+id/tvLeadStatus" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="14sp" android:textColor="@color/status_pending" android:layout_marginTop="4dp" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/btnCall" android:layout_width="match_parent" android:layout_height="48dp" android:text="@string/call_button" android:layout_marginTop="24dp" />
+    </LinearLayout>
+</ScrollView>

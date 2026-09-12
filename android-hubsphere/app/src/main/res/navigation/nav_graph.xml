@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/dashboardFragment">
+    <fragment android:id="@+id/dashboardFragment" android:name="com.hubsphere.android.ui.dashboard.DashboardFragment" android:label="Dashboard" />
+    <fragment android:id="@+id/contactsFragment" android:name="com.hubsphere.android.ui.contacts.ContactsFragment" android:label="Contacts" />
+    <fragment android:id="@+id/contactDetailFragment" android:name="com.hubsphere.android.ui.contacts.ContactDetailFragment" android:label="Contact Detail" />
+    <fragment android:id="@+id/leadsFragment" android:name="com.hubsphere.android.ui.leads.LeadsFragment" android:label="Leads" />
+    <fragment android:id="@+id/leadDetailFragment" android:name="com.hubsphere.android.ui.leads.LeadDetailFragment" android:label="Lead Detail" />
+    <fragment android:id="@+id/callsFragment" android:name="com.hubsphere.android.ui.calls.CallsFragment" android:label="Calls" />
+    <fragment android:id="@+id/devicesFragment" android:name="com.hubsphere.android.ui.devices.DevicesFragment" android:label="Devices" />
+    <fragment android:id="@+id/profileFragment" android:name="com.hubsphere.android.ui.profile.ProfileFragment" android:label="Profile" />
+</navigation>

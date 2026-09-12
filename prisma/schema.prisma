@@ -67,6 +67,9 @@ model Tenant {
   automationConditions  AutomationCondition[]
   automationActions     AutomationAction[]
   automationExecutionLogs AutomationExecutionLog[]
+  devices              Device[]
+  callRequests         CallRequest[]
+  callEvents           CallEvent[]
 
   @@map("tenants")
 }
@@ -119,6 +122,7 @@ model User {
   automationExecutions  AutomationExecution[] @relation("ExecutionTriggeredBy")
   createdWorkflows      AutomationWorkflow[] @relation("WorkflowCreator")
   updatedWorkflows      AutomationWorkflow[] @relation("WorkflowUpdater")
+  devices               Device[]
 
   @@map("users")
 }
@@ -331,13 +335,15 @@ model AuditLog {
 // ============================================
 
 model RefreshToken {
-  id        String    @id @default(uuid()) @db.Uuid
-  token     String    @unique
-  userId    String    @map("user_id") @db.Uuid
-  tenantId  String?   @map("tenant_id") @db.Uuid // Active tenant context when token was issued
-  expiresAt DateTime  @map("expires_at")
-  revokedAt DateTime? @map("revoked_at")
-  createdAt DateTime  @default(now()) @map("created_at")
+  id          String    @id @default(uuid()) @db.Uuid
+  token       String    @unique
+  userId      String    @map("user_id") @db.Uuid
+  tenantId    String?   @map("tenant_id") @db.Uuid // Active tenant context when token was issued
+  deviceType  String?   @default("WEB") @map("device_type") // WEB, ANDROID, IOS
+  deviceInfo  String?   @map("device_info") // User-Agent or device model
+  expiresAt   DateTime  @map("expires_at")
+  revokedAt   DateTime? @map("revoked_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -415,6 +421,7 @@ model Call {
 
   tenant     Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   recordings CallRecording[]
+  callRequest CallRequest?
 
   @@index([tenantId])
   @@index([agentId])
@@ -1642,4 +1649,117 @@ model AutomationExecutionLog {
   @@index([actionId])
   @@index([level])
   @@map("automation_execution_logs")
+}
+
+// ============================================
+// DEVICE (Android phone/tablet for SIM telecalling)
+// ============================================
+
+model Device {
+  id              String    @id @default(uuid()) @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  userId          String    @map("user_id") @db.Uuid
+  deviceName      String?   @map("device_name")
+  deviceModel     String?   @map("device_model")
+  osVersion       String?   @map("os_version")
+  appVersion      String?   @map("app_version")
+  simOperator     String?   @map("sim_operator")
+  simCountry      String?   @map("sim_country")
+  phoneNumber     String?   @map("phone_number")
+  status          String    @default("UNREGISTERED") // UNREGISTERED, PAIRING, PENDING_APPROVAL, ACTIVE, REVOKED
+  pairingToken    String?   @unique @map("pairing_token")
+  pairingTokenExpiry DateTime? @map("pairing_token_expiry")
+  deviceToken     String?   @unique @map("device_token") // Long-lived auth token
+  lastHeartbeatAt DateTime? @map("last_heartbeat_at")
+  lastIpAddress   String?   @map("last_ip_address")
+  pushToken       String?   @map("push_token") // FCM push token
+  metadata        Json      @default("{}")
+  registeredAt    DateTime? @map("registered_at")
+  approvedAt      DateTime? @map("approved_at")
+  approvedBy      String?   @map("approved_by") @db.Uuid
+  revokedAt       DateTime? @map("revoked_at")
+  revokedBy       String?   @map("revoked_by") @db.Uuid
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  callRequests CallRequest[]
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([status])
+  @@index([deviceToken])
+  @@index([pairingToken])
+  @@index([lastHeartbeatAt])
+  @@map("devices")
+}
+
+// ============================================
+// CALL REQUEST (CRM → Device call instruction)
+// ============================================
+
+model CallRequest {
+  id              String    @id @default(uuid()) @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  deviceId        String    @map("device_id") @db.Uuid
+  requestedBy     String    @map("requested_by") @db.Uuid
+  leadId          String?   @map("lead_id")
+  contactId       String?   @map("contact_id")
+  dealId          String?   @map("deal_id")
+  phoneNumber     String    @map("phone_number")
+  contactName     String?   @map("contact_name")
+  idempotencyKey  String    @unique @map("idempotency_key")
+  status          String    @default("PENDING") // PENDING, ACCEPTED, REJECTED, CANCELLED, EXPIRED, COMPLETED
+  callId          String?   @unique @map("call_id") @db.Uuid // Link to CRM Call record
+  priority        Int       @default(0)
+  metadata        Json      @default("{}")
+  expiresAt       DateTime? @map("expires_at")
+  acceptedAt      DateTime? @map("accepted_at")
+  completedAt     DateTime? @map("completed_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  device      Device       @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  call        Call?        @relation(fields: [callId], references: [id], onDelete: SetNull)
+  events      CallEvent[]
+
+  @@index([tenantId])
+  @@index([deviceId])
+  @@index([requestedBy])
+  @@index([status])
+  @@index([idempotencyKey])
+  @@index([createdAt])
+  @@map("call_requests")
+}
+
+// ============================================
+// CALL EVENT (Real-time events from Android device)
+// ============================================
+
+model CallEvent {
+  id              String    @id @default(uuid()) @db.Uuid
+  tenantId        String    @map("tenant_id") @db.Uuid
+  callRequestId   String    @map("call_request_id") @db.Uuid
+  deviceId        String    @map("device_id") @db.Uuid
+  eventType       String    @map("event_type") // CALL_STARTED, RINGING, CONNECTED, ON_HOLD, RESUMED, ENDED, FAILED, MISSED
+  eventData       Json      @default("{}") @map("event_data")
+  eventId         String    @unique @map("event_id") // Idempotency: unique per event
+  duration        Int?      // seconds
+  failureReason   String?   @map("failure_reason")
+  recordingAvailable Boolean? @default(false) @map("recording_available")
+  recordingUrl    String?   @map("recording_url")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  callRequest  CallRequest  @relation(fields: [callRequestId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([callRequestId])
+  @@index([deviceId])
+  @@index([eventType])
+  @@index([eventId])
+  @@index([createdAt])
+  @@map("call_events")
 }

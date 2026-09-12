@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">HubSphere</string>
+    <string name="login_title">HubSphere</string>
+    <string name="login_subtitle">Sign in to your account</string>
+    <string name="email_hint">Email address</string>
+    <string name="password_hint">Password</string>
+    <string name="login_button">Sign In</string>
+    <string name="nav_dashboard">Dashboard</string>
+    <string name="nav_contacts">Contacts</string>
+    <string name="nav_leads">Leads</string>
+    <string name="nav_calls">Calls</string>
+    <string name="nav_more">More</string>
+    <string name="device_status_active">Active</string>
+    <string name="device_status_pending">Pending Approval</string>
+    <string name="device_status_revoked">Revoked</string>
+    <string name="call_button">Call</string>
+    <string name="no_sim_detected">No SIM card detected</string>
+    <string name="offline_mode">Offline Mode</string>
+    <string name="sync_pending">Sync Pending</string>
+    <string name="check_for_updates">Check for Updates</string>
+    <string name="logout">Logout</string>
+    <string name="version_format">Version %s</string>
+    <string name="pair_device">Pair Device</string>
+    <string name="pairing_token_hint">Enter pairing token</string>
+    <string name="update_available">Update Available</string>
+    <string name="mandatory_update">Mandatory Update Required</string>
+</resources>

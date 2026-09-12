@@ -21,6 +21,7 @@ import {
   Phone,
   Upload,
   Download,
+  Smartphone,
   // HRMS icons
   Briefcase,
   // Communication icons
@@ -150,8 +151,9 @@ export const crmNav: NavSection[] = [
     ],
   },
   {
-    label: 'More',
+    label: 'Telecalling',
     items: [
+      { title: 'Devices & Calls', href: '/telecalling', icon: Smartphone },
       { title: 'Call History', href: '/crm/calls', icon: Phone },
       { title: 'Import', href: '/crm/import', icon: Upload },
       { title: 'Export', href: '/crm/export', icon: Download },

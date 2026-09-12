@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { email, password } = validate(loginSchema, body);
+    const { email, password, deviceType, deviceInfo } = validate(loginSchema, body);
 
     // Find user by email
     const user = await db.user.findUnique({
@@ -100,6 +100,8 @@ export async function POST(request: NextRequest) {
         token: refreshToken,
         userId: user.id,
         tenantId,
+        deviceType: deviceType || 'WEB', // WEB, ANDROID, IOS — enables simultaneous sessions
+        deviceInfo: deviceInfo || request.headers.get('user-agent') || undefined,
         expiresAt: getRefreshTokenExpiry(),
       },
     });
@@ -117,7 +119,7 @@ export async function POST(request: NextRequest) {
       action: 'auth.login',
       targetType: 'User',
       targetId: user.id,
-      metadata: { email: user.email },
+      metadata: { email: user.email, deviceType: deviceType || 'WEB' },
       ipAddress: request.headers.get('x-forwarded-for') ?? undefined,
       userAgent: request.headers.get('user-agent') ?? undefined,
     });
