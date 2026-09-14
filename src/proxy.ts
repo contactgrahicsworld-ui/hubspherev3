@@ -17,6 +17,7 @@ const PUBLIC_API_PREFIXES = [
   '/api/v1/system/health',
   '/api/v1/communication/webhook',
   '/api/v1/billing/plans', // Public: plan listing (no auth required)
+  '/api/v1/app-update',    // Public: mobile clients check for updates before login
 ];
 
 const PUBLIC_PAGE_PATHS = new Set([
@@ -140,7 +141,8 @@ export function proxy(request: NextRequest): NextResponse {
   if (isApi) {
     const hasToken = request.cookies.get('hs-access-token')?.value ||
                      request.cookies.get('accessToken')?.value ||
-                     request.headers.get('authorization');
+                     request.headers.get('authorization') ||
+                     request.headers.get('X-Device-Token'); // Device auth for call events/heartbeat
     if (!hasToken) {
       const res = NextResponse.json(
         { success: false, error: 'Authentication required', code: 'UNAUTHENTICATED' },
