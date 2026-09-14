@@ -47,7 +47,6 @@ class ApiService private constructor(private val context: Context) {
             try {
                 val response = client.newCall(request).execute()
                 if (response.code == 401) {
-                    // Try refresh
                     val newToken = AuthManager.refreshAccessToken()
                     if (newToken != null) {
                         val newRequest = request.newBuilder()
@@ -63,6 +62,14 @@ class ApiService private constructor(private val context: Context) {
         }
     }
 
+    // Helper: parse ApiResponse and extract typed data
+    private inline fun <reified T> parseApiResponse(response: String): T? {
+        val apiResp = gson.fromJson(response, ApiResponse::class.java)
+        if (!apiResp.success || apiResp.data == null) return null
+        val dataJson = gson.toJson(apiResp.data)
+        return gson.fromJson(dataJson, object : TypeToken<T>() {}.type)
+    }
+
     // AUTH
     suspend fun login(email: String, password: String, deviceType: String): LoginResponse? {
         val body = gson.toJson(mapOf("email" to email, "password" to password, "deviceType" to deviceType, "deviceInfo" to "HubSphere-Android/3.1.0"))
@@ -71,8 +78,7 @@ class ApiService private constructor(private val context: Context) {
             .post(body.toRequestBody(JSON_MEDIA_TYPE))
             .build()
         val response = executeRequest(request) ?: return null
-        val apiResp = gson.fromJson(response, ApiResponse::class.java)
-        return if (apiResp.success) gson.fromJson(gson.toJson(apiResp.data), LoginResponse::class.java) else null
+        return parseApiResponse<LoginResponse>(response)
     }
 
     suspend fun refreshToken(token: String): LoginResponse? {
@@ -82,8 +88,7 @@ class ApiService private constructor(private val context: Context) {
             .post(body.toRequestBody(JSON_MEDIA_TYPE))
             .build()
         val response = executeRequest(request) ?: return null
-        val apiResp = gson.fromJson(response, ApiResponse::class.java)
-        return if (apiResp.success) gson.fromJson(gson.toJson(apiResp.data), LoginResponse::class.java) else null
+        return parseApiResponse<LoginResponse>(response)
     }
 
     // CRM
@@ -92,9 +97,7 @@ class ApiService private constructor(private val context: Context) {
         search?.let { url += "&search=$it" }
         val request = authRequestBuilder().url(url).get().build()
         val response = executeRequest(request) ?: return null
-        val type = object : TypeToken<ApiResponse<List<Contact>>>() {}.type
-        val apiResp: ApiResponse<List<Contact>> = gson.fromJson(response, type)
-        return if (apiResp.success) apiResp.data else null
+        return parseApiResponse<List<Contact>>(response)
     }
 
     suspend fun getLeads(page: Int = 1, limit: Int = 20, search: String? = null): List<Lead>? {
@@ -102,18 +105,14 @@ class ApiService private constructor(private val context: Context) {
         search?.let { url += "&search=$it" }
         val request = authRequestBuilder().url(url).get().build()
         val response = executeRequest(request) ?: return null
-        val type = object : TypeToken<ApiResponse<List<Lead>>>() {}.type
-        val apiResp: ApiResponse<List<Lead>> = gson.fromJson(response, type)
-        return if (apiResp.success) apiResp.data else null
+        return parseApiResponse<List<Lead>>(response)
     }
 
     suspend fun getCalls(page: Int = 1, limit: Int = 20): List<CallRecord>? {
         val url = "$BASE_URL$API_PREFIX/crm/calls?page=$page&limit=$limit"
         val request = authRequestBuilder().url(url).get().build()
         val response = executeRequest(request) ?: return null
-        val type = object : TypeToken<ApiResponse<List<CallRecord>>>() {}.type
-        val apiResp: ApiResponse<List<CallRecord>> = gson.fromJson(response, type)
-        return if (apiResp.success) apiResp.data else null
+        return parseApiResponse<List<CallRecord>>(response)
     }
 
     // DEVICES
@@ -124,8 +123,7 @@ class ApiService private constructor(private val context: Context) {
             .post(body.toRequestBody(JSON_MEDIA_TYPE))
             .build()
         val response = executeRequest(request) ?: return null
-        val apiResp = gson.fromJson(response, ApiResponse::class.java)
-        return if (apiResp.success) gson.fromJson(gson.toJson(apiResp.data), Device::class.java) else null
+        return parseApiResponse<Device>(response)
     }
 
     suspend fun pairDevice(deviceId: String, pairingToken: String): Device? {
@@ -135,8 +133,7 @@ class ApiService private constructor(private val context: Context) {
             .post(body.toRequestBody(JSON_MEDIA_TYPE))
             .build()
         val response = executeRequest(request) ?: return null
-        val apiResp = gson.fromJson(response, ApiResponse::class.java)
-        return if (apiResp.success) gson.fromJson(gson.toJson(apiResp.data), Device::class.java) else null
+        return parseApiResponse<Device>(response)
     }
 
     suspend fun sendHeartbeat(deviceId: String, appVersion: String): Boolean {
@@ -158,8 +155,7 @@ class ApiService private constructor(private val context: Context) {
             .post(body.toRequestBody(JSON_MEDIA_TYPE))
             .build()
         val response = executeRequest(request) ?: return null
-        val apiResp = gson.fromJson(response, ApiResponse::class.java)
-        return if (apiResp.success) gson.fromJson(gson.toJson(apiResp.data), CallEvent::class.java) else null
+        return parseApiResponse<CallEvent>(response)
     }
 
     // CALL REQUESTS
@@ -168,9 +164,7 @@ class ApiService private constructor(private val context: Context) {
         status?.let { url += "&status=$it" }
         val request = authRequestBuilder().url(url).get().build()
         val response = executeRequest(request) ?: return null
-        val type = object : TypeToken<ApiResponse<List<CallRequest>>>() {}.type
-        val apiResp: ApiResponse<List<CallRequest>> = gson.fromJson(response, type)
-        return if (apiResp.success) apiResp.data else null
+        return parseApiResponse<List<CallRequest>>(response)
     }
 
     // APP UPDATE (SEPARATE from data sync)
@@ -178,7 +172,6 @@ class ApiService private constructor(private val context: Context) {
         val url = "$BASE_URL$API_PREFIX/app-update?platform=android&currentVersion=$currentVersion"
         val request = Request.Builder().url(url).get().build()
         val response = executeRequest(request) ?: return null
-        val apiResp = gson.fromJson(response, ApiResponse::class.java)
-        return if (apiResp.success) gson.fromJson(gson.toJson(apiResp.data), AppUpdateInfo::class.java) else null
+        return parseApiResponse<AppUpdateInfo>(response)
     }
 }

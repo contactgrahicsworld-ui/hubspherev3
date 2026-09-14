@@ -25,4 +25,8 @@
     <string name="pairing_token_hint">Enter pairing token</string>
     <string name="update_available">Update Available</string>
     <string name="mandatory_update">Mandatory Update Required</string>
+    <string name="login_error_invalid">Invalid email or password</string>
+    <string name="login_error_network">Network error. Please check your connection.</string>
+    <string name="lead_detail_title">Lead Detail</string>
+    <string name="no_phone_number">No phone number</string>
 </resources>

@@ -3,12 +3,34 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/nav_graph"
     app:startDestination="@id/dashboardFragment">
-    <fragment android:id="@+id/dashboardFragment" android:name="com.hubsphere.android.ui.dashboard.DashboardFragment" android:label="Dashboard" />
-    <fragment android:id="@+id/contactsFragment" android:name="com.hubsphere.android.ui.contacts.ContactsFragment" android:label="Contacts" />
+
+    <fragment android:id="@+id/loginFragment" android:name="com.hubsphere.android.auth.LoginFragment" android:label="Login">
+        <action android:id="@+id/action_login_to_main" app:destination="@id/dashboardFragment" />
+    </fragment>
+
+    <fragment android:id="@+id/dashboardFragment" android:name="com.hubsphere.android.ui.dashboard.DashboardFragment" android:label="Dashboard">
+        <action android:id="@+id/action_dashboard_to_contacts" app:destination="@id/contactsFragment" />
+        <action android:id="@+id/action_dashboard_to_leads" app:destination="@id/leadsFragment" />
+        <action android:id="@+id/action_dashboard_to_calls" app:destination="@id/callsFragment" />
+    </fragment>
+
+    <fragment android:id="@+id/contactsFragment" android:name="com.hubsphere.android.ui.contacts.ContactsFragment" android:label="Contacts">
+        <action android:id="@+id/action_contacts_to_detail" app:destination="@id/contactDetailFragment" />
+    </fragment>
+
     <fragment android:id="@+id/contactDetailFragment" android:name="com.hubsphere.android.ui.contacts.ContactDetailFragment" android:label="Contact Detail" />
-    <fragment android:id="@+id/leadsFragment" android:name="com.hubsphere.android.ui.leads.LeadsFragment" android:label="Leads" />
+
+    <fragment android:id="@+id/leadsFragment" android:name="com.hubsphere.android.ui.leads.LeadsFragment" android:label="Leads">
+        <action android:id="@+id/action_leads_to_detail" app:destination="@id/leadDetailFragment" />
+    </fragment>
+
     <fragment android:id="@+id/leadDetailFragment" android:name="com.hubsphere.android.ui.leads.LeadDetailFragment" android:label="Lead Detail" />
+
     <fragment android:id="@+id/callsFragment" android:name="com.hubsphere.android.ui.calls.CallsFragment" android:label="Calls" />
+
     <fragment android:id="@+id/devicesFragment" android:name="com.hubsphere.android.ui.devices.DevicesFragment" android:label="Devices" />
-    <fragment android:id="@+id/profileFragment" android:name="com.hubsphere.android.ui.profile.ProfileFragment" android:label="Profile" />
+
+    <fragment android:id="@+id/profileFragment" android:name="com.hubsphere.android.ui.profile.ProfileFragment" android:label="Profile">
+        <action android:id="@+id/action_profile_to_devices" app:destination="@id/devicesFragment" />
+    </fragment>
 </navigation>

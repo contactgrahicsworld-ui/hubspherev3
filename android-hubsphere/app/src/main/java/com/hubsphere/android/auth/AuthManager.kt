@@ -55,6 +55,16 @@ object AuthManager {
             .apply()
     }
 
+    fun saveUserInfo(id: String, email: String, name: String, role: String, tenantId: String, tenantName: String) {
+        prefs.edit()
+            .putString(KEY_USER_ID, id)
+            .putString(KEY_USER_NAME, name)
+            .putString(KEY_USER_EMAIL, email)
+            .putString(KEY_TENANT_ID, tenantId)
+            .putString(KEY_TENANT_NAME, tenantName)
+            .apply()
+    }
+
     fun getUserId(): String? = prefs.getString(KEY_USER_ID, null)
     fun getUserName(): String? = prefs.getString(KEY_USER_NAME, null)
     fun getUserEmail(): String? = prefs.getString(KEY_USER_EMAIL, null)
@@ -80,6 +90,11 @@ object AuthManager {
     }
 
     fun logout() {
+        val deviceToken = getDeviceToken()
+        val deviceId = getDeviceId()
         prefs.edit().clear().apply()
+        // Preserve device identity for re-pairing
+        if (deviceToken != null) prefs.edit().putString(KEY_DEVICE_TOKEN, deviceToken).apply()
+        if (deviceId != null) prefs.edit().putString(KEY_DEVICE_ID, deviceId).apply()
     }
 }

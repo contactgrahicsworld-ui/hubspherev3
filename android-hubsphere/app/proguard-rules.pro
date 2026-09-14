@@ -1,7 +1,7 @@
 # Gson
 -keepattributes Signature
 -keepattributes *Annotation*
--keep class com.hubsphere.android.api.models.** { *; }
+-keep class com.hubsphere.android.api.** { *; }
 -keep class com.google.gson.** { *; }
 -dontwarn sun.misc.**
 
@@ -34,7 +34,7 @@
 -keep class * extends androidx.fragment.app.Fragment { *; }
 
 # HubSphere Models
--keep class com.hubsphere.android.api.models.** { *; }
+-keep class com.hubsphere.android.api.** { *; }
 -keep class com.hubsphere.android.auth.** { *; }
 -keep class com.hubsphere.android.sync.** { *; }
 -keep class com.hubsphere.android.device.** { *; }

@@ -7,15 +7,14 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.hubsphere.android.R
-import com.hubsphere.android.api.models.Call
+import com.hubsphere.android.api.CallRecord
 import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 
 class CallListAdapter(
-    private val calls: List<Call>,
-    private val onClick: (Call) -> Unit
+    private val calls: List<CallRecord>,
+    private val onClick: (CallRecord) -> Unit
 ) : RecyclerView.Adapter<CallListAdapter.ViewHolder>() {
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -35,35 +34,36 @@ class CallListAdapter(
         val call = calls[position]
 
         // Call type icon and color
-        when (call.direction.lowercase()) {
-            "inbound" -> {
+        val direction = call.direction ?: "outbound"
+        when (direction.lowercase()) {
+            "inbound", "incoming" -> {
                 holder.ivCallType.setImageResource(android.R.drawable.ic_menu_call)
-                holder.ivCallType.setColorFilter(holder.itemView.context.getColor(R.color.call_incoming))
+                holder.ivCallType.setColorFilter(holder.itemView.context.getColor(R.color.status_active))
             }
-            "outbound" -> {
+            "outbound", "outgoing" -> {
                 holder.ivCallType.setImageResource(android.R.drawable.ic_menu_call)
-                holder.ivCallType.setColorFilter(holder.itemView.context.getColor(R.color.call_outgoing))
+                holder.ivCallType.setColorFilter(holder.itemView.context.getColor(R.color.primary))
             }
             else -> {
                 holder.ivCallType.setImageResource(android.R.drawable.ic_menu_call)
-                holder.ivCallType.setColorFilter(holder.itemView.context.getColor(R.color.call_missed))
+                holder.ivCallType.setColorFilter(holder.itemView.context.getColor(R.color.status_revoked))
             }
         }
 
-        // Contact name
-        holder.tvContactName.text = call.contactName ?: call.phoneNumber
+        // Contact info
+        holder.tvContactName.text = call.callStatus ?: "Call"
 
         // Call info
-        val directionLabel = when (call.direction.lowercase()) {
-            "inbound" -> "Incoming"
-            "outbound" -> "Outgoing"
-            else -> call.direction
+        val directionLabel = when (direction.lowercase()) {
+            "inbound", "incoming" -> "Incoming"
+            "outbound", "outgoing" -> "Outgoing"
+            else -> direction
         }
-        val durationLabel = formatDuration(call.duration)
+        val durationLabel = formatDuration(call.duration ?: 0)
         holder.tvCallInfo.text = "$directionLabel • $durationLabel"
 
         // Time
-        holder.tvTime.text = formatTime(call.startTime)
+        holder.tvTime.text = formatTime(call.callStartTime)
 
         holder.itemView.setOnClickListener {
             onClick(call)

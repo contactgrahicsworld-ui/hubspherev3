@@ -200,7 +200,10 @@ export async function verify2FADuringLogin(
 /** Derive an AES-256 key from the app's JWT secret for 2FA secret encryption */
 async function get2FAEncryptionKey(): Promise<CryptoKey> {
   // Use JWT_SECRET as the master key (already required, min 32 chars)
-  const masterKey = process.env.JWT_SECRET || 'dev-2fa-encryption-key-change-in-prod';
+  const masterKey = process.env.JWT_SECRET;
+  if (!masterKey || masterKey.length < 32) {
+    throw new Error('JWT_SECRET environment variable is required (min 32 chars) for 2FA encryption');
+  }
   const encoder = new TextEncoder();
   // Derive a 256-bit key using SHA-256 hash of the master key
   const hash = await crypto.subtle.digest('SHA-256', encoder.encode(masterKey));

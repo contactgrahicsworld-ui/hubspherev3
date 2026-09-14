@@ -11,7 +11,7 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.google.android.material.button.MaterialButton
 import com.hubsphere.android.R
-import com.hubsphere.android.auth.AuthActivity
+import com.hubsphere.android.auth.LoginActivity
 import com.hubsphere.android.auth.AuthManager
 import com.hubsphere.android.device.DeviceManager
 import com.hubsphere.android.telecom.SimChecker
@@ -83,7 +83,7 @@ class ProfileFragment : Fragment() {
 
         btnLogout.setOnClickListener {
             AuthManager.logout()
-            startActivity(Intent(requireContext(), AuthActivity::class.java))
+            startActivity(Intent(requireContext(), LoginActivity::class.java))
             requireActivity().finish()
         }
     }

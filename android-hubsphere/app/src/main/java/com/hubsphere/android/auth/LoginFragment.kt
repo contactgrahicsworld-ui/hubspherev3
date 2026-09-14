@@ -1,5 +1,6 @@
 package com.hubsphere.android.auth
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -8,22 +9,18 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import androidx.navigation.fragment.findNavController
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
-import com.hubsphere.android.HubSphereApp
 import com.hubsphere.android.R
 import com.hubsphere.android.api.ApiService
-import com.hubsphere.android.api.models.LoginRequest
+import com.hubsphere.android.telecom.SimChecker
+import com.hubsphere.android.ui.MainActivity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class LoginFragment : Fragment() {
-
-    private lateinit var authManager: AuthManager
-    private lateinit var apiService: ApiService
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -36,12 +33,8 @@ class LoginFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val app = requireActivity().application as HubSphereApp
-        authManager = app.authManager
-        apiService = ApiService(requireContext())
-
-        if (authManager.isLoggedIn()) {
-            findNavController().navigate(R.id.action_login_to_main)
+        if (AuthManager.isLoggedIn()) {
+            navigateToMain()
             return
         }
 
@@ -52,6 +45,18 @@ class LoginFragment : Fragment() {
         val btnLogin = view.findViewById<MaterialButton>(R.id.btnLogin)
         val tvError = view.findViewById<TextView>(R.id.tvError)
         val progressBar = view.findViewById<ProgressBar>(R.id.progressBar)
+        val tvSimStatus = view.findViewById<TextView>(R.id.tvSimStatus)
+
+        // Show SIM status
+        context?.let {
+            val simChecker = SimChecker(it)
+            if (simChecker.hasSim()) {
+                tvSimStatus.text = "SIM: ${simChecker.getOperatorName()} (${simChecker.getCountryCode()})"
+            } else {
+                tvSimStatus.text = getString(R.string.no_sim_detected)
+                tvSimStatus.setTextColor(it.getColor(R.color.status_revoked))
+            }
+        }
 
         btnLogin.setOnClickListener {
             tilEmail.error = null
@@ -75,21 +80,20 @@ class LoginFragment : Fragment() {
 
             lifecycleScope.launch {
                 try {
-                    val request = LoginRequest(email, password, AuthManager.DEVICE_TYPE)
-                    val response = withContext(Dispatchers.IO) {
-                        apiService.login(request)
+                    val apiService = ApiService.getInstance(requireContext())
+                    val result = withContext(Dispatchers.IO) {
+                        apiService.login(email, password, AuthManager.DEVICE_TYPE)
                     }
-                    if (response.isSuccessful && response.body() != null) {
-                        val loginResponse = response.body()!!
-                        authManager.saveTokens(loginResponse.accessToken, loginResponse.refreshToken)
-                        val user = loginResponse.user
-                        if (user != null) {
-                            authManager.saveUserInfo(
-                                user.id, user.email, user.name, user.role,
-                                user.tenantId ?: "", user.tenantName ?: ""
-                            )
-                        }
-                        findNavController().navigate(R.id.action_login_to_main)
+                    if (result != null) {
+                        AuthManager.saveTokens(result.accessToken, result.refreshToken)
+                        AuthManager.saveUser(
+                            result.user.id,
+                            result.user.name ?: "",
+                            result.user.email,
+                            result.tenant?.id ?: "",
+                            result.tenant?.name ?: ""
+                        )
+                        navigateToMain()
                     } else {
                         tvError.text = getString(R.string.login_error_invalid)
                         tvError.visibility = View.VISIBLE
@@ -103,5 +107,10 @@ class LoginFragment : Fragment() {
                 }
             }
         }
+    }
+
+    private fun navigateToMain() {
+        startActivity(Intent(requireContext(), MainActivity::class.java))
+        requireActivity().finish()
     }
 }

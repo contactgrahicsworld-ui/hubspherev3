@@ -7,7 +7,7 @@ import android.widget.ImageButton
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.hubsphere.android.R
-import com.hubsphere.android.api.models.Contact
+import com.hubsphere.android.api.Contact
 
 class ContactListAdapter(
     private val contacts: List<Contact>,
@@ -36,14 +36,13 @@ class ContactListAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val contact = contacts[position]
 
-        // Initials
-        val initials = contact.name.split(" ")
+        val initials = contact.displayName.split(" ")
             .take(2)
             .mapNotNull { it.firstOrNull()?.uppercaseChar()?.toString() }
             .joinToString("")
         holder.tvInitials.text = initials
 
-        holder.tvName.text = contact.name
+        holder.tvName.text = contact.displayName
         holder.tvCompany.text = contact.company ?: ""
         holder.tvPhone.text = contact.phone ?: ""
 

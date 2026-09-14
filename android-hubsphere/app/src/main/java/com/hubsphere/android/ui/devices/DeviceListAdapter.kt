@@ -7,7 +7,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.hubsphere.android.R
-import com.hubsphere.android.api.models.Device
+import com.hubsphere.android.api.Device
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -34,24 +34,24 @@ class DeviceListAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val device = devices[position]
 
-        holder.tvDeviceName.text = device.name
+        holder.tvDeviceName.text = device.deviceName ?: "Unknown Device"
 
         // Status
         val statusColor = when (device.status.uppercase()) {
-            "ACTIVE" -> R.color.device_active
-            "PENDING_APPROVAL" -> R.color.device_pending
-            "REVOKED" -> R.color.device_revoked
-            else -> R.color.device_inactive
+            "ACTIVE" -> R.color.status_active
+            "PENDING_APPROVAL" -> R.color.status_pending
+            "REVOKED" -> R.color.status_revoked
+            else -> R.color.status_pairing
         }
         holder.tvDeviceStatus.text = device.status
         holder.tvDeviceStatus.setTextColor(holder.itemView.context.getColor(statusColor))
 
         // Last heartbeat
-        if (!device.lastHeartbeat.isNullOrEmpty()) {
+        if (!device.lastHeartbeatAt.isNullOrEmpty()) {
             try {
                 val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US)
                 format.timeZone = TimeZone.getTimeZone("UTC")
-                val heartbeatDate = format.parse(device.lastHeartbeat)
+                val heartbeatDate = format.parse(device.lastHeartbeatAt)
                 if (heartbeatDate != null) {
                     val elapsedMs = Date().time - heartbeatDate.time
                     val elapsedMin = TimeUnit.MILLISECONDS.toMinutes(elapsedMs)
@@ -60,22 +60,15 @@ class DeviceListAdapter(
                     holder.tvLastHeartbeat.text = "Last heartbeat: unknown"
                 }
             } catch (e: Exception) {
-                holder.tvLastHeartbeat.text = "Last heartbeat: ${device.lastHeartbeat}"
+                holder.tvLastHeartbeat.text = "Last heartbeat: ${device.lastHeartbeatAt}"
             }
         } else {
             holder.tvLastHeartbeat.text = "No heartbeat"
         }
 
         // Device type icon
-        when (device.type.uppercase()) {
-            "ANDROID" -> {
-                holder.ivDeviceIcon.setImageResource(android.R.drawable.ic_menu_manage)
-                holder.ivDeviceIcon.setColorFilter(holder.itemView.context.getColor(R.color.success))
-            }
-            else -> {
-                holder.ivDeviceIcon.setImageResource(android.R.drawable.ic_menu_manage)
-            }
-        }
+        holder.ivDeviceIcon.setImageResource(android.R.drawable.ic_menu_manage)
+        holder.ivDeviceIcon.setColorFilter(holder.itemView.context.getColor(R.color.status_active))
     }
 
     override fun getItemCount(): Int = devices.size

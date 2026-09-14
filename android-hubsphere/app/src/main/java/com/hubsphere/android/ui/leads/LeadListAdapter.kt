@@ -7,7 +7,7 @@ import android.widget.ImageButton
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.hubsphere.android.R
-import com.hubsphere.android.api.models.Lead
+import com.hubsphere.android.api.Lead
 
 class LeadListAdapter(
     private val leads: List<Lead>,
@@ -36,23 +36,23 @@ class LeadListAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val lead = leads[position]
 
-        val initials = lead.name.split(" ")
+        val initials = lead.displayName.split(" ")
             .take(2)
             .mapNotNull { it.firstOrNull()?.uppercaseChar()?.toString() }
             .joinToString("")
         holder.tvInitials.text = initials
 
-        holder.tvName.text = lead.name
+        holder.tvName.text = lead.displayName
         holder.tvCompany.text = lead.company ?: ""
 
         // Status badge
         holder.tvStatus.text = lead.status
         val statusColor = when (lead.status.uppercase()) {
-            "NEW" -> R.color.lead_new
-            "CONTACTED" -> R.color.lead_contacted
-            "QUALIFIED" -> R.color.lead_qualified
-            "LOST" -> R.color.lead_lost
-            else -> R.color.lead_new
+            "NEW" -> R.color.status_pending
+            "CONTACTED" -> R.color.status_pairing
+            "QUALIFIED" -> R.color.status_active
+            "LOST" -> R.color.status_revoked
+            else -> R.color.status_pending
         }
         holder.tvStatus.setBackgroundResource(statusColor)
 

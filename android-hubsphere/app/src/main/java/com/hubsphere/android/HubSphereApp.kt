@@ -8,6 +8,8 @@ import com.hubsphere.android.sync.SyncWorker
 import java.util.concurrent.TimeUnit
 
 class HubSphereApp : Application() {
+    val authManager: AuthManager get() = AuthManager
+
     override fun onCreate() {
         super.onCreate()
         AuthManager.init(this)
