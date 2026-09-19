@@ -14,13 +14,17 @@ import { ValidationError } from '@/lib/errors';
  * Strip HTML tags and script content from a string to prevent stored XSS.
  * 1. Removes all content between <script>...</script> and <style>...</style> tags
  * 2. Removes all remaining HTML tags <...>
- * 3. Trims whitespace
+ * 3. Removes event handler attributes (onerror, onclick, etc.)
+ * 4. Removes javascript: protocol URLs
+ * 5. Trims whitespace
  */
 function stripHtmlTags(str: string): string {
   return str
     .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
     .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
     .replace(/<[^>]*>/g, '')
+    .replace(/\bon\w+\s*=\s*["'][^"']*["']/gi, '') // Remove event handlers like onerror=""
+    .replace(/javascript\s*:/gi, '') // Remove javascript: protocol
     .trim();
 }
 
@@ -236,6 +240,75 @@ export const paginationSchema = z.object({
 });
 
 export type PaginationInput = z.infer<typeof paginationSchema>;
+
+// ============================================
+// CRM ENTITY SCHEMAS (input sanitization)
+// ============================================
+
+/** Max lengths for CRM text fields */
+const MAX_NAME = 200;
+const MAX_EMAIL = 320;
+const MAX_PHONE = 50;
+const MAX_TITLE = 200;
+const MAX_DESCRIPTION = 5000;
+const MAX_COMPANY = 200;
+
+export const createLeadSchema = z.object({
+  firstName: safeStringField(1, MAX_NAME),
+  lastName: safeStringField(undefined, MAX_NAME).optional(),
+  email: z.string().trim().max(MAX_EMAIL).email().optional(),
+  mobile: z.string().trim().max(MAX_PHONE).optional(),
+  company: safeStringField(undefined, MAX_COMPANY).optional(),
+  source: z.enum(['WEBSITE', 'REFERRAL', 'COLD_CALL', 'ADVERTISEMENT', 'SOCIAL_MEDIA', 'EMAIL', 'OTHER']).default('OTHER'),
+  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).default('MEDIUM'),
+  value: z.number().min(0).max(1e12).optional(),
+  description: safeStringField(undefined, MAX_DESCRIPTION).optional(),
+  ownerId: z.string().uuid().optional(),
+});
+
+export type CreateLeadInput = z.infer<typeof createLeadSchema>;
+
+export const createContactSchema = z.object({
+  firstName: safeStringField(1, MAX_NAME),
+  lastName: safeStringField(undefined, MAX_NAME).optional(),
+  email: z.string().trim().max(MAX_EMAIL).email().optional(),
+  mobile: z.string().trim().max(MAX_PHONE).optional(),
+  phone: z.string().trim().max(MAX_PHONE).optional(),
+  title: safeStringField(undefined, MAX_TITLE).optional(),
+  companyId: z.string().uuid().optional(),
+  ownerId: z.string().uuid().optional(),
+  notes: safeStringField(undefined, MAX_DESCRIPTION).optional(),
+});
+
+export type CreateContactInput = z.infer<typeof createContactSchema>;
+
+export const createDealSchema = z.object({
+  title: safeStringField(1, MAX_NAME),
+  value: z.number().min(0).max(1e12).default(0),
+  currency: z.string().trim().max(10).default('INR'),
+  stage: z.string().trim().max(50).default('NEW'),
+  probability: z.number().int().min(0).max(100).optional(),
+  expectedCloseDate: z.string().datetime().optional(),
+  contactId: z.string().uuid().optional(),
+  companyId: z.string().uuid().optional(),
+  ownerId: z.string().uuid().optional(),
+  notes: safeStringField(undefined, MAX_DESCRIPTION).optional(),
+});
+
+export type CreateDealInput = z.infer<typeof createDealSchema>;
+
+export const createTaskSchema = z.object({
+  title: safeStringField(1, MAX_NAME),
+  description: safeStringField(undefined, MAX_DESCRIPTION).optional(),
+  status: z.enum(['TODO', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED']).default('TODO'),
+  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).default('MEDIUM'),
+  dueDate: z.string().datetime().optional(),
+  entityType: z.enum(['LEAD', 'CONTACT', 'COMPANY', 'DEAL']).optional(),
+  entityId: z.string().uuid().optional(),
+  ownerId: z.string().uuid(),
+});
+
+export type CreateTaskInput = z.infer<typeof createTaskSchema>;
 
 // ============================================
 // VALIDATE HELPER

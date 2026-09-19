@@ -1,0 +1,1276 @@
+     1→/**
+     2→ * Automation Execution Engine — HubSphere V3
+     3→ *
+     4→ * This is the REAL execution engine that:
+     5→ * 1. Listens for trigger events via `triggerEvent()`
+     6→ * 2. Finds all active workflows matching the trigger type (tenant-isolated)
+     7→ * 3. Evaluates conditions against the event data
+     8→ * 4. Executes actions in order — ACTUALLY creates tasks, sends notifications, etc.
+     9→ * 5. Creates AutomationExecution + AutomationExecutionLog records
+    10→ * 6. Handles errors gracefully (logs but never throws)
+    11→ * 7. Runs asynchronously (never blocks the triggering operation)
+    12→ *
+    13→ * Called from business logic via dispatcher convenience functions
+    14→ * or directly via `triggerEvent()`.
+    15→ */
+    16→
+    17→import { db } from '@/lib/db';
+    18→import { logger } from '@/lib/logger';
+    19→import { aiGateway } from '@/lib/providers/ai-gateway';
+    20→import { providerRegistry } from '@/lib/providers/registry';
+    21→import { sendEmail, type EmailMessage } from '@/lib/email';
+    22→import { randomUUID } from 'crypto';
+    23→
+    24→// ============================================
+    25→// TYPES
+    26→// ============================================
+    27→
+    28→/** Supported trigger event types — mapped from AUTOMATION_TRIGGER_EVENTS in constants */
+    29→export type TriggerEventType =
+    30→  | 'lead.created'
+    31→  | 'lead.updated'
+    32→  | 'lead.status_changed'
+    33→  | 'deal.created'
+    34→  | 'deal.updated'
+    35→  | 'deal.stage_changed'
+    36→  | 'deal.won'
+    37→  | 'deal.lost'
+    38→  | 'contact.created'
+    39→  | 'contact.updated'
+    40→  | 'task.created'
+    41→  | 'task.completed'
+    42→  | 'task.overdue'
+    43→  | 'call.completed'
+    44→  | 'call.missed'
+    45→  | 'field_visit.completed'
+    46→  | 'employee.created'
+    47→  | 'leave.requested'
+    48→  | 'leave.approved'
+    49→  | 'invoice.overdue'
+    50→  | 'payment.received'
+    51→  | 'custom_event';
+    52→
+    53→/** Supported condition types */
+    54→export type ConditionType =
+    55→  | 'FIELD_MATCH'
+    56→  | 'STATUS_IS'
+    57→  | 'PRIORITY_IS'
+    58→  | 'OWNER_IS'
+    59→  | 'VALUE_GT'
+    60→  | 'VALUE_LT'
+    61→  | 'TIME_CONDITION';
+    62→
+    63→/** Supported action types */
+    64→export type ActionType =
+    65→  | 'create_task'
+    66→  | 'update_lead'
+    67→  | 'update_deal'
+    68→  | 'change_status'
+    69→  | 'assign_user'
+    70→  | 'create_followup'
+    71→  | 'send_whatsapp'
+    72→  | 'send_email'
+    73→  | 'send_sms'
+    74→  | 'create_notification'
+    75→  | 'delay'
+    76→  | 'webhook'
+    77→  | 'ai_action'
+    78→  | 'add_tag'
+    79→  | 'create_activity'
+    80→  | 'trigger_webhook'
+    81→  | 'ai_suggestion';
+    82→
+    83→/** Context passed to the engine for every trigger event */
+    84→export interface TriggerContext {
+    85→  eventType: TriggerEventType;
+    86→  tenantId: string;
+    87→  /** The entity that triggered this event (lead, deal, task, etc.) */
+    88→  data: Record<string, unknown>;
+    89→  /** Optional: ID of the entity that triggered this */
+    90→  entityId?: string;
+    91→  /** Optional: Type of the entity (lead, deal, task, etc.) */
+    92→  entityType?: string;
+    93→  /** Optional: User ID that triggered this event */
+    94→  triggeredBy?: string;
+    95→}
+    96→
+    97→/** Result of a single action execution */
+    98→interface ActionResult {
+    99→  actionId: string;
+   100→  actionType: string;
+   101→  level: 'INFO' | 'WARN' | 'ERROR' | 'DEBUG';
+   102→  message: string;
+   103→  data: Record<string, unknown>;
+   104→  durationMs: number;
+   105→}
+   106→
+   107→/** Result of the entire trigger event processing */
+   108→export interface TriggerResult {
+   109→  matchedWorkflows: number;
+   110→  executedWorkflows: number;
+   111→  skippedConditionFail: number;
+   112→  errors: number;
+   113→  results: Array<{
+   114→    workflowId: string;
+   115→    workflowName: string;
+   116→    executionId: string;
+   117→    status: 'COMPLETED' | 'FAILED' | 'SKIPPED';
+   118→  }>;
+   119→}
+   120→
+   121→// ============================================
+   122→// CONSTANTS
+   123→// ============================================
+   124→
+   125→const MAX_ACTIONS_PER_EXECUTION = 10;
+   126→const MAX_WORKFLOWS_PER_EVENT = 50;
+   127→const MAX_DELAY_MS = 24 * 60 * 60 * 1000; // 24 hours max delay
+   128→
+   129→// ============================================
+   130→// CONDITION EVALUATOR (Safe — no eval, no Function constructor)
+   131→// ============================================
+   132→
+   133→/**
+   134→ * Resolve a nested field value from an object using dot notation.
+   135→ * e.g., "lead.status" → data.lead.status
+   136→ */
+   137→function resolveFieldValue(field: string, data: Record<string, unknown>): unknown {
+   138→  return field.split('.').reduce<unknown>(
+   139→    (obj, key) => (obj != null && typeof obj === 'object' ? (obj as Record<string, unknown>)[key] : undefined),
+   140→    data,
+   141→  );
+   142→}
+   143→
+   144→/**
+   145→ * Evaluate a single condition against event data.
+   146→ */
+   147→function evaluateSingleCondition(
+   148→  field: string,
+   149→  operator: string,
+   150→  value: string | null | undefined,
+   151→  data: Record<string, unknown>,
+   152→): boolean {
+   153→  const fieldValue = resolveFieldValue(field, data);
+   154→
+   155→  switch (operator) {
+   156→    case 'equals':
+   157→      return String(fieldValue ?? '') === String(value ?? '');
+   158→    case 'not_equals':
+   159→      return String(fieldValue ?? '') !== String(value ?? '');
+   160→    case 'contains':
+   161→      return String(fieldValue ?? '').toLowerCase().includes(String(value ?? '').toLowerCase());
+   162→    case 'not_contains':
+   163→      return !String(fieldValue ?? '').toLowerCase().includes(String(value ?? '').toLowerCase());
+   164→    case 'greater_than': {
+   165→      const numField = Number(fieldValue);
+   166→      const numValue = Number(value);
+   167→      if (Number.isNaN(numField) || Number.isNaN(numValue)) return false;
+   168→      return numField > numValue;
+   169→    }
+   170→    case 'less_than': {
+   171→      const numField = Number(fieldValue);
+   172→      const numValue = Number(value);
+   173→      if (Number.isNaN(numField) || Number.isNaN(numValue)) return false;
+   174→      return numField < numValue;
+   175→    }
+   176→    case 'empty':
+   177→      return fieldValue === null || fieldValue === undefined || fieldValue === '';
+   178→    case 'not_empty':
+   179→      return fieldValue !== null && fieldValue !== undefined && fieldValue !== '';
+   180→    case 'before': {
+   181→      const fieldDate = new Date(String(fieldValue));
+   182→      const compareDate = new Date(String(value));
+   183→      if (Number.isNaN(fieldDate.getTime()) || Number.isNaN(compareDate.getTime())) return false;
+   184→      return fieldDate < compareDate;
+   185→    }
+   186→    case 'after': {
+   187→      const fieldDate = new Date(String(fieldValue));
+   188→      const compareDate = new Date(String(value));
+   189→      if (Number.isNaN(fieldDate.getTime()) || Number.isNaN(compareDate.getTime())) return false;
+   190→      return fieldDate > compareDate;
+   191→    }
+   192→    default:
+   193→      logger.warn('Unknown condition operator, skipping', { module: 'automation-engine', operator });
+   194→      return true; // Unknown operator = pass (don't block)
+   195→  }
+   196→}
+   197→
+   198→/**
+   199→ * Evaluate all conditions for a workflow against event data.
+   200→ * Conditions are grouped by AND/OR logic.
+   201→ */
+   202→function evaluateAllConditions(
+   203→  conditions: Array<{
+   204→    field: string;
+   205→    operator: string;
+   206→    value: string | null;
+   207→    logic: string;
+   208→    sortOrder: number;
+   209→  }>,
+   210→  data: Record<string, unknown>,
+   211→): boolean {
+   212→  if (conditions.length === 0) return true;
+   213→
+   214→  const sorted = [...conditions].sort((a, b) => a.sortOrder - b.sortOrder);
+   215→
+   216→  // Group conditions: consecutive AND conditions form a group;
+   217→  // OR between conditions splits into separate groups.
+   218→  // Result: OR between AND-groups (any group passing is sufficient).
+   219→  const andGroups: Array<Array<{ field: string; operator: string; value: string | null }>> = [];
+   220→  let currentGroup: Array<{ field: string; operator: string; value: string | null }> = [];
+   221→
+   222→  for (const cond of sorted) {
+   223→    currentGroup.push({ field: cond.field, operator: cond.operator, value: cond.value });
+   224→    if (cond.logic === 'OR') {
+   225→      andGroups.push(currentGroup);
+   226→      currentGroup = [];
+   227→    }
+   228→  }
+   229→  if (currentGroup.length > 0) {
+   230→    andGroups.push(currentGroup);
+   231→  }
+   232→
+   233→  // If multiple groups: any one passing is sufficient (OR between groups)
+   234→  if (andGroups.length > 1) {
+   235→    return andGroups.some((group) =>
+   236→      group.every((cond) => evaluateSingleCondition(cond.field, cond.operator, cond.value, data)),
+   237→    );
+   238→  }
+   239→
+   240→  // Single AND group — all must pass
+   241→  return andGroups[0].every((cond) =>
+   242→    evaluateSingleCondition(cond.field, cond.operator, cond.value, data),
+   243→  );
+   244→}
+   245→
+   246→// ============================================
+   247→// TIME CONDITION HELPER
+   248→// ============================================
+   249→
+   250→/**
+   251→ * Evaluate time-based conditions (business hours, weekend, etc.)
+   252→ * Checked when condition type is TIME_CONDITION.
+   253→ */
+   254→function evaluateTimeCondition(config: Record<string, unknown>): boolean {
+   255→  const now = new Date();
+   256→  const type = String(config.timeType ?? '');
+   257→
+   258→  switch (type) {
+   259→    case 'business_hours': {
+   260→      const hour = now.getHours();
+   261→      const day = now.getDay(); // 0=Sun, 6=Sat
+   262→      return day >= 1 && day <= 5 && hour >= 9 && hour < 18;
+   263→    }
+   264→    case 'weekend': {
+   265→      const day = now.getDay();
+   266→      return day === 0 || day === 6;
+   267→    }
+   268→    case 'weekday': {
+   269→      const day = now.getDay();
+   270→      return day >= 1 && day <= 5;
+   271→    }
+   272→    default:
+   273→      return true;
+   274→  }
+   275→}
+   276→
+   277→// ============================================
+   278→// ACTION EXECUTORS — REAL SIDE EFFECTS
+   279→// ============================================
+   280→
+   281→/**
+   282→ * CREATE_TASK: Create a real Task record in the database.
+   283→ */
+   284→async function executeCreateTask(
+   285→  tenantId: string,
+   286→  actionConfig: Record<string, unknown>,
+   287→  data: Record<string, unknown>,
+   288→): Promise<{ success: boolean; message: string; taskId?: string }> {
+   289→  const title = String(actionConfig.title ?? 'Automated Task');
+   290→  const description = actionConfig.description ? String(actionConfig.description) : null;
+   291→  const priority = String(actionConfig.priority ?? 'MEDIUM');
+   292→  const dueDateStr = actionConfig.dueDate ? String(actionConfig.dueDate) : null;
+   293→  const dueDate = dueDateStr ? new Date(dueDateStr) : null;
+   294→
+   295→  // Resolve assignee: specific userId, "owner" (from trigger data), or round-robin
+   296→  let ownerId = resolveAssignee(tenantId, actionConfig, data);
+   297→
+   298→  if (!ownerId) {
+   299→    // Fallback: use the triggeredBy user if available
+   300→    ownerId = data.triggeredBy as string | undefined;
+   301→  }
+   302→
+   303→  if (!ownerId) {
+   304→    return { success: false, message: 'Cannot create task: no assignee resolved' };
+   305→  }
+   306→
+   307→  // Resolve entity linkage
+   308→  const entityType = (actionConfig.entityType ?? data.entityType ?? null) as string | null;
+   309→  const entityId = (actionConfig.entityId ?? data.entityId ?? null) as string | null;
+   310→
+   311→  const task = await db.task.create({
+   312→    data: {
+   313→      tenantId,
+   314→      title,
+   315→      description,
+   316→      status: 'TODO',
+   317→      priority,
+   318→      dueDate,
+   319→      ownerId,
+   320→      entityType,
+   321→      entityId,
+   322→    },
+   323→  });
+   324→
+   325→  return { success: true, message: `Task created: ${title}`, taskId: task.id };
+   326→}
+   327→
+   328→/**
+   329→ * UPDATE_FIELD (update_lead / update_deal / change_status):
+   330→ * Update a field on the triggering entity.
+   331→ */
+   332→async function executeUpdateField(
+   333→  tenantId: string,
+   334→  actionConfig: Record<string, unknown>,
+   335→  data: Record<string, unknown>,
+   336→): Promise<{ success: boolean; message: string }> {
+   337→  const entityType = String(actionConfig.entityType ?? data.entityType ?? '');
+   338→  const entityId = String(actionConfig.entityId ?? data.entityId ?? '');
+   339→  const field = String(actionConfig.field ?? '');
+   340→  const value = actionConfig.value;
+   341→
+   342→  if (!entityType || !entityId || !field) {
+   343→    return { success: false, message: 'Missing entityType, entityId, or field for update' };
+   344→  }
+   345→
+   346→  const updateData: Record<string, unknown> = { [field]: value };
+   347→
+   348→  switch (entityType.toLowerCase()) {
+   349→    case 'lead':
+   350→      await db.lead.update({ where: { id: entityId, tenantId }, data: updateData });
+   351→      break;
+   352→    case 'deal':
+   353→      await db.deal.update({ where: { id: entityId, tenantId }, data: updateData });
+   354→      break;
+   355→    case 'contact':
+   356→      await db.contact.update({ where: { id: entityId, tenantId }, data: updateData });
+   357→      break;
+   358→    case 'task':
+   359→      await db.task.update({ where: { id: entityId, tenantId }, data: updateData });
+   360→      break;
+   361→    default:
+   362→      return { success: false, message: `Unsupported entity type for update: ${entityType}` };
+   363→  }
+   364→
+   365→  return { success: true, message: `Updated ${entityType}.${field} = ${JSON.stringify(value)}` };
+   366→}
+   367→
+   368→/**
+   369→ * ASSIGN_USER: Assign an owner to the triggering entity (round-robin or specific).
+   370→ */
+   371→async function executeAssignUser(
+   372→  tenantId: string,
+   373→  actionConfig: Record<string, unknown>,
+   374→  data: Record<string, unknown>,
+   375→): Promise<{ success: boolean; message: string }> {
+   376→  const entityType = String(actionConfig.entityType ?? data.entityType ?? '');
+   377→  const entityId = String(actionConfig.entityId ?? data.entityId ?? '');
+   378→  const assignmentMode = String(actionConfig.mode ?? 'specific'); // 'specific' or 'round_robin'
+   379→
+   380→  if (!entityType || !entityId) {
+   381→    return { success: false, message: 'Missing entityType or entityId for assignment' };
+   382→  }
+   383→
+   384→  let ownerId: string | undefined;
+   385→
+   386→  if (assignmentMode === 'round_robin') {
+   387→    // Round-robin: get team members in the tenant and pick next one
+   388→    const teamGroupId = String(actionConfig.teamGroupId ?? '');
+   389→    ownerId = await resolveRoundRobin(tenantId, teamGroupId, entityType, entityId);
+   390→  } else {
+   391→    ownerId = resolveAssignee(tenantId, actionConfig, data);
+   392→  }
+   393→
+   394→  if (!ownerId) {
+   395→    return { success: false, message: 'No user resolved for assignment' };
+   396→  }
+   397→
+   398→  const updateData = { ownerId };
+   399→
+   400→  switch (entityType.toLowerCase()) {
+   401→    case 'lead':
+   402→      await db.lead.update({ where: { id: entityId, tenantId }, data: updateData });
+   403→      break;
+   404→    case 'deal':
+   405→      await db.deal.update({ where: { id: entityId, tenantId }, data: updateData });
+   406→      break;
+   407→    case 'task':
+   408→      await db.task.update({ where: { id: entityId, tenantId }, data: updateData });
+   409→      break;
+   410→    default:
+   411→      return { success: false, message: `Unsupported entity type for assignment: ${entityType}` };
+   412→  }
+   413→
+   414→  return { success: true, message: `Assigned ${entityType} to user ${ownerId}` };
+   415→}
+   416→
+   417→/**
+   418→ * SEND_NOTIFICATION: Create a Notification record in the database.
+   419→ */
+   420→async function executeSendNotification(
+   421→  tenantId: string,
+   422→  actionConfig: Record<string, unknown>,
+   423→  data: Record<string, unknown>,
+   424→): Promise<{ success: boolean; message: string; notificationId?: string }> {
+   425→  const title = String(actionConfig.title ?? 'Automation Notification');
+   426→  const body = String(actionConfig.body ?? '');
+   427→  const type = String(actionConfig.notificationType ?? 'INFO');
+   428→  const category = String(actionConfig.category ?? 'GENERAL');
+   429→  const link = actionConfig.link ? String(actionConfig.link) : null;
+   430→
+   431→  // Resolve recipient
+   432→  let recipientId = resolveAssignee(tenantId, actionConfig, data);
+   433→  if (!recipientId) {
+   434→    // Try "manager" — look up the owner's manager
+   435→    const ownerId = data.ownerId as string | undefined;
+   436→    if (ownerId) {
+   437→      const membership = await db.membership.findFirst({
+   438→        where: { userId: ownerId, tenantId },
+   439→        select: { userId: true },
+   440→      });
+   441→      // For now, use the owner as recipient if manager not resolvable
+   442→      recipientId = membership?.userId ?? ownerId;
+   443→    }
+   444→  }
+   445→
+   446→  if (!recipientId) {
+   447→    return { success: false, message: 'No recipient resolved for notification' };
+   448→  }
+   449→
+   450→  const notification = await db.notification.create({
+   451→    data: {
+   452→      tenantId,
+   453→      recipientId,
+   454→      title,
+   455→      body,
+   456→      type,
+   457→      category,
+   458→      link,
+   459→      metadata: { source: 'automation', actionConfig } as any,
+   460→    },
+   461→  });
+   462→
+   463→  return { success: true, message: `Notification sent to ${recipientId}`, notificationId: notification.id };
+   464→}
+   465→
+   466→/**
+   467→ * SEND_EMAIL: Send an actual email via the email service.
+   468→ */
+   469→async function executeSendEmail(
+   470→  tenantId: string,
+   471→  actionConfig: Record<string, unknown>,
+   472→  data: Record<string, unknown>,
+   473→): Promise<{ success: boolean; message: string }> {
+   474→  const to = String(actionConfig.to ?? '');
+   475→  const subject = String(actionConfig.subject ?? 'Automation Notification');
+   476→  const html = actionConfig.html ? String(actionConfig.html) : undefined;
+   477→  const text = actionConfig.text ? String(actionConfig.text) : undefined;
+   478→
+   479→  // If "to" is a placeholder like "owner" or "contact", resolve it
+   480→  let resolvedTo = to;
+   481→  if (to === 'owner' || to === '{{owner.email}}') {
+   482→    const ownerId = data.ownerId as string | undefined;
+   483→    if (ownerId) {
+   484→      const user = await db.user.findUnique({ where: { id: ownerId }, select: { email: true } });
+   485→      resolvedTo = user?.email ?? '';
+   486→    }
+   487→  } else if (to === 'contact' || to === '{{contact.email}}') {
+   488→    resolvedTo = String(data.email ?? data.contactEmail ?? '');
+   489→  }
+   490→
+   491→  // Simple template variable substitution
+   492→  const substituteVars = (str: string): string => {
+   493→    return str
+   494→      .replace(/\{\{(\w+)\}\}/g, (_, key) => String(data[key] ?? ''))
+   495→      .replace(/\{\{(\w+)\.(\w+)\}\}/g, (_, obj, key) => {
+   496→        const nested = data[obj];
+   497→        if (nested && typeof nested === 'object') {
+   498→          return String((nested as Record<string, unknown>)[key] ?? '');
+   499→        }
+   500→        return '';
+   501→      });
+   502→  };
+   503→
+   504→  if (!resolvedTo) {
+   505→    return { success: false, message: 'No email recipient resolved' };
+   506→  }
+   507→
+   508→  const result = await sendEmail({
+   509→    to: resolvedTo,
+   510→    subject: substituteVars(subject),
+   511→    html: html ? substituteVars(html) : undefined,
+   512→    text: text ? substituteVars(text) : substituteVars(subject),
+   513→  });
+   514→
+   515→  return {
+   516→    success: result.sent,
+   517→    message: result.sent
+   518→      ? `Email sent to ${resolvedTo} via ${result.provider}`
+   519→      : `Email not sent: ${result.error ?? 'unknown error'}`,
+   520→  };
+   521→}
+   522→
+   523→/**
+   524→ * CREATE_FOLLOW_UP: Create a FollowUp record.
+   525→ */
+   526→async function executeCreateFollowUp(
+   527→  tenantId: string,
+   528→  actionConfig: Record<string, unknown>,
+   529→  data: Record<string, unknown>,
+   530→): Promise<{ success: boolean; message: string; followUpId?: string }> {
+   531→  const title = String(actionConfig.title ?? 'Automated Follow-up');
+   532→  const description = actionConfig.description ? String(actionConfig.description) : null;
+   533→  const followUpAtStr = String(actionConfig.followUpAt ?? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString());
+   534→  const followUpAt = new Date(followUpAtStr);
+   535→
+   536→  let userId = resolveAssignee(tenantId, actionConfig, data);
+   537→  if (!userId) userId = data.ownerId as string | undefined;
+   538→  if (!userId) return { success: false, message: 'No user resolved for follow-up' };
+   539→
+   540→  const leadId = (actionConfig.leadId ?? data.leadId ?? null) as string | null;
+   541→  const contactId = (actionConfig.contactId ?? data.contactId ?? null) as string | null;
+   542→  const dealId = (actionConfig.dealId ?? data.dealId ?? null) as string | null;
+   543→
+   544→  const followUp = await db.followUp.create({
+   545→    data: {
+   546→      tenantId,
+   547→      title,
+   548→      description,
+   549→      status: 'PENDING',
+   550→      followUpAt,
+   551→      userId,
+   552→      leadId,
+   553→      contactId,
+   554→      dealId,
+   555→    },
+   556→  });
+   557→
+   558→  return { success: true, message: `Follow-up created: ${title}`, followUpId: followUp.id };
+   559→}
+   560→
+   561→/**
+   562→ * ADD_TAG: Add a tag to the triggering entity.
+   563→ */
+   564→async function executeAddTag(
+   565→  tenantId: string,
+   566→  actionConfig: Record<string, unknown>,
+   567→  data: Record<string, unknown>,
+   568→): Promise<{ success: boolean; message: string }> {
+   569→  const tagName = String(actionConfig.tag ?? actionConfig.tagName ?? '');
+   570→  const entityType = String(actionConfig.entityType ?? data.entityType ?? '');
+   571→  const entityId = String(actionConfig.entityId ?? data.entityId ?? '');
+   572→
+   573→  if (!tagName || !entityType || !entityId) {
+   574→    return { success: false, message: 'Missing tag name, entityType, or entityId' };
+   575→  }
+   576→
+   577→  // Ensure the tag exists
+   578→  let tag = await db.tag.findFirst({
+   579→    where: { tenantId, name: tagName },
+   580→  });
+   581→
+   582→  if (!tag) {
+   583→    tag = await db.tag.create({
+   584→      data: { tenantId, name: tagName, color: String(actionConfig.color ?? '#6366f1') },
+   585→    });
+   586→  }
+   587→
+   588→  // Link tag to entity based on type
+   589→  switch (entityType.toLowerCase()) {
+   590→    case 'lead': {
+   591→      const lead = await db.lead.findUnique({ where: { id: entityId, tenantId }, include: { tags: true } });
+   592→      if (lead && !lead.tags.some((t) => t.tagId === tag.id)) {
+   593→        await db.leadTag.create({ data: { leadId: entityId, tagId: tag.id } });
+   594→      }
+   595→      break;
+   596→    }
+   597→    case 'contact': {
+   598→      const contact = await db.contact.findUnique({ where: { id: entityId, tenantId }, include: { tags: true } });
+   599→      if (contact && !contact.tags.some((t) => t.tagId === tag.id)) {
+   600→        await db.contactTag.create({ data: { contactId: entityId, tagId: tag.id } });
+   601→      }
+   602→      break;
+   603→    }
+   604→    default:
+   605→      return { success: false, message: `Tagging not supported for entity type: ${entityType}` };
+   606→  }
+   607→
+   608→  return { success: true, message: `Tag "${tagName}" added to ${entityType}` };
+   609→}
+   610→
+   611→/**
+   612→ * CREATE_ACTIVITY: Create an Activity log entry.
+   613→ */
+   614→async function executeCreateActivity(
+   615→  tenantId: string,
+   616→  actionConfig: Record<string, unknown>,
+   617→  data: Record<string, unknown>,
+   618→): Promise<{ success: boolean; message: string; activityId?: string }> {
+   619→  const type = String(actionConfig.activityType ?? 'NOTE');
+   620→  const title = String(actionConfig.title ?? 'Automated Activity');
+   621→  const description = actionConfig.description ? String(actionConfig.description) : null;
+   622→  const userId = (actionConfig.userId ?? data.ownerId ?? data.triggeredBy ?? null) as string | null;
+   623→  const leadId = (actionConfig.leadId ?? data.leadId ?? null) as string | null;
+   624→  const contactId = (actionConfig.contactId ?? data.contactId ?? null) as string | null;
+   625→  const dealId = (actionConfig.dealId ?? data.dealId ?? null) as string | null;
+   626→
+   627→  const activity = await db.activity.create({
+   628→    data: {
+   629→      tenantId,
+   630→      type,
+   631→      title,
+   632→      description,
+   633→      userId,
+   634→      leadId,
+   635→      contactId,
+   636→      dealId,
+   637→      metadata: { source: 'automation' } as any,
+   638→    },
+   639→  });
+   640→
+   641→  return { success: true, message: `Activity created: ${title}`, activityId: activity.id };
+   642→}
+   643→
+   644→/**
+   645→ * TRIGGER_WEBHOOK: Fire an HTTP request to an external URL.
+   646→ */
+   647→async function executeTriggerWebhook(
+   648→  tenantId: string,
+   649→  actionConfig: Record<string, unknown>,
+   650→  data: Record<string, unknown>,
+   651→): Promise<{ success: boolean; message: string }> {
+   652→  const url = String(actionConfig.url ?? '');
+   653→  const method = String(actionConfig.method ?? 'POST').toUpperCase();
+   654→  const headers = (actionConfig.headers ?? {}) as Record<string, string>;
+   655→  const bodyPayload = (actionConfig.body ?? data) as Record<string, unknown>;
+   656→
+   657→  if (!url) {
+   658→    return { success: false, message: 'Webhook URL not configured' };
+   659→  }
+   660→
+   661→  try {
+   662→    const response = await fetch(url, {
+   663→      method,
+   664→      headers: {
+   665→        'Content-Type': 'application/json',
+   666→        ...headers,
+   667→      },
+   668→      body: JSON.stringify(bodyPayload),
+   669→      signal: AbortSignal.timeout(10_000), // 10s timeout
+   670→    });
+   671→
+   672→    if (!response.ok) {
+   673→      return {
+   674→        success: false,
+   675→        message: `Webhook returned ${response.status}: ${response.statusText}`,
+   676→      };
+   677→    }
+   678→
+   679→    return { success: true, message: `Webhook delivered to ${url} (${response.status})` };
+   680→  } catch (err) {
+   681→    return {
+   682→      success: false,
+   683→      message: `Webhook failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
+   684→    };
+   685→  }
+   686→}
+   687→
+   688→/**
+   689→ * AI_SUGGESTION: Call the AI gateway for a recommendation.
+   690→ * Returns null result if AI is not configured (graceful degradation).
+   691→ */
+   692→async function executeAiSuggestion(
+   693→  tenantId: string,
+   694→  actionConfig: Record<string, unknown>,
+   695→  data: Record<string, unknown>,
+   696→): Promise<{ success: boolean; message: string; suggestion?: string }> {
+   697→  if (!aiGateway.isAvailable()) {
+   698→    return {
+   699→      success: false,
+   700→      message: 'AI_PROVIDER_NOT_CONFIGURED — AI suggestion skipped',
+   701→    };
+   702→  }
+   703→
+   704→  try {
+   705→    const prompt = String(
+   706→      actionConfig.prompt ??
+   707→      `Based on the following data, provide a recommendation: ${JSON.stringify(data).slice(0, 2000)}`,
+   708→    );
+   709→
+   710→    const response = await aiGateway.process(prompt, tenantId, {
+   711→      actionType: 'ai_suggestion',
+   712→      entityType: data.entityType,
+   713→      entityId: data.entityId,
+   714→    });
+   715→
+   716→    // Store the suggestion as an activity for traceability
+   717→    await db.activity.create({
+   718→      data: {
+   719→        tenantId,
+   720→        type: 'NOTE',
+   721→        title: 'AI Suggestion',
+   722→        description: response.content.slice(0, 5000),
+   723→        userId: (data.triggeredBy as string) ?? null,
+   724→        metadata: {
+   725→          source: 'automation',
+   726→          aiModel: response.model,
+   727→          aiProvider: response.providerId,
+   728→          usage: response.usage,
+   729→        } as any,
+   730→      },
+   731→    });
+   732→
+   733→    return {
+   734→      success: true,
+   735→      message: `AI suggestion generated (${response.model})`,
+   736→      suggestion: response.content,
+   737→    };
+   738→  } catch (err) {
+   739→    // AI errors are non-fatal — log but don't fail the workflow
+   740→    logger.warn('AI suggestion failed', {
+   741→      module: 'automation-engine',
+   742→      tenantId,
+   743→      error: err instanceof Error ? err.message : 'Unknown error',
+   744→    });
+   745→    return {
+   746→      success: false,
+   747→      message: `AI suggestion failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
+   748→    };
+   749→  }
+   750→}
+   751→
+   752→/**
+   753→ * SEND_WHATSAPP / SEND_SMS: Send via communication provider.
+   754→ * These create a message record and attempt delivery through configured providers.
+   755→ */
+   756→async function executeSendMessage(
+   757→  tenantId: string,
+   758→  actionConfig: Record<string, unknown>,
+   759→  data: Record<string, unknown>,
+   760→  channel: 'WHATSAPP' | 'SMS',
+   761→): Promise<{ success: boolean; message: string }> {
+   762→  // Check if a communication provider is configured for this channel
+   763→  const providerConfig = await db.communicationProviderConfig.findFirst({
+   764→    where: { tenantId, channel, isEnabled: true },
+   765→  });
+   766→
+   767→  if (!providerConfig) {
+   768→    return {
+   769→      success: false,
+   770→      message: `PROVIDER_NOT_CONFIGURED — No ${channel} provider enabled for tenant`,
+   771→    };
+   772→  }
+   773→
+   774→  const to = String(actionConfig.to ?? data.mobile ?? data.phone ?? '');
+   775→  const text = String(actionConfig.body ?? actionConfig.text ?? actionConfig.message ?? '');
+   776→
+   777→  if (!to) {
+   778→    return { success: false, message: `No recipient for ${channel} message` };
+   779→  }
+   780→
+   781→  // Create or reuse a system conversation for automated messages
+   782→  let conversation = await db.conversation.findFirst({
+   783→    where: { tenantId, channel, externalId: `automation:${tenantId}:${channel}` },
+   784→  });
+   785→
+   786→  if (!conversation) {
+   787→    conversation = await db.conversation.create({
+   788→      data: {
+   789→        tenantId,
+   790→        channel,
+   791→        externalId: `automation:${tenantId}:${channel}`,
+   792→        subject: 'Automated Messages',
+   793→        participantIds: [to],
+   794→        status: 'ACTIVE',
+   795→        metadata: { source: 'automation' },
+   796→      },
+   797→    });
+   798→  }
+   799→
+   800→  // Create a message record for traceability
+   801→  const message = await db.message.create({
+   802→    data: {
+   803→      tenantId,
+   804→      conversationId: conversation.id,
+   805→      direction: 'OUTBOUND',
+   806→      channel,
+   807→      contentType: 'TEXT',
+   808→      content: text,
+   809→      status: 'QUEUED',
+   810→      senderId: (data.triggeredBy as string) ?? null,
+   811→      externalSenderId: to,
+   812→      metadata: { source: 'automation', to, actionConfig } as any,
+   813→    },
+   814→  });
+   815→
+   816→  // Attempt to send via the provider (the actual delivery is handled by the communication module)
+   817→  // For now we mark it as PROCESSING — the communication dispatcher would pick it up
+   818→  await db.message.update({
+   819→    where: { id: message.id },
+   820→    data: { status: 'PROCESSING' },
+   821→  });
+   822→
+   823→  return { success: true, message: `${channel} message queued for ${to}` };
+   824→}
+   825→
+   826→// ============================================
+   827→// HELPERS
+   828→// ============================================
+   829→
+   830→/**
+   831→ * Resolve an assignee from action config and trigger data.
+   832→ * Supports: specific userId, "owner", "triggeredBy", or a template variable.
+   833→ */
+   834→function resolveAssignee(
+   835→  tenantId: string,
+   836→  actionConfig: Record<string, unknown>,
+   837→  data: Record<string, unknown>,
+   838→): string | undefined {
+   839→  const assignTo = String(actionConfig.assignTo ?? actionConfig.userId ?? '');
+   840→
+   841→  switch (assignTo) {
+   842→    case 'owner':
+   843→      return data.ownerId as string | undefined;
+   844→    case 'triggeredBy':
+   845→      return data.triggeredBy as string | undefined;
+   846→    case 'manager': {
+   847→      // Will be resolved at call time by looking up the owner's manager
+   848→      // For now, return ownerId as fallback
+   849→      return data.ownerId as string | undefined;
+   850→    }
+   851→    default:
+   852→      if (assignTo && assignTo !== '') return assignTo;
+   853→      return data.ownerId as string | undefined;
+   854→  }
+   855→}
+   856→
+   857→/**
+   858→ * Resolve round-robin assignment within a tenant.
+   859→ * Uses a simple least-recently-assigned strategy based on task ownership counts.
+   860→ */
+   861→async function resolveRoundRobin(
+   862→  tenantId: string,
+   863→  _teamGroupId: string,
+   864→  entityType: string,
+   865→  _entityId: string,
+   866→): Promise<string | undefined> {
+   867→  // Get active members in the tenant
+   868→  const members = await db.membership.findMany({
+   869→    where: { tenantId, status: 'ACTIVE' },
+   870→    select: { userId: true },
+   871→  });
+   872→
+   873→  if (members.length === 0) return undefined;
+   874→
+   875→  // Count recent assignments for each member
+   876→  const assignmentCounts = await db.task.groupBy({
+   877→    by: ['ownerId'],
+   878→    where: {
+   879→      tenantId,
+   880→      entityType,
+   881→      ownerId: { in: members.map((m) => m.userId) },
+   882→    },
+   883→    _count: { id: true },
+   884→    orderBy: { _count: { id: 'asc' } },
+   885→  });
+   886→
+   887→  if (assignmentCounts.length > 0 && assignmentCounts[0].ownerId) {
+   888→    return assignmentCounts[0].ownerId;
+   889→  }
+   890→
+   891→  // Fallback: pick the first member
+   892→  return members[0].userId;
+   893→}
+   894→
+   895→// ============================================
+   896→// MAIN ACTION EXECUTOR
+   897→// ============================================
+   898→
+   899→/**
+   900→ * Execute a single action and return the result.
+   901→ * This is the central dispatcher that routes to specific action implementations.
+   902→ */
+   903→async function executeAction(
+   904→  action: { id: string; type: string; config: unknown; delayMs: number },
+   905→  tenantId: string,
+   906→  data: Record<string, unknown>,
+   907→  eventType: string,
+   908→): Promise<ActionResult> {
+   909→  const startTime = Date.now();
+   910→  const actionConfig = (action.config as Record<string, unknown>) ?? {};
+   911→
+   912→  try {
+   913→    // Handle DELAY action — actually wait (bounded by MAX_DELAY_MS)
+   914→    if (action.type === 'delay') {
+   915→      const delayMs = Math.min(action.delayMs || Number(actionConfig.delayMs ?? 0), MAX_DELAY_MS);
+   916→      if (delayMs > 0) {
+   917→        await new Promise((resolve) => setTimeout(resolve, delayMs));
+   918→      }
+   919→      return {
+   920→        actionId: action.id,
+   921→        actionType: action.type,
+   922→        level: 'INFO',
+   923→        message: `Delay completed: ${delayMs}ms`,
+   924→        data: { delayMs },
+   925→        durationMs: Date.now() - startTime,
+   926→      };
+   927→    }
+   928→
+   929→    let result: { success: boolean; message: string; [key: string]: unknown };
+   930→
+   931→    switch (action.type) {
+   932→      case 'create_task':
+   933→        result = await executeCreateTask(tenantId, actionConfig, data);
+   934→        break;
+   935→
+   936→      case 'update_lead':
+   937→      case 'update_deal':
+   938→      case 'change_status':
+   939→        result = await executeUpdateField(tenantId, actionConfig, data);
+   940→        break;
+   941→
+   942→      case 'assign_user':
+   943→        result = await executeAssignUser(tenantId, actionConfig, data);
+   944→        break;
+   945→
+   946→      case 'create_notification':
+   947→        result = await executeSendNotification(tenantId, actionConfig, data);
+   948→        break;
+   949→
+   950→      case 'send_email':
+   951→        result = await executeSendEmail(tenantId, actionConfig, data);
+   952→        break;
+   953→
+   954→      case 'send_whatsapp':
+   955→        result = await executeSendMessage(tenantId, actionConfig, data, 'WHATSAPP');
+   956→        break;
+   957→
+   958→      case 'send_sms':
+   959→        result = await executeSendMessage(tenantId, actionConfig, data, 'SMS');
+   960→        break;
+   961→
+   962→      case 'create_followup':
+   963→        result = await executeCreateFollowUp(tenantId, actionConfig, data);
+   964→        break;
+   965→
+   966→      case 'add_tag':
+   967→        result = await executeAddTag(tenantId, actionConfig, data);
+   968→        break;
+   969→
+   970→      case 'create_activity':
+   971→        result = await executeCreateActivity(tenantId, actionConfig, data);
+   972→        break;
+   973→
+   974→      case 'trigger_webhook':
+   975→      case 'webhook':
+   976→        result = await executeTriggerWebhook(tenantId, actionConfig, data);
+   977→        break;
+   978→
+   979→      case 'ai_action':
+   980→      case 'ai_suggestion':
+   981→        result = await executeAiSuggestion(tenantId, actionConfig, data);
+   982→        break;
+   983→
+   984→      default:
+   985→        result = {
+   986→          success: false,
+   987→          message: `Unknown action type: ${action.type} — skipped`,
+   988→        };
+   989→    }
+   990→
+   991→    return {
+   992→      actionId: action.id,
+   993→      actionType: action.type,
+   994→      level: result.success ? 'INFO' : 'WARN',
+   995→      message: result.message,
+   996→      data: result,
+   997→      durationMs: Date.now() - startTime,
+   998→    };
+   999→  } catch (err) {
+  1000→    const errorMsg = err instanceof Error ? err.message : 'Unknown execution error';
+  1001→    logger.error('Action execution failed', {
+  1002→      module: 'automation-engine',
+  1003→      actionType: action.type,
+  1004→      actionId: action.id,
+  1005→      tenantId,
+  1006→      error: errorMsg,
+  1007→    });
+  1008→
+  1009→    return {
+  1010→      actionId: action.id,
+  1011→      actionType: action.type,
+  1012→      level: 'ERROR',
+  1013→      message: `Action failed: ${errorMsg}`,
+  1014→      data: { error: errorMsg },
+  1015→      durationMs: Date.now() - startTime,
+  1016→    };
+  1017→  }
+  1018→}
+  1019→
+  1020→// ============================================
+  1021→// MAIN ENGINE: triggerEvent()
+  1022→// ============================================
+  1023→
+  1024→/**
+  1025→ * Trigger an automation event.
+  1026→ *
+  1027→ * This is the main entry point called from business logic.
+  1028→ * It runs asynchronously and NEVER throws — errors are logged internally.
+  1029→ *
+  1030→ * Usage:
+  1031→ *   await triggerEvent({ eventType: 'lead.created', tenantId, data: { ...lead, entityId: lead.id, entityType: 'lead' } });
+  1032→ *
+  1033→ * Or use the convenience functions in dispatcher.ts.
+  1034→ */
+  1035→export async function triggerEvent(context: TriggerContext): Promise<TriggerResult> {
+  1036→  const { eventType, tenantId, data, entityId, entityType, triggeredBy } = context;
+  1037→
+  1038→  const result: TriggerResult = {
+  1039→    matchedWorkflows: 0,
+  1040→    executedWorkflows: 0,
+  1041→    skippedConditionFail: 0,
+  1042→    errors: 0,
+  1043→    results: [],
+  1044→  };
+  1045→
+  1046→  try {
+  1047→    // 1. Find all ACTIVE workflows in this tenant whose triggers match the event type
+  1048→    const workflows = await db.automationWorkflow.findMany({
+  1049→      where: {
+  1050→        tenantId,
+  1051→        status: 'ACTIVE',
+  1052→        triggers: {
+  1053→          some: { eventType },
+  1054→        },
+  1055→      },
+  1056→      include: {
+  1057→        triggers: true,
+  1058→        conditions: { orderBy: { sortOrder: 'asc' } },
+  1059→        actions: { orderBy: { sortOrder: 'asc' } },
+  1060→      },
+  1061→      take: MAX_WORKFLOWS_PER_EVENT,
+  1062→    });
+  1063→
+  1064→    result.matchedWorkflows = workflows.length;
+  1065→
+  1066→    if (workflows.length === 0) {
+  1067→      logger.info('No matching workflows for event', {
+  1068→        module: 'automation-engine',
+  1069→        eventType,
+  1070→        tenantId,
+  1071→      });
+  1072→      return result;
+  1073→    }
+  1074→
+  1075→    logger.info('Processing automation event', {
+  1076→      module: 'automation-engine',
+  1077→      eventType,
+  1078→      tenantId,
+  1079→      matchedWorkflows: workflows.length,
+  1080→    });
+  1081→
+  1082→    // 2. Process each matching workflow
+  1083→    for (const workflow of workflows) {
+  1084→      try {
+  1085→        // Verify trigger match (defense in depth)
+  1086→        const triggerMatches = workflow.triggers.some((t) => t.eventType === eventType);
+  1087→        if (!triggerMatches) continue;
+  1088→
+  1089→        // 3. Evaluate conditions against event data
+  1090→        const conditionsPass = evaluateAllConditions(
+  1091→          workflow.conditions.map((c) => ({
+  1092→            field: c.field,
+  1093→            operator: c.operator,
+  1094→            value: c.value,
+  1095→            logic: c.logic,
+  1096→            sortOrder: c.sortOrder,
+  1097→          })),
+  1098→          data,
+  1099→        );
+  1100→
+  1101→        if (!conditionsPass) {
+  1102→          result.skippedConditionFail++;
+  1103→          result.results.push({
+  1104→            workflowId: workflow.id,
+  1105→            workflowName: workflow.name,
+  1106→            executionId: '',
+  1107→            status: 'SKIPPED',
+  1108→          });
+  1109→          continue;
+  1110→        }
+  1111→
+  1112→        // 4. Create AutomationExecution record
+  1113→        const idempotencyKey = randomUUID();
+  1114→        const execution = await db.automationExecution.create({
+  1115→          data: {
+  1116→            tenantId,
+  1117→            workflowId: workflow.id,
+  1118→            triggerEvent: eventType,
+  1119→            status: 'RUNNING',
+  1120→            triggerData: data as any,
+  1121→            entityId: entityId ?? null,
+  1122→            entityType: entityType ?? null,
+  1123→            triggeredById: triggeredBy ?? null,
+  1124→            idempotencyKey,
+  1125→          },
+  1126→        });
+  1127→
+  1128→        // 5. Execute actions in order
+  1129→        const actionsToExecute = workflow.actions.slice(0, MAX_ACTIONS_PER_EXECUTION);
+  1130→        const logsToCreate: Array<{
+  1131→          tenantId: string;
+  1132→          executionId: string;
+  1133→          actionId: string | null;
+  1134→          level: string;
+  1135→          message: string;
+  1136→          data: any;
+  1137→          durationMs: number;
+  1138→        }> = [];
+  1139→
+  1140→        let executionFailed = false;
+  1141→        let executionError: string | null = null;
+  1142→
+  1143→        for (const action of actionsToExecute) {
+  1144→          // Handle pre-action delay (delayMs on the action itself)
+  1145→          if (action.delayMs > 0) {
+  1146→            const clampedDelay = Math.min(action.delayMs, MAX_DELAY_MS);
+  1147→            await new Promise((resolve) => setTimeout(resolve, clampedDelay));
+  1148→          }
+  1149→
+  1150→          const actionResult = await executeAction(action, tenantId, data, eventType);
+  1151→
+  1152→          logsToCreate.push({
+  1153→            tenantId,
+  1154→            executionId: execution.id,
+  1155→            actionId: actionResult.actionId,
+  1156→            level: actionResult.level,
+  1157→            message: actionResult.message,
+  1158→            data: actionResult.data as any,
+  1159→            durationMs: actionResult.durationMs,
+  1160→          });
+  1161→
+  1162→          // If action errored, mark execution as failed but continue logging
+  1163→          if (actionResult.level === 'ERROR') {
+  1164→            executionFailed = true;
+  1165→            executionError = actionResult.message;
+  1166→            break; // Stop executing further actions on error
+  1167→          }
+  1168→        }
+  1169→
+  1170→        // Log loop prevention if actions were truncated
+  1171→        if (workflow.actions.length > MAX_ACTIONS_PER_EXECUTION) {
+  1172→          logsToCreate.push({
+  1173→            tenantId,
+  1174→            executionId: execution.id,
+  1175→            actionId: null,
+  1176→            level: 'WARN',
+  1177→            message: `Loop prevention: exceeded maximum of ${MAX_ACTIONS_PER_EXECUTION} actions`,
+  1178→            data: { totalActions: workflow.actions.length, executed: MAX_ACTIONS_PER_EXECUTION },
+  1179→            durationMs: 0,
+  1180→          });
+  1181→        }
+  1182→
+  1183→        // 6. Persist execution logs
+  1184→        if (logsToCreate.length > 0) {
+  1185→          await db.automationExecutionLog.createMany({ data: logsToCreate });
+  1186→        }
+  1187→
+  1188→        // 7. Update execution status
+  1189→        const finalStatus = executionFailed ? 'FAILED' : 'COMPLETED';
+  1190→        await db.automationExecution.update({
+  1191→          where: { id: execution.id },
+  1192→          data: {
+  1193→            status: finalStatus,
+  1194→            error: executionError,
+  1195→            completedAt: new Date(),
+  1196→          },
+  1197→        });
+  1198→
+  1199→        // 8. Update workflow stats
+  1200→        await db.automationWorkflow.update({
+  1201→          where: { id: workflow.id },
+  1202→          data: {
+  1203→            executionCount: { increment: 1 },
+  1204→            lastExecutedAt: new Date(),
+  1205→          },
+  1206→        });
+  1207→
+  1208→        if (executionFailed) {
+  1209→          result.errors++;
+  1210→        } else {
+  1211→          result.executedWorkflows++;
+  1212→        }
+  1213→
+  1214→        result.results.push({
+  1215→          workflowId: workflow.id,
+  1216→          workflowName: workflow.name,
+  1217→          executionId: execution.id,
+  1218→          status: finalStatus,
+  1219→        });
+  1220→      } catch (workflowErr) {
+  1221→        // Individual workflow errors don't stop other workflows
+  1222→        result.errors++;
+  1223→        logger.error('Workflow execution failed', {
+  1224→          module: 'automation-engine',
+  1225→          workflowId: workflow.id,
+  1226→          workflowName: workflow.name,
+  1227→          tenantId,
+  1228→          error: workflowErr instanceof Error ? workflowErr.message : 'Unknown error',
+  1229→        });
+  1230→
+  1231→        result.results.push({
+  1232→          workflowId: workflow.id,
+  1233→          workflowName: workflow.name,
+  1234→          executionId: '',
+  1235→          status: 'FAILED',
+  1236→        });
+  1237→      }
+  1238→    }
+  1239→
+  1240→    logger.info('Automation event processed', {
+  1241→      module: 'automation-engine',
+  1242→      eventType,
+  1243→      tenantId,
+  1244→      matched: result.matchedWorkflows,
+  1245→      executed: result.executedWorkflows,
+  1246→      skipped: result.skippedConditionFail,
+  1247→      errors: result.errors,
+  1248→    });
+  1249→  } catch (err) {
+  1250→    // Top-level error — never throw, just log
+  1251→    logger.error('Automation engine error', {
+  1252→      module: 'automation-engine',
+  1253→      eventType,
+  1254→      tenantId,
+  1255→      error: err instanceof Error ? err.message : 'Unknown error',
+  1256→    });
+  1257→  }
+  1258→
+  1259→  return result;
+  1260→}
+  1261→
+  1262→/**
+  1263→ * Fire-and-forget version of triggerEvent.
+  1264→ * Runs the engine in the background without awaiting the result.
+  1265→ * Use this from API route handlers to avoid blocking the response.
+  1266→ */
+  1267→export function triggerEventAsync(context: TriggerContext): void {
+  1268→  // Use Promise.resolve().then() to start execution without awaiting
+  1269→  // Errors are caught internally by triggerEvent, so this is safe
+  1270→  Promise.resolve()
+  1271→    .then(() => triggerEvent(context))
+  1272→    .catch(() => {
+  1273→      // Double safety: should never reach here since triggerEvent catches its own errors
+  1274→    });
+  1275→}
+  1276→

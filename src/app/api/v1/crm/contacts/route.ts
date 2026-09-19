@@ -65,6 +65,7 @@ const contactSelect = {
 function formatContact(contact: any) {
   return {
     id: contact.id,
+    tenantId: contact.tenantId,
     firstName: contact.firstName,
     lastName: contact.lastName,
     email: contact.email,
@@ -229,6 +230,12 @@ export async function POST(request: NextRequest) {
       ipAddress: request.headers.get('x-forwarded-for') ?? undefined,
       userAgent: request.headers.get('user-agent') ?? undefined,
     });
+
+    // Fire automation dispatcher (best-effort, non-blocking)
+    try {
+      const { onContactCreated } = await import('@/lib/automation/dispatcher');
+      onContactCreated(payload.tenantId, formatContact(contact as any));
+    } catch { /* automation is best-effort */ }
 
     return NextResponse.json(
       success(formatContact(contact as any), 'Contact created successfully'),

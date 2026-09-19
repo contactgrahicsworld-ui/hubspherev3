@@ -51,12 +51,29 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       try { logger.security('auth_failure', { module: 'auth', email, reason: 'user_not_found' }); } catch (e) { console.error('[Logger fallback]', e) }
+      // Audit log for failed login (user not found)
+      await createAuditLog({
+        action: 'auth.login_failed',
+        targetType: 'User',
+        metadata: { reason: 'user_not_found' },
+        ipAddress: request.headers.get('x-forwarded-for') ?? undefined,
+        userAgent: request.headers.get('user-agent') ?? undefined,
+      }).catch(() => {});
       throw new AuthenticationError('Invalid email or password');
     }
 
     // Check user status
     if (user.status === 'SUSPENDED') {
       try { logger.security('auth_failure', { module: 'auth', email, userId: user.id, reason: 'account_suspended' }); } catch (e) { console.error('[Logger fallback]', e) }
+      await createAuditLog({
+        actorId: user.id,
+        action: 'auth.login_failed',
+        targetType: 'User',
+        targetId: user.id,
+        metadata: { reason: 'account_suspended' },
+        ipAddress: request.headers.get('x-forwarded-for') ?? undefined,
+        userAgent: request.headers.get('user-agent') ?? undefined,
+      }).catch(() => {});
       throw new AuthenticationError('Account has been suspended');
     }
 
@@ -64,6 +81,15 @@ export async function POST(request: NextRequest) {
     const validPassword = await verifyPassword(password, user.passwordHash);
     if (!validPassword) {
       try { logger.security('auth_failure', { module: 'auth', email, userId: user.id, reason: 'invalid_password' }); } catch (e) { console.error('[Logger fallback]', e) }
+      await createAuditLog({
+        actorId: user.id,
+        action: 'auth.login_failed',
+        targetType: 'User',
+        targetId: user.id,
+        metadata: { reason: 'invalid_password' },
+        ipAddress: request.headers.get('x-forwarded-for') ?? undefined,
+        userAgent: request.headers.get('user-agent') ?? undefined,
+      }).catch(() => {});
       throw new AuthenticationError('Invalid email or password');
     }
 
@@ -145,6 +171,18 @@ export async function POST(request: NextRequest) {
     );
 
     setAuthCookies(response, accessToken, refreshToken);
+
+    // Set CSRF token cookie for subsequent mutating requests
+    const csrfToken = crypto.randomUUID();
+    const isSecure = process.env.NODE_ENV === 'production';
+    response.cookies.set('csrf-token', csrfToken, {
+      httpOnly: false, // Must be readable by client JS for header-based submission
+      secure: isSecure,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 15 * 60, // Same as access token
+    });
+
     try { logger.info('User login', { module: 'auth', userId: user.id, email: user.email, tenantId, roleCode }); } catch (e) { console.error('[Logger fallback]', e) }
     return response;
   } catch (error) {

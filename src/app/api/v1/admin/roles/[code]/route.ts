@@ -106,17 +106,18 @@ export async function PUT(
       }),
     ]);
 
-    // Reassign permissions
+    // Reassign permissions (batch insert to avoid N+1)
     if (data.permissions && data.permissions.length > 0) {
       const permissions = await db.permission.findMany({
         where: { code: { in: data.permissions } },
       });
 
-      for (const perm of permissions) {
-        await db.rolePermission.create({
-          data: { roleCode: role.code, permissionId: perm.id },
-        });
-      }
+      await db.rolePermission.createMany({
+        data: permissions.map((perm) => ({
+          roleCode: role.code,
+          permissionId: perm.id,
+        })),
+      });
     }
 
     await createAuditLog({

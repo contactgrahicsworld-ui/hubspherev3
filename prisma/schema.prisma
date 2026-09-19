@@ -70,6 +70,19 @@ model Tenant {
   devices              Device[]
   callRequests         CallRequest[]
   callEvents           CallEvent[]
+  products             Product[]
+  productCategories    ProductCategory[]
+  stockMovements       StockMovement[]
+  purchaseOrders       PurchaseOrder[]
+  vendors              Vendor[]
+  accounts             Account[]
+  journalEntries       JournalEntry[]
+  taxRates             TaxRate[]
+  budgets              Budget[]
+  campaigns            Campaign[]
+  leadCaptureForms     LeadCaptureForm[]
+  formSubmissions      FormSubmission[]
+  marketingLists       MarketingList[]
 
   @@map("tenants")
 }
@@ -815,10 +828,12 @@ model Task {
 
   @@index([tenantId])
   @@index([tenantId, status])
+  @@index([tenantId, createdAt])
   @@index([ownerId])
   @@index([status])
   @@index([dueDate])
   @@index([entityType, entityId])
+  @@index([createdAt])
   @@map("tasks")
 }
 
@@ -849,12 +864,14 @@ model FollowUp {
 
   @@index([tenantId])
   @@index([tenantId, status, followUpAt])
+  @@index([tenantId, createdAt])
   @@index([userId])
   @@index([status])
   @@index([followUpAt])
   @@index([leadId])
   @@index([contactId])
   @@index([dealId])
+  @@index([createdAt])
   @@map("follow_ups")
 }
 
@@ -1762,4 +1779,290 @@ model CallEvent {
   @@index([eventId])
   @@index([createdAt])
   @@map("call_events")
+}
+
+// ============================================
+// INVENTORY
+// ============================================
+
+model Product {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @map("tenant_id") @db.Uuid
+  sku             String
+  name            String
+  description     String?
+  category        String?
+  unit            String   @default("PIECE")
+  unitPrice       Float    @default(0) @map("unit_price")
+  costPrice       Float    @default(0) @map("cost_price")
+  stockQuantity   Int      @default(0) @map("stock_quantity")
+  reorderLevel    Int      @default(0) @map("reorder_level")
+  reorderQuantity Int      @default(0) @map("reorder_quantity")
+  warehouse       String?
+  isActive        Boolean  @default(true) @map("is_active")
+  metadata        Json?    @default("{}")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  stockMovements StockMovement[]
+
+  @@unique([tenantId, sku])
+  @@index([tenantId])
+  @@index([category])
+  @@map("products")
+}
+
+model ProductCategory {
+  id               String   @id @default(uuid()) @db.Uuid
+  tenantId          String   @map("tenant_id") @db.Uuid
+  name              String
+  description       String?
+  parentCategoryId  String?  @map("parent_category_id") @db.Uuid
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("product_categories")
+}
+
+model StockMovement {
+  id            String   @id @default(uuid()) @db.Uuid
+  tenantId      String   @map("tenant_id") @db.Uuid
+  productId     String   @map("product_id") @db.Uuid
+  type          String   // IN, OUT, ADJUSTMENT, TRANSFER
+  quantity      Int
+  referenceType String?  @map("reference_type")
+  referenceId   String?  @map("reference_id")
+  notes         String?
+  performedBy   String?  @map("performed_by") @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([productId])
+  @@index([createdAt])
+  @@map("stock_movements")
+}
+
+model PurchaseOrder {
+  id           String    @id @default(uuid()) @db.Uuid
+  tenantId     String    @map("tenant_id") @db.Uuid
+  vendorId     String?   @map("vendor_id") @db.Uuid
+  vendorName   String?   @map("vendor_name")
+  status       String    @default("DRAFT") // DRAFT, SUBMITTED, APPROVED, RECEIVED, CANCELLED
+  items        Json      @default("[]")
+  totalAmount  Float     @default(0) @map("total_amount")
+  orderDate    DateTime? @map("order_date")
+  expectedDate DateTime? @map("expected_date")
+  notes        String?
+  createdBy    String?   @map("created_by") @db.Uuid
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([status])
+  @@map("purchase_orders")
+}
+
+model Vendor {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  name      String
+  email     String?
+  phone     String?
+  address   String?
+  category  String?
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("vendors")
+}
+
+// ============================================
+// ACCOUNTING
+// ============================================
+
+model Account {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  code      String
+  name      String
+  type      String   // ASSET, LIABILITY, EQUITY, REVENUE, EXPENSE
+  category  String?
+  parentId  String?  @map("parent_id") @db.Uuid
+  isActive  Boolean  @default(true) @map("is_active")
+  balance   Float    @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  journalLines JournalLine[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@index([type])
+  @@map("accounts")
+}
+
+model JournalEntry {
+  id            String    @id @default(uuid()) @db.Uuid
+  tenantId      String    @map("tenant_id") @db.Uuid
+  entryNumber   String    @map("entry_number")
+  date          DateTime
+  description   String?
+  status        String    @default("DRAFT") // DRAFT, POSTED
+  referenceType String?   @map("reference_type")
+  referenceId   String?   @map("reference_id")
+  createdBy     String?   @map("created_by") @db.Uuid
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  tenant Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  lines  JournalLine[]
+
+  @@unique([tenantId, entryNumber])
+  @@index([tenantId])
+  @@index([date])
+  @@map("journal_entries")
+}
+
+model JournalLine {
+  id             String   @id @default(uuid()) @db.Uuid
+  journalEntryId String   @map("journal_entry_id") @db.Uuid
+  accountId      String   @map("account_id") @db.Uuid
+  debit          Float    @default(0)
+  credit         Float    @default(0)
+  description    String?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  journalEntry JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
+  account      Account      @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([journalEntryId])
+  @@index([accountId])
+  @@map("journal_lines")
+}
+
+model TaxRate {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  name      String
+  rate      Float
+  type      String   // GST, VAT, INCOME, OTHER
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("tax_rates")
+}
+
+model Budget {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @map("tenant_id") @db.Uuid
+  accountId       String?  @map("account_id") @db.Uuid
+  name            String
+  period          String   // YYYY-MM
+  allocatedAmount Float    @default(0) @map("allocated_amount")
+  spentAmount     Float    @default(0) @map("spent_amount")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([period])
+  @@map("budgets")
+}
+
+// ============================================
+// MARKETING
+// ============================================
+
+model Campaign {
+  id          String    @id @default(uuid()) @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  name        String
+  type        String    @default("EMAIL") // EMAIL, SMS, WHATSAPP, MULTI_CHANNEL
+  status      String    @default("DRAFT") // DRAFT, SCHEDULED, RUNNING, PAUSED, COMPLETED
+  audience    Json      @default("{}")
+  content     Json      @default("{}")
+  schedule    Json      @default("{}")
+  metrics     Json      @default("{}")
+  startDate   DateTime? @map("start_date")
+  endDate     DateTime? @map("end_date")
+  createdBy   String?   @map("created_by") @db.Uuid
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([status])
+  @@map("campaigns")
+}
+
+model LeadCaptureForm {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenantId        String   @map("tenant_id") @db.Uuid
+  name            String
+  fields          Json     @default("[]")
+  settings        Json     @default("{}")
+  isActive        Boolean  @default(true) @map("is_active")
+  submissionCount Int      @default(0) @map("submission_count")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("lead_capture_forms")
+}
+
+model FormSubmission {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  formId    String   @map("form_id") @db.Uuid
+  data      Json
+  leadId    String?  @map("lead_id") @db.Uuid
+  source    String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([formId])
+  @@map("form_submissions")
+}
+
+model MarketingList {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  name        String
+  type        String   @default("STATIC") // STATIC, DYNAMIC
+  criteria    Json     @default("{}")
+  memberCount Int      @default(0) @map("member_count")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("marketing_lists")
 }

@@ -47,18 +47,75 @@ import {
   BarChart3,
   // AI icons
   Brain,
+  // Inventory icons
+  Package,
+  // Accounting icons
+  Calculator,
+  // Marketing icons
+  Megaphone,
+  // Search icon
+  Search,
 } from 'lucide-react'
 
 export interface NavItem {
   title: string
   href: string
   icon: LucideIcon
+  shortcut?: string
+  commandCenter?: boolean
 }
 
 export interface NavSection {
   label: string
   items: NavItem[]
 }
+
+export const searchNav: NavSection[] = [
+  {
+    label: 'Search',
+    items: [
+      { title: 'Search', href: '#command-center', icon: Search, shortcut: 'Ctrl+K', commandCenter: true },
+    ],
+  },
+]
+
+export const inventoryNav: NavSection[] = [
+  {
+    label: 'Inventory',
+    items: [
+      { title: 'Dashboard', href: '/inventory', icon: Package },
+      { title: 'Products', href: '/inventory/products', icon: Package },
+      { title: 'Stock', href: '/inventory/stock', icon: Package },
+      { title: 'Purchase Orders', href: '/inventory/purchase-orders', icon: Package },
+      { title: 'Vendors', href: '/inventory/vendors', icon: Package },
+    ],
+  },
+]
+
+export const accountingNav: NavSection[] = [
+  {
+    label: 'Accounting',
+    items: [
+      { title: 'Dashboard', href: '/accounting', icon: Calculator },
+      { title: 'Accounts', href: '/accounting/accounts', icon: Calculator },
+      { title: 'Journal Entries', href: '/accounting/journal-entries', icon: Calculator },
+      { title: 'Tax Rates', href: '/accounting/tax-rates', icon: Calculator },
+      { title: 'Budgets', href: '/accounting/budgets', icon: Calculator },
+    ],
+  },
+]
+
+export const marketingNav: NavSection[] = [
+  {
+    label: 'Marketing',
+    items: [
+      { title: 'Dashboard', href: '/marketing', icon: Megaphone },
+      { title: 'Campaigns', href: '/marketing/campaigns', icon: Megaphone },
+      { title: 'Forms', href: '/marketing/forms', icon: Megaphone },
+      { title: 'Lists', href: '/marketing/lists', icon: Megaphone },
+    ],
+  },
+]
 
 export const superAdminNav: NavSection[] = [
   {
@@ -76,6 +133,7 @@ export const superAdminNav: NavSection[] = [
       { title: 'Audit Logs', href: '/super-admin/audit', icon: FileText },
       { title: 'Feature Flags', href: '/super-admin/features', icon: Flag },
       { title: 'System Health', href: '/super-admin/health', icon: Activity },
+      { title: 'AI Configuration', href: '/super-admin/ai-config', icon: Brain },
       { title: 'Settings', href: '/super-admin/settings', icon: Settings },
     ],
   },
@@ -283,18 +341,47 @@ export const tenantAdminNav: NavSection[] = [
       { title: 'Chat', href: '/ai/chat', icon: MessageSquare },
     ],
   },
+  {
+    label: 'Inventory',
+    items: [
+      { title: 'Dashboard', href: '/inventory', icon: Package },
+      { title: 'Products', href: '/inventory/products', icon: Package },
+      { title: 'Stock', href: '/inventory/stock', icon: Package },
+      { title: 'Purchase Orders', href: '/inventory/purchase-orders', icon: Package },
+      { title: 'Vendors', href: '/inventory/vendors', icon: Package },
+    ],
+  },
+  {
+    label: 'Accounting',
+    items: [
+      { title: 'Dashboard', href: '/accounting', icon: Calculator },
+      { title: 'Accounts', href: '/accounting/accounts', icon: Calculator },
+      { title: 'Journal Entries', href: '/accounting/journal-entries', icon: Calculator },
+      { title: 'Tax Rates', href: '/accounting/tax-rates', icon: Calculator },
+      { title: 'Budgets', href: '/accounting/budgets', icon: Calculator },
+    ],
+  },
+  {
+    label: 'Marketing',
+    items: [
+      { title: 'Dashboard', href: '/marketing', icon: Megaphone },
+      { title: 'Campaigns', href: '/marketing/campaigns', icon: Megaphone },
+      { title: 'Forms', href: '/marketing/forms', icon: Megaphone },
+      { title: 'Lists', href: '/marketing/lists', icon: Megaphone },
+    ],
+  },
 ]
 
 export function getNavForRole(role: string): NavSection[] {
   if (role === 'SUPER_ADMIN') return superAdminNav
   if (role === 'HR_MANAGER' || role === 'HR_EXECUTIVE' || role === 'ACCOUNTANT') {
-    return [...hrmsNav, ...communicationNav.slice(1, 3)]
+    return [...hrmsNav, ...communicationNav.slice(1, 3), ...accountingNav]
   }
   if (role === 'FIELD_MANAGER' || role === 'FIELD_EXECUTIVE') {
     return [...crmNav.slice(0, 1), ...hrmsNav.slice(2), ...communicationNav.slice(0, 1)]
   }
   if (['TENANT_OWNER', 'ADMIN', 'MANAGER', 'SALES_MANAGER', 'SALES_EXECUTIVE', 'TELECALLER'].includes(role)) {
-    return [...tenantAdminNav, ...communicationNav, ...automationNav, ...analyticsNav, ...aiNav]
+    return [...tenantAdminNav, ...communicationNav, ...automationNav, ...analyticsNav, ...aiNav, ...inventoryNav, ...accountingNav, ...marketingNav]
   }
-  return [...crmNav, ...hrmsNav, ...communicationNav, ...automationNav, ...analyticsNav, ...aiNav]
+  return [...crmNav, ...hrmsNav, ...communicationNav, ...automationNav, ...analyticsNav, ...aiNav, ...inventoryNav, ...accountingNav, ...marketingNav]
 }

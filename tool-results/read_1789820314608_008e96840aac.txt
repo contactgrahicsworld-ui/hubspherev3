@@ -1,0 +1,991 @@
+     1→     1→'use client';
+     2→     2→
+     3→     3→import { useEffect, useState, useCallback } from 'react';
+     4→     4→import { apiFetch } from '@/lib/auth-client';
+     5→     5→import { toast } from 'sonner';
+     6→     6→import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+     7→     7→import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+     8→     8→import { Badge } from '@/components/ui/badge';
+     9→     9→import { Button } from '@/components/ui/button';
+    10→    10→import { Input } from '@/components/ui/input';
+    11→    11→import { Switch } from '@/components/ui/switch';
+    12→    12→import { Label } from '@/components/ui/label';
+    13→    13→import { Separator } from '@/components/ui/separator';
+    14→    14→import { Skeleton } from '@/components/ui/skeleton';
+    15→    15→import { ScrollArea } from '@/components/ui/scroll-area';
+    16→    16→import {
+    17→    17→  Select,
+    18→    18→  SelectContent,
+    19→    19→  SelectItem,
+    20→    20→  SelectTrigger,
+    21→    21→  SelectValue,
+    22→    22→} from '@/components/ui/select';
+    23→    23→import {
+    24→    24→  Table,
+    25→    25→  TableBody,
+    26→    26→  TableCell,
+    27→    27→  TableHead,
+    28→    28→  TableHeader,
+    29→    29→  TableRow,
+    30→    30→} from '@/components/ui/table';
+    31→    31→import {
+    32→    32→  Dialog,
+    33→    33→  DialogContent,
+    34→    34→  DialogDescription,
+    35→    35→  DialogFooter,
+    36→    36→  DialogHeader,
+    37→    37→  DialogTitle,
+    38→    38→} from '@/components/ui/dialog';
+    39→    39→import { TelecallingDashboard } from '@/components/telecalling/telecalling-dashboard';
+    40→    40→import { DeviceCard, type Device } from '@/components/telecalling/device-card';
+    41→    41→import { CallRequestCard, type CallRequest } from '@/components/telecalling/call-request-card';
+    42→    42→import {
+    43→    43→  Phone,
+    44→    44→  Smartphone,
+    45→    45→  Wifi,
+    46→    46→  WifiOff,
+    47→    47→  Check,
+    48→    48→  X,
+    49→    49→  Clock,
+    50→    50→  AlertCircle,
+    51→    51→  RefreshCw,
+    52→    52→  Search,
+    53→    53→  Settings,
+    54→    54→  History,
+    55→    55→  PhoneCall,
+    56→    56→  ListOrdered,
+    57→    57→  Loader2,
+    58→    58→} from 'lucide-react';
+    59→    59→
+    60→    60→// ============================================
+    61→    61→// Types
+    62→    62→// ============================================
+    63→    63→
+    64→    64→interface CallEventItem {
+    65→    65→  id: string;
+    66→    66→  callRequestId: string;
+    67→    67→  deviceId: string;
+    68→    68→  eventType: string;
+    69→    69→  duration: number | null;
+    70→    70→  failureReason: string | null;
+    71→    71→  createdAt: string;
+    72→    72→}
+    73→    73→
+    74→    74→interface PaginatedDevices {
+    75→    75→  success: boolean;
+    76→    76→  data: Device[];
+    77→    77→  pagination: { page: number; limit: number; total: number; totalPages: number };
+    78→    78→}
+    79→    79→
+    80→    80→interface PaginatedCallRequests {
+    81→    81→  success: boolean;
+    82→    82→  data: CallRequest[];
+    83→    83→  pagination: { page: number; limit: number; total: number; totalPages: number };
+    84→    84→}
+    85→    85→
+    86→    86→interface PaginatedCallEvents {
+    87→    87→  success: boolean;
+    88→    88→  data: CallEventItem[];
+    89→    89→  pagination: { page: number; limit: number; total: number; totalPages: number };
+    90→    90→}
+    91→    91→
+    92→    92→// ============================================
+    93→    93→// Helpers
+    94→    94→// ============================================
+    95→    95→
+    96→    96→function formatDateTime(dateStr: string | null): string {
+    97→    97→  if (!dateStr) return '-';
+    98→    98→  try {
+    99→    99→    return new Date(dateStr).toLocaleString('en-US', {
+   100→   100→      month: 'short',
+   101→   101→      day: 'numeric',
+   102→   102→      year: 'numeric',
+   103→   103→      hour: 'numeric',
+   104→   104→      minute: '2-digit',
+   105→   105→    });
+   106→   106→  } catch {
+   107→   107→    return '-';
+   108→   108→  }
+   109→   109→}
+   110→   110→
+   111→   111→function formatDuration(seconds: number | null): string {
+   112→   112→  if (seconds == null) return '-';
+   113→   113→  const m = Math.floor(seconds / 60);
+   114→   114→  const s = seconds % 60;
+   115→   115→  return m > 0 ? `${m}m ${s}s` : `${s}s`;
+   116→   116→}
+   117→   117→
+   118→   118→// ============================================
+   119→   119→// Device status badge
+   120→   120→// ============================================
+   121→   121→
+   122→   122→const DEVICE_STATUS_CONFIG: Record<string, { label: string; className: string }> = {
+   123→   123→  UNREGISTERED: {
+   124→   124→    label: 'Unregistered',
+   125→   125→    className: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400',
+   126→   126→  },
+   127→   127→  PAIRING: {
+   128→   128→    label: 'Pairing',
+   129→   129→    className: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
+   130→   130→  },
+   131→   131→  PENDING_APPROVAL: {
+   132→   132→    label: 'Pending',
+   133→   133→    className: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+   134→   134→  },
+   135→   135→  ACTIVE: {
+   136→   136→    label: 'Active',
+   137→   137→    className: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+   138→   138→  },
+   139→   139→  REVOKED: {
+   140→   140→    label: 'Revoked',
+   141→   141→    className: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+   142→   142→  },
+   143→   143→};
+   144→   144→
+   145→   145→// ============================================
+   146→   146→// Call request status badge
+   147→   147→// ============================================
+   148→   148→
+   149→   149→const CR_STATUS_CONFIG: Record<string, { label: string; className: string }> = {
+   150→   150→  PENDING: {
+   151→   151→    label: 'Pending',
+   152→   152→    className: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
+   153→   153→  },
+   154→   154→  ACCEPTED: {
+   155→   155→    label: 'Accepted',
+   156→   156→    className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+   157→   157→  },
+   158→   158→  REJECTED: {
+   159→   159→    label: 'Rejected',
+   160→   160→    className: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+   161→   161→  },
+   162→   162→  CANCELLED: {
+   163→   163→    label: 'Cancelled',
+   164→   164→    className: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
+   165→   165→  },
+   166→   166→  EXPIRED: {
+   167→   167→    label: 'Expired',
+   168→   168→    className: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
+   169→   169→  },
+   170→   170→  COMPLETED: {
+   171→   171→    label: 'Completed',
+   172→   172→    className: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+   173→   173→  },
+   174→   174→};
+   175→   175→
+   176→   176→// ============================================
+   177→   177→// Main Page
+   178→   178→// ============================================
+   179→   179→
+   180→   180→export default function TelecallingPage() {
+   181→   181→  // ===== Devices Tab State =====
+   182→   182→  const [devices, setDevices] = useState<Device[]>([]);
+   183→   183→  const [devicesLoading, setDevicesLoading] = useState(true);
+   184→   184→  const [devicesError, setDevicesError] = useState<string | null>(null);
+   185→   185→  const [deviceStatusFilter, setDeviceStatusFilter] = useState('');
+   186→   186→  const [deviceSearch, setDeviceSearch] = useState('');
+   187→   187→  const [revokeDialogDevice, setRevokeDialogDevice] = useState<Device | null>(null);
+   188→   188→  const [revokeLoading, setRevokeLoading] = useState(false);
+   189→   189→
+   190→   190→  // ===== Call Queue Tab State =====
+   191→   191→  const [callRequests, setCallRequests] = useState<CallRequest[]>([]);
+   192→   192→  const [crLoading, setCrLoading] = useState(true);
+   193→   193→  const [crError, setCrError] = useState<string | null>(null);
+   194→   194→  const [crStatusFilter, setCrStatusFilter] = useState('PENDING');
+   195→   195→
+   196→   196→  // ===== Call History Tab State =====
+   197→   197→  const [callEvents, setCallEvents] = useState<CallEventItem[]>([]);
+   198→   198→  const [eventsLoading, setEventsLoading] = useState(true);
+   199→   199→  const [eventsError, setEventsError] = useState<string | null>(null);
+   200→   200→
+   201→   201→  // ===== Settings Tab State =====
+   202→   202→  const [defaultExpiry, setDefaultExpiry] = useState('300');
+   203→   203→  const [autoApprove, setAutoApprove] = useState(false);
+   204→   204→  const [heartbeatTimeout, setHeartbeatTimeout] = useState('5');
+   205→   205→  const [maxConcurrentCalls, setMaxConcurrentCalls] = useState('1');
+   206→   206→
+   207→   207→  // ===== Fetch Devices =====
+   208→   208→  const fetchDevices = useCallback(async () => {
+   209→   209→    try {
+   210→   210→      setDevicesLoading(true);
+   211→   211→      setDevicesError(null);
+   212→   212→      const params = new URLSearchParams({ limit: '100' });
+   213→   213→      if (deviceStatusFilter) params.set('status', deviceStatusFilter);
+   214→   214→      const res = await apiFetch<PaginatedDevices>(`/api/v1/devices?${params}`);
+   215→   215→      setDevices(res.data ?? []);
+   216→   216→    } catch (err) {
+   217→   217→      const message = err instanceof Error ? err.message : 'Failed to load devices';
+   218→   218→      setDevicesError(message);
+   219→   219→      toast.error(message);
+   220→   220→    } finally {
+   221→   221→      setDevicesLoading(false);
+   222→   222→    }
+   223→   223→  }, [deviceStatusFilter]);
+   224→   224→
+   225→   225→  useEffect(() => { fetchDevices(); }, [fetchDevices]);
+   226→   226→
+   227→   227→  // ===== Fetch Call Requests =====
+   228→   228→  const fetchCallRequests = useCallback(async () => {
+   229→   229→    try {
+   230→   230→      setCrLoading(true);
+   231→   231→      setCrError(null);
+   232→   232→      const params = new URLSearchParams({ limit: '50' });
+   233→   233→      if (crStatusFilter) params.set('status', crStatusFilter);
+   234→   234→      const res = await apiFetch<PaginatedCallRequests>(`/api/v1/call-requests?${params}`);
+   235→   235→      setCallRequests(res.data ?? []);
+   236→   236→    } catch (err) {
+   237→   237→      const message = err instanceof Error ? err.message : 'Failed to load call requests';
+   238→   238→      setCrError(message);
+   239→   239→      toast.error(message);
+   240→   240→    } finally {
+   241→   241→      setCrLoading(false);
+   242→   242→    }
+   243→   243→  }, [crStatusFilter]);
+   244→   244→
+   245→   245→  useEffect(() => { fetchCallRequests(); }, [fetchCallRequests]);
+   246→   246→
+   247→   247→  // ===== Fetch Call Events =====
+   248→   248→  const fetchCallEvents = useCallback(async () => {
+   249→   249→    try {
+   250→   250→      setEventsLoading(true);
+   251→   251→      setEventsError(null);
+   252→   252→      const res = await apiFetch<PaginatedCallEvents>('/api/v1/call-events?limit=50');
+   253→   253→      setCallEvents(res.data ?? []);
+   254→   254→    } catch (err) {
+   255→   255→      const message = err instanceof Error ? err.message : 'Failed to load call events';
+   256→   256→      setEventsError(message);
+   257→   257→    } finally {
+   258→   258→      setEventsLoading(false);
+   259→   259→    }
+   260→   260→  }, []);
+   261→   261→
+   262→   262→  useEffect(() => { fetchCallEvents(); }, [fetchCallEvents]);
+   263→   263→
+   264→   264→  // ===== Device Actions =====
+   265→   265→  const handleApproveDevice = useCallback(async (deviceId: string) => {
+   266→   266→    try {
+   267→   267→      await apiFetch(`/api/v1/devices/${deviceId}/approve`, { method: 'POST' });
+   268→   268→      toast.success('Device approved');
+   269→   269→      setDevices((prev) => prev.map((d) => (d.id === deviceId ? { ...d, status: 'ACTIVE' } : d)));
+   270→   270→    } catch (err) {
+   271→   271→      toast.error(err instanceof Error ? err.message : 'Failed to approve device');
+   272→   272→    }
+   273→   273→  }, []);
+   274→   274→
+   275→   275→  const handleRevokeDevice = useCallback(async () => {
+   276→   276→    if (!revokeDialogDevice) return;
+   277→   277→    try {
+   278→   278→      setRevokeLoading(true);
+   279→   279→      await apiFetch(`/api/v1/devices/${revokeDialogDevice.id}/revoke`, { method: 'POST' });
+   280→   280→      toast.success('Device revoked');
+   281→   281→      setDevices((prev) =>
+   282→   282→        prev.map((d) => (d.id === revokeDialogDevice.id ? { ...d, status: 'REVOKED' } : d))
+   283→   283→      );
+   284→   284→      setRevokeDialogDevice(null);
+   285→   285→    } catch (err) {
+   286→   286→      toast.error(err instanceof Error ? err.message : 'Failed to revoke device');
+   287→   287→    } finally {
+   288→   288→      setRevokeLoading(false);
+   289→   289→    }
+   290→   290→  }, [revokeDialogDevice]);
+   291→   291→
+   292→   292→  const openRevokeDialog = useCallback((device: Device) => {
+   293→   293→    setRevokeDialogDevice(device);
+   294→   294→  }, []);
+   295→   295→
+   296→   296→  // ===== Cancel Call Request =====
+   297→   297→  const handleCancelCallRequest = useCallback(async (id: string) => {
+   298→   298→    try {
+   299→   299→      await apiFetch(`/api/v1/call-requests/${id}`, {
+   300→   300→        method: 'PATCH',
+   301→   301→        body: JSON.stringify({ status: 'CANCELLED' }),
+   302→   302→      });
+   303→   303→      toast.success('Call request cancelled');
+   304→   304→      setCallRequests((prev) => prev.filter((cr) => cr.id !== id));
+   305→   305→    } catch (err) {
+   306→   306→      toast.error(err instanceof Error ? err.message : 'Failed to cancel call request');
+   307→   307→    }
+   308→   308→  }, []);
+   309→   309→
+   310→   310→  // ===== Filtered devices for search =====
+   311→   311→  const filteredDevices = deviceSearch
+   312→   312→    ? devices.filter(
+   313→   313→        (d) =>
+   314→   314→          (d.deviceName?.toLowerCase().includes(deviceSearch.toLowerCase()) ?? false) ||
+   315→   315→          (d.deviceModel?.toLowerCase().includes(deviceSearch.toLowerCase()) ?? false) ||
+   316→   316→          (d.phoneNumber?.includes(deviceSearch) ?? false) ||
+   317→   317→          d.id.includes(deviceSearch)
+   318→   318→      )
+   319→   319→    : devices;
+   320→   320→
+   321→   321→  // ===== Event type helpers =====
+   322→   322→  const EVENT_TYPE_STYLES: Record<string, string> = {
+   323→   323→    CALL_STARTED: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+   324→   324→    RINGING: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
+   325→   325→    CONNECTED: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+   326→   326→    ON_HOLD: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+   327→   327→    RESUMED: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+   328→   328→    ENDED: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
+   329→   329→    FAILED: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+   330→   330→    MISSED: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+   331→   331→  };
+   332→   332→
+   333→   333→  return (
+   334→   334→    <div className="space-y-6">
+   335→   335→      {/* Page Header */}
+   336→   336→      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+   337→   337→        <div>
+   338→   338→          <h1 className="text-2xl font-bold tracking-tight">Telecalling</h1>
+   339→   339→          <p className="mt-1 text-muted-foreground">
+   340→   340→            Manage devices, call queues, and telecalling configuration
+   341→   341→          </p>
+   342→   342→        </div>
+   343→   343→      </div>
+   344→   344→
+   345→   345→      {/* Main Tabs */}
+   346→   346→      <Tabs defaultValue="dashboard" className="space-y-6">
+   347→   347→        <TabsList className="w-full sm:w-auto">
+   348→   348→          <TabsTrigger value="dashboard" className="gap-1.5">
+   349→   349→            <Wifi className="size-4" />
+   350→   350→            <span className="hidden sm:inline">Dashboard</span>
+   351→   351→          </TabsTrigger>
+   352→   352→          <TabsTrigger value="devices" className="gap-1.5">
+   353→   353→            <Smartphone className="size-4" />
+   354→   354→            <span className="hidden sm:inline">Devices</span>
+   355→   355→          </TabsTrigger>
+   356→   356→          <TabsTrigger value="call-queue" className="gap-1.5">
+   357→   357→            <PhoneCall className="size-4" />
+   358→   358→            <span className="hidden sm:inline">Call Queue</span>
+   359→   359→          </TabsTrigger>
+   360→   360→          <TabsTrigger value="call-history" className="gap-1.5">
+   361→   361→            <History className="size-4" />
+   362→   362→            <span className="hidden sm:inline">Call History</span>
+   363→   363→          </TabsTrigger>
+   364→   364→          <TabsTrigger value="settings" className="gap-1.5">
+   365→   365→            <Settings className="size-4" />
+   366→   366→            <span className="hidden sm:inline">Settings</span>
+   367→   367→          </TabsTrigger>
+   368→   368→        </TabsList>
+   369→   369→
+   370→   370→        {/* ===== Dashboard Tab ===== */}
+   371→   371→        <TabsContent value="dashboard">
+   372→   372→          <TelecallingDashboard />
+   373→   373→        </TabsContent>
+   374→   374→
+   375→   375→        {/* ===== Devices Tab ===== */}
+   376→   376→        <TabsContent value="devices" className="space-y-4">
+   377→   377→          {/* Filters */}
+   378→   378→          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+   379→   379→            <div className="relative flex-1 max-w-sm">
+   380→   380→              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+   381→   381→              <Input
+   382→   382→                placeholder="Search devices..."
+   383→   383→                value={deviceSearch}
+   384→   384→                onChange={(e) => setDeviceSearch(e.target.value)}
+   385→   385→                className="pl-9"
+   386→   386→                aria-label="Search devices"
+   387→   387→              />
+   388→   388→            </div>
+   389→   389→            <Select
+   390→   390→              value={deviceStatusFilter || '_all'}
+   391→   391→              onValueChange={(v) => setDeviceStatusFilter(v === '_all' ? '' : v)}
+   392→   392→            >
+   393→   393→              <SelectTrigger className="w-[160px]" aria-label="Filter by status">
+   394→   394→                <SelectValue placeholder="All Statuses" />
+   395→   395→              </SelectTrigger>
+   396→   396→              <SelectContent>
+   397→   397→                <SelectItem value="_all">All Statuses</SelectItem>
+   398→   398→                <SelectItem value="UNREGISTERED">Unregistered</SelectItem>
+   399→   399→                <SelectItem value="PAIRING">Pairing</SelectItem>
+   400→   400→                <SelectItem value="PENDING_APPROVAL">Pending Approval</SelectItem>
+   401→   401→                <SelectItem value="ACTIVE">Active</SelectItem>
+   402→   402→                <SelectItem value="REVOKED">Revoked</SelectItem>
+   403→   403→              </SelectContent>
+   404→   404→            </Select>
+   405→   405→            <Button variant="outline" size="sm" onClick={fetchDevices}>
+   406→   406→              <RefreshCw className="size-3 mr-1" />
+   407→   407→              Refresh
+   408→   408→            </Button>
+   409→   409→          </div>
+   410→   410→
+   411→   411→          {/* Loading */}
+   412→   412→          {devicesLoading && (
+   413→   413→            <div className="space-y-3">
+   414→   414→              {Array.from({ length: 3 }).map((_, i) => (
+   415→   415→                <Card key={i}>
+   416→   416→                  <CardContent className="p-4 space-y-3">
+   417→   417→                    <Skeleton className="h-5 w-3/4" />
+   418→   418→                    <Skeleton className="h-4 w-1/2" />
+   419→   419→                    <Skeleton className="h-4 w-2/3" />
+   420→   420→                  </CardContent>
+   421→   421→                </Card>
+   422→   422→              ))}
+   423→   423→            </div>
+   424→   424→          )}
+   425→   425→
+   426→   426→          {/* Error */}
+   427→   427→          {devicesError && !devicesLoading && (
+   428→   428→            <Card className="border-destructive/50">
+   429→   429→              <CardContent className="flex items-center gap-3 py-6">
+   430→   430→                <AlertCircle className="size-5 shrink-0 text-destructive" />
+   431→   431→                <p className="text-sm text-destructive">{devicesError}</p>
+   432→   432→                <Button variant="outline" size="sm" className="ml-auto shrink-0" onClick={fetchDevices}>
+   433→   433→                  Retry
+   434→   434→                </Button>
+   435→   435→              </CardContent>
+   436→   436→            </Card>
+   437→   437→          )}
+   438→   438→
+   439→   439→          {/* Desktop Table */}
+   440→   440→          {!devicesLoading && !devicesError && filteredDevices.length > 0 && (
+   441→   441→            <>
+   442→   442→              <Card className="hidden lg:block">
+   443→   443→                <CardContent className="p-0">
+   444→   444→                  <Table>
+   445→   445→                    <TableHeader>
+   446→   446→                      <TableRow>
+   447→   447→                        <TableHead className="min-w-[180px]">Device</TableHead>
+   448→   448→                        <TableHead>Status</TableHead>
+   449→   449→                        <TableHead className="min-w-[130px]">Phone</TableHead>
+   450→   450→                        <TableHead>SIM Operator</TableHead>
+   451→   451→                        <TableHead>App Ver</TableHead>
+   452→   452→                        <TableHead>Last Heartbeat</TableHead>
+   453→   453→                        <TableHead className="text-right">Actions</TableHead>
+   454→   454→                      </TableRow>
+   455→   455→                    </TableHeader>
+   456→   456→                    <TableBody>
+   457→   457→                      {filteredDevices.map((device) => {
+   458→   458→                        const sc = DEVICE_STATUS_CONFIG[device.status] ?? {
+   459→   459→                          label: device.status,
+   460→   460→                          className: '',
+   461→   461→                        };
+   462→   462→                        return (
+   463→   463→                          <TableRow key={device.id}>
+   464→   464→                            <TableCell>
+   465→   465→                              <div>
+   466→   466→                                <p className="text-sm font-medium">
+   467→   467→                                  {device.deviceName || 'Unnamed'}
+   468→   468→                                </p>
+   469→   469→                                <p className="text-xs text-muted-foreground">
+   470→   470→                                  {device.deviceModel || '-'}
+   471→   471→                                </p>
+   472→   472→                              </div>
+   473→   473→                            </TableCell>
+   474→   474→                            <TableCell>
+   475→   475→                              <Badge variant="outline" className={sc.className}>
+   476→   476→                                {sc.label}
+   477→   477→                              </Badge>
+   478→   478→                            </TableCell>
+   479→   479→                            <TableCell className="text-sm">
+   480→   480→                              {device.phoneNumber || '-'}
+   481→   481→                            </TableCell>
+   482→   482→                            <TableCell className="text-sm text-muted-foreground">
+   483→   483→                              {device.simOperator || '-'}
+   484→   484→                            </TableCell>
+   485→   485→                            <TableCell className="text-sm text-muted-foreground">
+   486→   486→                              {device.appVersion ? `v${device.appVersion}` : '-'}
+   487→   487→                            </TableCell>
+   488→   488→                            <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
+   489→   489→                              {formatDateTime(device.lastHeartbeatAt)}
+   490→   490→                            </TableCell>
+   491→   491→                            <TableCell className="text-right">
+   492→   492→                              <div className="flex items-center justify-end gap-1">
+   493→   493→                                {device.status === 'PENDING_APPROVAL' && (
+   494→   494→                                  <Button
+   495→   495→                                    size="sm"
+   496→   496→                                    variant="default"
+   497→   497→                                    className="h-7 gap-1 text-xs"
+   498→   498→                                    onClick={() => handleApproveDevice(device.id)}
+   499→   499→                                  >
+   500→   500→                                    <Check className="size-3" />
+   501→   501→                                    Approve
+   502→   502→                                  </Button>
+   503→   503→                                )}
+   504→   504→                                {(device.status === 'ACTIVE' || device.status === 'PENDING_APPROVAL') && (
+   505→   505→                                  <Button
+   506→   506→                                    size="sm"
+   507→   507→                                    variant="outline"
+   508→   508→                                    className="h-7 gap-1 text-xs text-destructive hover:bg-destructive/10"
+   509→   509→                                    onClick={() => openRevokeDialog(device)}
+   510→   510→                                  >
+   511→   511→                                    <X className="size-3" />
+   512→   512→                                    {device.status === 'PENDING_APPROVAL' ? 'Reject' : 'Revoke'}
+   513→   513→                                  </Button>
+   514→   514→                                )}
+   515→   515→                              </div>
+   516→   516→                            </TableCell>
+   517→   517→                          </TableRow>
+   518→   518→                        );
+   519→   519→                      })}
+   520→   520→                    </TableBody>
+   521→   521→                  </Table>
+   522→   522→                </CardContent>
+   523→   523→              </Card>
+   524→   524→
+   525→   525→              {/* Mobile Cards */}
+   526→   526→              <div className="flex flex-col gap-3 lg:hidden">
+   527→   527→                {filteredDevices.map((device) => (
+   528→   528→                  <DeviceCard
+   529→   529→                    key={device.id}
+   530→   530→                    device={device}
+   531→   531→                    onApprove={handleApproveDevice}
+   532→   532→                    onRevoke={(id) => {
+   533→   533→                      const d = devices.find((dev) => dev.id === id);
+   534→   534→                      if (d) openRevokeDialog(d);
+   535→   535→                    }}
+   536→   536→                  />
+   537→   537→                ))}
+   538→   538→              </div>
+   539→   539→
+   540→   540→              <p className="text-xs text-muted-foreground text-center">
+   541→   541→                {filteredDevices.length} of {devices.length} devices
+   542→   542→              </p>
+   543→   543→            </>
+   544→   544→          )}
+   545→   545→
+   546→   546→          {/* Empty */}
+   547→   547→          {!devicesLoading && !devicesError && filteredDevices.length === 0 && (
+   548→   548→            <Card>
+   549→   549→              <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+   550→   550→                <Smartphone className="mb-3 size-10 text-muted-foreground/50" />
+   551→   551→                <p className="text-sm font-medium text-muted-foreground">No devices found</p>
+   552→   552→                <p className="mt-1 text-xs text-muted-foreground">
+   553→   553→                  {deviceSearch || deviceStatusFilter
+   554→   554→                    ? 'Try adjusting your filters.'
+   555→   555→                    : 'Devices will appear here once they are registered.'}
+   556→   556→                </p>
+   557→   557→              </CardContent>
+   558→   558→            </Card>
+   559→   559→          )}
+   560→   560→        </TabsContent>
+   561→   561→
+   562→   562→        {/* ===== Call Queue Tab ===== */}
+   563→   563→        <TabsContent value="call-queue" className="space-y-4">
+   564→   564→          {/* Filters */}
+   565→   565→          <div className="flex items-center gap-3">
+   566→   566→            <Select
+   567→   567→              value={crStatusFilter || '_all'}
+   568→   568→              onValueChange={(v) => setCrStatusFilter(v === '_all' ? '' : v)}
+   569→   569→            >
+   570→   570→              <SelectTrigger className="w-[160px]" aria-label="Filter by status">
+   571→   571→                <SelectValue placeholder="All Statuses" />
+   572→   572→              </SelectTrigger>
+   573→   573→              <SelectContent>
+   574→   574→                <SelectItem value="_all">All Statuses</SelectItem>
+   575→   575→                <SelectItem value="PENDING">Pending</SelectItem>
+   576→   576→                <SelectItem value="ACCEPTED">Accepted</SelectItem>
+   577→   577→                <SelectItem value="REJECTED">Rejected</SelectItem>
+   578→   578→                <SelectItem value="CANCELLED">Cancelled</SelectItem>
+   579→   579→                <SelectItem value="EXPIRED">Expired</SelectItem>
+   580→   580→                <SelectItem value="COMPLETED">Completed</SelectItem>
+   581→   581→              </SelectContent>
+   582→   582→            </Select>
+   583→   583→            <Button variant="outline" size="sm" onClick={fetchCallRequests}>
+   584→   584→              <RefreshCw className="size-3 mr-1" />
+   585→   585→              Refresh
+   586→   586→            </Button>
+   587→   587→          </div>
+   588→   588→
+   589→   589→          {/* Loading */}
+   590→   590→          {crLoading && (
+   591→   591→            <div className="space-y-3">
+   592→   592→              {Array.from({ length: 3 }).map((_, i) => (
+   593→   593→                <Card key={i}>
+   594→   594→                  <CardContent className="p-4 space-y-3">
+   595→   595→                    <Skeleton className="h-5 w-3/4" />
+   596→   596→                    <Skeleton className="h-4 w-1/2" />
+   597→   597→                  </CardContent>
+   598→   598→                </Card>
+   599→   599→              ))}
+   600→   600→            </div>
+   601→   601→          )}
+   602→   602→
+   603→   603→          {/* Error */}
+   604→   604→          {crError && !crLoading && (
+   605→   605→            <Card className="border-destructive/50">
+   606→   606→              <CardContent className="flex items-center gap-3 py-6">
+   607→   607→                <AlertCircle className="size-5 shrink-0 text-destructive" />
+   608→   608→                <p className="text-sm text-destructive">{crError}</p>
+   609→   609→                <Button variant="outline" size="sm" className="ml-auto shrink-0" onClick={fetchCallRequests}>
+   610→   610→                  Retry
+   611→   611→                </Button>
+   612→   612→              </CardContent>
+   613→   613→            </Card>
+   614→   614→          )}
+   615→   615→
+   616→   616→          {/* Desktop Table */}
+   617→   617→          {!crLoading && !crError && callRequests.length > 0 && (
+   618→   618→            <>
+   619→   619→              <Card className="hidden md:block">
+   620→   620→                <CardContent className="p-0">
+   621→   621→                  <Table>
+   622→   622→                    <TableHeader>
+   623→   623→                      <TableRow>
+   624→   624→                        <TableHead className="min-w-[140px]">Phone / Contact</TableHead>
+   625→   625→                        <TableHead>Status</TableHead>
+   626→   626→                        <TableHead>Priority</TableHead>
+   627→   627→                        <TableHead className="min-w-[140px]">Device</TableHead>
+   628→   628→                        <TableHead>Created</TableHead>
+   629→   629→                        <TableHead>Expires</TableHead>
+   630→   630→                        <TableHead className="text-right">Actions</TableHead>
+   631→   631→                      </TableRow>
+   632→   632→                    </TableHeader>
+   633→   633→                    <TableBody>
+   634→   634→                      {callRequests.map((cr) => {
+   635→   635→                        const sc = CR_STATUS_CONFIG[cr.status] ?? {
+   636→   636→                          label: cr.status,
+   637→   637→                          className: '',
+   638→   638→                        };
+   639→   639→                        const isPending = cr.status === 'PENDING';
+   640→   640→                        const isExpired =
+   641→   641→                          cr.expiresAt && new Date(cr.expiresAt).getTime() < Date.now();
+   642→   642→
+   643→   643→                        return (
+   644→   644→                          <TableRow key={cr.id}>
+   645→   645→                            <TableCell>
+   646→   646→                              <div>
+   647→   647→                                <p className="text-sm font-medium">
+   648→   648→                                  {cr.contactName || cr.phoneNumber}
+   649→   649→                                </p>
+   650→   650→                                {cr.contactName && (
+   651→   651→                                  <p className="text-xs text-muted-foreground">{cr.phoneNumber}</p>
+   652→   652→                                )}
+   653→   653→                              </div>
+   654→   654→                            </TableCell>
+   655→   655→                            <TableCell>
+   656→   656→                              <Badge variant="outline" className={sc.className}>
+   657→   657→                                {sc.label}
+   658→   658→                              </Badge>
+   659→   659→                            </TableCell>
+   660→   660→                            <TableCell className="text-sm">
+   661→   661→                              {cr.priority > 0 ? `P${cr.priority}` : '-'}
+   662→   662→                            </TableCell>
+   663→   663→                            <TableCell className="text-sm text-muted-foreground">
+   664→   664→                              {cr.deviceName || cr.deviceId.slice(0, 8) + '…'}
+   665→   665→                            </TableCell>
+   666→   666→                            <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
+   667→   667→                              {formatDateTime(cr.createdAt)}
+   668→   668→                            </TableCell>
+   669→   669→                            <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
+   670→   670→                              {isPending && isExpired ? (
+   671→   671→                                <span className="text-red-600 dark:text-red-400">Expired</span>
+   672→   672→                              ) : (
+   673→   673→                                formatDateTime(cr.expiresAt)
+   674→   674→                              )}
+   675→   675→                            </TableCell>
+   676→   676→                            <TableCell className="text-right">
+   677→   677→                              {isPending && !isExpired && (
+   678→   678→                                <Button
+   679→   679→                                  size="sm"
+   680→   680→                                  variant="outline"
+   681→   681→                                  className="h-7 gap-1 text-xs text-destructive hover:bg-destructive/10"
+   682→   682→                                  onClick={() => handleCancelCallRequest(cr.id)}
+   683→   683→                                >
+   684→   684→                                  <X className="size-3" />
+   685→   685→                                  Cancel
+   686→   686→                                </Button>
+   687→   687→                              )}
+   688→   688→                            </TableCell>
+   689→   689→                          </TableRow>
+   690→   690→                        );
+   691→   691→                      })}
+   692→   692→                    </TableBody>
+   693→   693→                  </Table>
+   694→   694→                </CardContent>
+   695→   695→              </Card>
+   696→   696→
+   697→   697→              {/* Mobile Cards */}
+   698→   698→              <div className="flex flex-col gap-3 md:hidden">
+   699→   699→                {callRequests.map((cr) => (
+   700→   700→                  <CallRequestCard
+   701→   701→                    key={cr.id}
+   702→   702→                    callRequest={cr}
+   703→   703→                    onCancel={handleCancelCallRequest}
+   704→   704→                  />
+   705→   705→                ))}
+   706→   706→              </div>
+   707→   707→            </>
+   708→   708→          )}
+   709→   709→
+   710→   710→          {/* Empty */}
+   711→   711→          {!crLoading && !crError && callRequests.length === 0 && (
+   712→   712→            <Card>
+   713→   713→              <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+   714→   714→                <PhoneCall className="mb-3 size-10 text-muted-foreground/50" />
+   715→   715→                <p className="text-sm font-medium text-muted-foreground">No call requests</p>
+   716→   716→                <p className="mt-1 text-xs text-muted-foreground">
+   717→   717→                  {crStatusFilter
+   718→   718→                    ? `No ${crStatusFilter.toLowerCase()} call requests found.`
+   719→   719→                    : 'Call requests will appear here when created.'}
+   720→   720→                </p>
+   721→   721→              </CardContent>
+   722→   722→            </Card>
+   723→   723→          )}
+   724→   724→        </TabsContent>
+   725→   725→
+   726→   726→        {/* ===== Call History Tab ===== */}
+   727→   727→        <TabsContent value="call-history" className="space-y-4">
+   728→   728→          <div className="flex items-center gap-3">
+   729→   729→            <Button variant="outline" size="sm" onClick={fetchCallEvents}>
+   730→   730→              <RefreshCw className="size-3 mr-1" />
+   731→   731→              Refresh
+   732→   732→            </Button>
+   733→   733→          </div>
+   734→   734→
+   735→   735→          {/* Loading */}
+   736→   736→          {eventsLoading && (
+   737→   737→            <Card>
+   738→   738→              <CardContent className="p-0">
+   739→   739→                <div className="space-y-2 p-4">
+   740→   740→                  {Array.from({ length: 5 }).map((_, i) => (
+   741→   741→                    <Skeleton key={i} className="h-8 w-full" />
+   742→   742→                  ))}
+   743→   743→                </div>
+   744→   744→              </CardContent>
+   745→   745→            </Card>
+   746→   746→          )}
+   747→   747→
+   748→   748→          {/* Error */}
+   749→   749→          {eventsError && !eventsLoading && (
+   750→   750→            <Card className="border-destructive/50">
+   751→   751→              <CardContent className="flex items-center gap-3 py-6">
+   752→   752→                <AlertCircle className="size-5 shrink-0 text-destructive" />
+   753→   753→                <p className="text-sm text-destructive">{eventsError}</p>
+   754→   754→                <Button variant="outline" size="sm" className="ml-auto shrink-0" onClick={fetchCallEvents}>
+   755→   755→                  Retry
+   756→   756→                </Button>
+   757→   757→              </CardContent>
+   758→   758→            </Card>
+   759→   759→          )}
+   760→   760→
+   761→   761→          {/* Events Table */}
+   762→   762→          {!eventsLoading && !eventsError && callEvents.length > 0 && (
+   763→   763→            <Card>
+   764→   764→              <CardContent className="p-0">
+   765→   765→                <Table>
+   766→   766→                  <TableHeader>
+   767→   767→                    <TableRow>
+   768→   768→                      <TableHead>Event</TableHead>
+   769→   769→                      <TableHead className="min-w-[120px]">Request ID</TableHead>
+   770→   770→                      <TableHead>Duration</TableHead>
+   771→   771→                      <TableHead>Failure Reason</TableHead>
+   772→   772→                      <TableHead>Time</TableHead>
+   773→   773→                    </TableRow>
+   774→   774→                  </TableHeader>
+   775→   775→                  <TableBody>
+   776→   776→                    {callEvents.map((event) => (
+   777→   777→                      <TableRow key={event.id}>
+   778→   778→                        <TableCell>
+   779→   779→                          <Badge
+   780→   780→                            variant="outline"
+   781→   781→                            className={`text-xs ${EVENT_TYPE_STYLES[event.eventType] ?? ''}`}
+   782→   782→                          >
+   783→   783→                            {event.eventType}
+   784→   784→                          </Badge>
+   785→   785→                        </TableCell>
+   786→   786→                        <TableCell className="font-mono text-xs text-muted-foreground">
+   787→   787→                          {event.callRequestId.slice(0, 8)}…
+   788→   788→                        </TableCell>
+   789→   789→                        <TableCell className="text-sm text-muted-foreground">
+   790→   790→                          {formatDuration(event.duration)}
+   791→   791→                        </TableCell>
+   792→   792→                        <TableCell className="max-w-[200px] truncate text-xs text-red-600 dark:text-red-400">
+   793→   793→                          {event.failureReason || '-'}
+   794→   794→                        </TableCell>
+   795→   795→                        <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
+   796→   796→                          {formatDateTime(event.createdAt)}
+   797→   797→                        </TableCell>
+   798→   798→                      </TableRow>
+   799→   799→                    ))}
+   800→   800→                  </TableBody>
+   801→   801→                </Table>
+   802→   802→              </CardContent>
+   803→   803→            </Card>
+   804→   804→          )}
+   805→   805→
+   806→   806→          {/* Empty */}
+   807→   807→          {!eventsLoading && !eventsError && callEvents.length === 0 && (
+   808→   808→            <Card>
+   809→   809→              <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+   810→   810→                <History className="mb-3 size-10 text-muted-foreground/50" />
+   811→   811→                <p className="text-sm font-medium text-muted-foreground">No call events</p>
+   812→   812→                <p className="mt-1 text-xs text-muted-foreground">
+   813→   813→                  Events will appear here as calls progress.
+   814→   814→                </p>
+   815→   815→              </CardContent>
+   816→   816→            </Card>
+   817→   817→          )}
+   818→   818→        </TabsContent>
+   819→   819→
+   820→   820→        {/* ===== Settings Tab ===== */}
+   821→   821→        <TabsContent value="settings" className="space-y-6">
+   822→   822→          <div className="grid gap-6 lg:grid-cols-2">
+   823→   823→            {/* General Settings */}
+   824→   824→            <Card>
+   825→   825→              <CardHeader>
+   826→   826→                <CardTitle className="text-base">General Settings</CardTitle>
+   827→   827→                <CardDescription>Configure default telecalling behavior</CardDescription>
+   828→   828→              </CardHeader>
+   829→   829→              <CardContent className="space-y-4">
+   830→   830→                <div className="space-y-2">
+   831→   831→                  <Label htmlFor="default-expiry">Default Call Expiry (seconds)</Label>
+   832→   832→                  <Input
+   833→   833→                    id="default-expiry"
+   834→   834→                    type="number"
+   835→   835→                    min="60"
+   836→   836→                    max="3600"
+   837→   837→                    value={defaultExpiry}
+   838→   838→                    onChange={(e) => setDefaultExpiry(e.target.value)}
+   839→   839→                  />
+   840→   840→                  <p className="text-xs text-muted-foreground">
+   841→   841→                    Time before a pending call request expires (60–3600s)
+   842→   842→                  </p>
+   843→   843→                </div>
+   844→   844→
+   845→   845→                <Separator />
+   846→   846→
+   847→   847→                <div className="space-y-2">
+   848→   848→                  <Label htmlFor="heartbeat-timeout">Heartbeat Timeout (minutes)</Label>
+   849→   849→                  <Input
+   850→   850→                    id="heartbeat-timeout"
+   851→   851→                    type="number"
+   852→   852→                    min="1"
+   853→   853→                    max="30"
+   854→   854→                    value={heartbeatTimeout}
+   855→   855→                    onChange={(e) => setHeartbeatTimeout(e.target.value)}
+   856→   856→                  />
+   857→   857→                  <p className="text-xs text-muted-foreground">
+   858→   858→                    Mark device as stale if no heartbeat received within this time
+   859→   859→                  </p>
+   860→   860→                </div>
+   861→   861→
+   862→   862→                <Separator />
+   863→   863→
+   864→   864→                <div className="space-y-2">
+   865→   865→                  <Label htmlFor="max-concurrent">Max Concurrent Calls per Device</Label>
+   866→   866→                  <Select value={maxConcurrentCalls} onValueChange={setMaxConcurrentCalls}>
+   867→   867→                    <SelectTrigger id="max-concurrent" className="w-full">
+   868→   868→                      <SelectValue />
+   869→   869→                    </SelectTrigger>
+   870→   870→                    <SelectContent>
+   871→   871→                      <SelectItem value="1">1 call</SelectItem>
+   872→   872→                      <SelectItem value="2">2 calls</SelectItem>
+   873→   873→                      <SelectItem value="3">3 calls</SelectItem>
+   874→   874→                      <SelectItem value="5">5 calls</SelectItem>
+   875→   875→                    </SelectContent>
+   876→   876→                  </Select>
+   877→   877→                </div>
+   878→   878→              </CardContent>
+   879→   879→            </Card>
+   880→   880→
+   881→   881→            {/* Device Policy Settings */}
+   882→   882→            <Card>
+   883→   883→              <CardHeader>
+   884→   884→                <CardTitle className="text-base">Device Policy</CardTitle>
+   885→   885→                <CardDescription>Control how devices are registered and managed</CardDescription>
+   886→   886→              </CardHeader>
+   887→   887→              <CardContent className="space-y-4">
+   888→   888→                <div className="flex items-center justify-between gap-4">
+   889→   889→                  <div className="space-y-0.5">
+   890→   890→                    <Label htmlFor="auto-approve">Auto-approve devices</Label>
+   891→   891→                    <p className="text-xs text-muted-foreground">
+   892→   892→                      Automatically approve devices after pairing without manual review
+   893→   893→                    </p>
+   894→   894→                  </div>
+   895→   895→                  <Switch
+   896→   896→                    id="auto-approve"
+   897→   897→                    checked={autoApprove}
+   898→   898→                    onCheckedChange={setAutoApprove}
+   899→   899→                  />
+   900→   900→                </div>
+   901→   901→
+   902→   902→                <Separator />
+   903→   903→
+   904→   904→                <div className="space-y-2">
+   905→   905→                  <Label>Pairing Token Expiry</Label>
+   906→   906→                  <Select defaultValue="15">
+   907→   907→                    <SelectTrigger className="w-full">
+   908→   908→                      <SelectValue />
+   909→   909→                    </SelectTrigger>
+   910→   910→                    <SelectContent>
+   911→   911→                      <SelectItem value="5">5 minutes</SelectItem>
+   912→   912→                      <SelectItem value="15">15 minutes</SelectItem>
+   913→   913→                      <SelectItem value="30">30 minutes</SelectItem>
+   914→   914→                      <SelectItem value="60">1 hour</SelectItem>
+   915→   915→                    </SelectContent>
+   916→   916→                  </Select>
+   917→   917→                  <p className="text-xs text-muted-foreground">
+   918→   918→                    How long a pairing token remains valid
+   919→   919→                  </p>
+   920→   920→                </div>
+   921→   921→
+   922→   922→                <Separator />
+   923→   923→
+   924→   924→                <div className="flex items-center justify-between gap-4">
+   925→   925→                  <div className="space-y-0.5">
+   926→   926→                    <Label htmlFor="notify-revoke">Notify on revocation</Label>
+   927→   927→                    <p className="text-xs text-muted-foreground">
+   928→   928→                      Send a push notification to the device when it is revoked
+   929→   929→                    </p>
+   930→   930→                  </div>
+   931→   931→                  <Switch id="notify-revoke" defaultChecked />
+   932→   932→                </div>
+   933→   933→              </CardContent>
+   934→   934→            </Card>
+   935→   935→          </div>
+   936→   936→
+   937→   937→          {/* Save button */}
+   938→   938→          <div className="flex items-center justify-end gap-3">
+   939→   939→            <Button
+   940→   940→              variant="default"
+   941→   941→              onClick={() => toast.success('Settings saved')}
+   942→   942→            >
+   943→   943→              Save Settings
+   944→   944→            </Button>
+   945→   945→          </div>
+   946→   946→        </TabsContent>
+   947→   947→      </Tabs>
+   948→   948→
+   949→   949→      {/* ===== Revoke Confirmation Dialog ===== */}
+   950→   950→      <Dialog
+   951→   951→        open={revokeDialogDevice !== null}
+   952→   952→        onOpenChange={(open) => {
+   953→   953→          if (!open) setRevokeDialogDevice(null);
+   954→   954→        }}
+   955→   955→      >
+   956→   956→        <DialogContent>
+   957→   957→          <DialogHeader>
+   958→   958→            <DialogTitle>
+   959→   959→              {revokeDialogDevice?.status === 'PENDING_APPROVAL'
+   960→   960→                ? 'Reject Device?'
+   961→   961→                : 'Revoke Device?'}
+   962→   962→            </DialogTitle>
+   963→   963→            <DialogDescription>
+   964→   964→              {revokeDialogDevice?.status === 'PENDING_APPROVAL'
+   965→   965→                ? `This will reject the device "${revokeDialogDevice?.deviceName || 'Unnamed'}". The device will need to re-register.`
+   966→   966→                : `This will revoke access for device "${revokeDialogDevice?.deviceName || 'Unnamed'}". The device will be disconnected and its token invalidated.`}
+   967→   967→            </DialogDescription>
+   968→   968→          </DialogHeader>
+   969→   969→          <DialogFooter className="gap-2 sm:gap-0">
+   970→   970→            <Button
+   971→   971→              variant="outline"
+   972→   972→              onClick={() => setRevokeDialogDevice(null)}
+   973→   973→              disabled={revokeLoading}
+   974→   974→            >
+   975→   975→              Cancel
+   976→   976→            </Button>
+   977→   977→            <Button
+   978→   978→              variant="destructive"
+   979→   979→              onClick={handleRevokeDevice}
+   980→   980→              disabled={revokeLoading}
+   981→   981→            >
+   982→   982→              {revokeLoading && <Loader2 className="size-4 mr-1 animate-spin" />}
+   983→   983→              {revokeDialogDevice?.status === 'PENDING_APPROVAL' ? 'Reject' : 'Revoke'}
+   984→   984→            </Button>
+   985→   985→          </DialogFooter>
+   986→   986→        </DialogContent>
+   987→   987→      </Dialog>
+   988→   988→    </div>
+   989→   989→  );
+   990→   990→}
+   991→   991→

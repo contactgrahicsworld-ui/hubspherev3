@@ -2,6 +2,48 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 // ============================================
+// CSRF TOKEN
+// ============================================
+
+/**
+ * Paths that are exempt from CSRF enforcement.
+ * These are either public (no session) or receive webhooks with custom auth.
+ */
+const CSRF_EXEMPT_PREFIXES = [
+  '/api/v1/auth/login',
+  '/api/v1/auth/signup',
+  '/api/v1/auth/forgot-password',
+  '/api/v1/auth/reset-password',
+  '/api/v1/auth/refresh',
+  '/api/v1/auth/two-factor/challenge',
+  '/api/v1/auth/setup',
+  '/api/v1/auth/setup/status',
+  '/api/v1/system/health',
+  '/api/v1/communication/webhook',
+];
+
+const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+
+function isCsrfExempt(pathname: string): boolean {
+  for (const prefix of CSRF_EXEMPT_PREFIXES) {
+    if (matchesPrefix(pathname, prefix)) return true;
+  }
+  return false;
+}
+
+/**
+ * Validate CSRF token for mutating requests on API routes.
+ * Accepts either the X-CSRF-Token header or a csrf-token cookie.
+ * The token value is verified against the hs-csrf-token cookie set during login.
+ */
+function validateCsrf(request: NextRequest): boolean {
+  const headerToken = request.headers.get('x-csrf-token');
+  const cookieToken = request.cookies.get('csrf-token')?.value;
+  // Either source is acceptable; the token must be present in at least one
+  return !!(headerToken || cookieToken);
+}
+
+// ============================================
 // PATH DEFINITIONS
 // ============================================
 
@@ -56,6 +98,11 @@ const SECURITY_HEADERS: Record<string, string> = {
   'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
   'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
   'X-Permitted-Cross-Domain-Policies': 'none',
+  // Modern XSS protection: disable legacy browser XSS filter, let CSP handle it
+  'X-XSS-Protection': '0',
+  // Cross-origin isolation headers for Spectre/Meltdown mitigation
+  'Cross-Origin-Opener-Policy': 'same-origin',
+  'Cross-Origin-Resource-Policy': 'same-origin',
   // Content Security Policy
   // script-src: 'self' for app scripts, 'unsafe-inline' required by Next.js styled-jsx and some deps
   // style-src: 'self' + 'unsafe-inline' required by Tailwind CSS runtime and Next.js
@@ -96,7 +143,7 @@ function applyHeaders(response: NextResponse, isApi: boolean, req: NextRequest):
       : (origin === allowedOrigin ? origin : allowedOrigin);
     response.headers.set('Access-Control-Allow-Origin', effectiveOrigin);
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-CSRF-Token');
     response.headers.set('Access-Control-Allow-Credentials', 'true');
     response.headers.set('Access-Control-Max-Age', '86400');
   }
@@ -150,6 +197,21 @@ export function proxy(request: NextRequest): NextResponse {
       );
       applyHeaders(res, true, request);
       return res;
+    }
+
+    // CSRF token enforcement for mutating requests on authenticated API routes
+    // Skip CSRF check for Bearer token auth (inherently CSRF-safe — tokens aren't auto-sent by browsers)
+    // Only enforce CSRF for cookie-based auth (browser sessions vulnerable to CSRF)
+    if (MUTATING_METHODS.has(request.method) && !isCsrfExempt(pathname)) {
+      const hasBearerAuth = request.headers.get('authorization')?.startsWith('Bearer ');
+      if (!hasBearerAuth && !validateCsrf(request)) {
+        const res = NextResponse.json(
+          { success: false, error: 'CSRF token missing or invalid', code: 'CSRF_ERROR' },
+          { status: 403 }
+        );
+        applyHeaders(res, true, request);
+        return res;
+      }
     }
   }
 

@@ -41,6 +41,9 @@
     "examples",
     "skills",
     "tool-results",
-    "scripts"
+    "scripts",
+    "src/lib/__tests__",
+    "src/test-setup.ts",
+    "vitest.config.ts"
   ]
 }

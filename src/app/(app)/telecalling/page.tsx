@@ -203,6 +203,30 @@ export default function TelecallingPage() {
   const [autoApprove, setAutoApprove] = useState(false);
   const [heartbeatTimeout, setHeartbeatTimeout] = useState('5');
   const [maxConcurrentCalls, setMaxConcurrentCalls] = useState('1');
+  const [pairingExpiry, setPairingExpiry] = useState('15');
+  const [notifyRevoke, setNotifyRevoke] = useState(true);
+  const [settingsSaving, setSettingsSaving] = useState(false);
+
+  // ===== Load Settings =====
+  useEffect(() => {
+    async function loadSettings() {
+      try {
+        const res = await apiFetch<{ success: boolean; data: Record<string, unknown> }>('/api/v1/telecalling/settings');
+        if (res.success && res.data) {
+          const d = res.data;
+          if (d.defaultExpiry !== undefined) setDefaultExpiry(String(d.defaultExpiry));
+          if (d.heartbeatTimeout !== undefined) setHeartbeatTimeout(String(d.heartbeatTimeout));
+          if (d.maxConcurrentCalls !== undefined) setMaxConcurrentCalls(String(d.maxConcurrentCalls));
+          if (d.autoApprove !== undefined) setAutoApprove(d.autoApprove as boolean);
+          if (d.pairingExpiry !== undefined) setPairingExpiry(String(d.pairingExpiry));
+          if (d.notifyRevoke !== undefined) setNotifyRevoke(d.notifyRevoke as boolean);
+        }
+      } catch {
+        // Settings load failed — keep defaults
+      }
+    }
+    loadSettings();
+  }, []);
 
   // ===== Fetch Devices =====
   const fetchDevices = useCallback(async () => {
@@ -903,7 +927,7 @@ export default function TelecallingPage() {
 
                 <div className="space-y-2">
                   <Label>Pairing Token Expiry</Label>
-                  <Select defaultValue="15">
+                  <Select value={pairingExpiry} onValueChange={setPairingExpiry}>
                     <SelectTrigger className="w-full">
                       <SelectValue />
                     </SelectTrigger>
@@ -928,7 +952,7 @@ export default function TelecallingPage() {
                       Send a push notification to the device when it is revoked
                     </p>
                   </div>
-                  <Switch id="notify-revoke" defaultChecked />
+                  <Switch id="notify-revoke" checked={notifyRevoke} onCheckedChange={setNotifyRevoke} />
                 </div>
               </CardContent>
             </Card>
@@ -938,8 +962,37 @@ export default function TelecallingPage() {
           <div className="flex items-center justify-end gap-3">
             <Button
               variant="default"
-              onClick={() => toast.success('Settings saved')}
+              disabled={settingsSaving}
+              onClick={async () => {
+                setSettingsSaving(true);
+                try {
+                  const res = await apiFetch<{ success: boolean; message?: string }>(
+                    '/api/v1/telecalling/settings',
+                    {
+                      method: 'PATCH',
+                      body: JSON.stringify({
+                        defaultExpiry: Number(defaultExpiry),
+                        heartbeatTimeout: Number(heartbeatTimeout),
+                        maxConcurrentCalls: Number(maxConcurrentCalls),
+                        autoApprove,
+                        pairingExpiry: Number(pairingExpiry),
+                        notifyRevoke,
+                      }),
+                    }
+                  );
+                  if (res.success) {
+                    toast.success(res.message ?? 'Settings saved');
+                  } else {
+                    toast.error('Failed to save settings');
+                  }
+                } catch {
+                  toast.error('Failed to save settings');
+                } finally {
+                  setSettingsSaving(false);
+                }
+              }}
             >
+              {settingsSaving && <Loader2 className="mr-2 size-4 animate-spin" />}
               Save Settings
             </Button>
           </div>

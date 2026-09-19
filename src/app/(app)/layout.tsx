@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { AppSidebar } from '@/components/app-shell/app-sidebar'
 import { AppHeader } from '@/components/app-shell/app-header'
 import { BottomNav } from '@/components/app-shell/bottom-nav'
+import { SearchProvider } from '@/components/search-provider'
 import { isAuthenticated, getUserInfo } from '@/lib/auth-client'
 
 function AppShellSkeleton() {
@@ -70,20 +71,22 @@ export default function AppLayout({
   }
 
   return (
-    <SidebarProvider>
-      <AppSidebar userRole={userRole} />
-      <SidebarInset>
-        <AppHeader
-          userRole={userRole}
-          onMobileNavOpen={handleMobileNavOpen}
-          mobileNavOpen={mobileNavOpen}
-          onMobileNavChange={setMobileNavOpen}
-        />
-        <main className='flex-1 overflow-y-auto p-4 pb-20 md:p-6 md:pb-6'>
-          {children}
-        </main>
-      </SidebarInset>
-      <BottomNav userRole={userRole} />
-    </SidebarProvider>
+    <SearchProvider>
+      <SidebarProvider>
+        <AppSidebar userRole={userRole} />
+        <SidebarInset>
+          <AppHeader
+            userRole={userRole}
+            onMobileNavOpen={handleMobileNavOpen}
+            mobileNavOpen={mobileNavOpen}
+            onMobileNavChange={setMobileNavOpen}
+          />
+          <main className='flex-1 overflow-y-auto p-4 pb-20 md:p-6 md:pb-6'>
+            {children}
+          </main>
+        </SidebarInset>
+        <BottomNav userRole={userRole} />
+      </SidebarProvider>
+    </SearchProvider>
   )
 }

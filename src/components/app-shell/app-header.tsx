@@ -173,9 +173,11 @@ export function AppHeader({
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem disabled>
-                <User className='mr-2 size-4' />
-                Profile
+              <DropdownMenuItem asChild>
+                <Link href='/profile'>
+                  <User className='mr-2 size-4' />
+                  Profile
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link

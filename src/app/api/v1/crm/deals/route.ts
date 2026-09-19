@@ -65,6 +65,7 @@ const dealSelect = {
 function formatDeal(deal: any) {
   return {
     id: deal.id,
+    tenantId: deal.tenantId,
     title: deal.title,
     value: deal.value,
     currency: deal.currency,
@@ -260,6 +261,12 @@ export async function POST(request: NextRequest) {
       ipAddress: request.headers.get('x-forwarded-for') ?? undefined,
       userAgent: request.headers.get('user-agent') ?? undefined,
     });
+
+    // Fire automation dispatcher (best-effort, non-blocking)
+    try {
+      const { onDealCreated } = await import('@/lib/automation/dispatcher');
+      onDealCreated(tenantId, formatDeal(deal as any));
+    } catch { /* automation is best-effort */ }
 
     return NextResponse.json(
       success(formatDeal(deal as any), 'Deal created successfully'),

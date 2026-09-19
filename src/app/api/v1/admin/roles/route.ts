@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { createRoleSchema, paginationSchema, validate } from '@/lib/validators';
 import { handleApiError, AuthenticationError } from '@/lib/errors';
-import { success, paginated } from '@/lib/api-response';
+import { success, paginated, cache } from '@/lib/api-response';
 import { getAuthUser } from '@/lib/api-auth';
 import { requirePermission } from '@/lib/rbac';
 import { createAuditLog } from '@/lib/audit';
@@ -62,7 +62,9 @@ export async function GET(request: NextRequest) {
       createdAt: r.createdAt,
     }));
 
-    return NextResponse.json(paginated(data, total, page, limit));
+    return NextResponse.json(paginated(data, total, page, limit), {
+      headers: cache.private300,
+    });
   } catch (error) {
     const { statusCode, body } = handleApiError(error);
     return NextResponse.json(body, { status: statusCode });

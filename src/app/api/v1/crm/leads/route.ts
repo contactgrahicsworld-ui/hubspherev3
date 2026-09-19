@@ -38,6 +38,7 @@ type CreateLeadInput = z.infer<typeof createLeadSchema>;
 
 const leadSelect = {
   id: true,
+  tenantId: true,
   firstName: true,
   lastName: true,
   email: true,
@@ -65,6 +66,7 @@ const leadSelect = {
 
 function formatLead(lead: {
   id: string;
+  tenantId: string;
   firstName: string;
   lastName: string | null;
   email: string | null;
@@ -85,6 +87,7 @@ function formatLead(lead: {
 }) {
   return {
     id: lead.id,
+    tenantId: lead.tenantId,
     firstName: lead.firstName,
     lastName: lead.lastName,
     email: lead.email,
@@ -246,6 +249,12 @@ export async function POST(request: NextRequest) {
       ipAddress: request.headers.get('x-forwarded-for') ?? undefined,
       userAgent: request.headers.get('user-agent') ?? undefined,
     });
+
+    // Fire automation dispatcher (best-effort, non-blocking)
+    try {
+      const { onLeadCreated } = await import('@/lib/automation/dispatcher');
+      onLeadCreated(payload.tenantId, formatLead(lead as any));
+    } catch { /* automation is best-effort */ }
 
     return NextResponse.json(
       success(formatLead(lead as any), 'Lead created successfully'),

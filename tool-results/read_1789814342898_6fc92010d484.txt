@@ -1,0 +1,796 @@
+     1→'use client'
+     2→
+     3→import { useEffect, useState, useCallback, type FormEvent } from 'react'
+     4→import { useRouter, useParams } from 'next/navigation'
+     5→import { apiFetch } from '@/lib/auth-client'
+     6→import { toast } from 'sonner'
+     7→import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+     8→import { Button } from '@/components/ui/button'
+     9→import { Badge } from '@/components/ui/badge'
+    10→import { Skeleton } from '@/components/ui/skeleton'
+    11→import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+    12→import { Textarea } from '@/components/ui/textarea'
+    13→import { Separator } from '@/components/ui/separator'
+    14→import { LeadFormDialog } from '@/components/crm/lead-form'
+    15→import {
+    16→  ArrowLeft,
+    17→  Pencil,
+    18→  UserCheck,
+    19→  Mail,
+    20→  Phone,
+    21→  Building,
+    22→  DollarSign,
+    23→  Calendar,
+    24→  Tag,
+    25→  StickyNote,
+    26→  Activity,
+    27→  Clock,
+    28→  CheckCircle,
+    29→  XCircle,
+    30→  AlertCircle,
+    31→  Loader2,
+    32→  User,
+    33→  Send,
+    34→} from 'lucide-react'
+    35→
+    36→// ============================================
+    37→// Types
+    38→// ============================================
+    39→
+    40→interface LeadOwner {
+    41→  id: string
+    42→  name: string | null
+    43→  email: string | null
+    44→}
+    45→
+    46→interface Lead {
+    47→  id: string
+    48→  firstName: string
+    49→  lastName: string | null
+    50→  email: string | null
+    51→  mobile: string | null
+    52→  company: string | null
+    53→  source: string | null
+    54→  status: string | null
+    55→  priority: string | null
+    56→  ownerId: string | null
+    57→  owner: LeadOwner | null
+    58→  value: number | null
+    59→  description: string | null
+    60→  convertedToContactId: string | null
+    61→  archived: boolean
+    62→  createdAt: string
+    63→  updatedAt: string
+    64→  tags: Array<{ id: string; name: string; color: string | null }>
+    65→}
+    66→
+    67→interface Note {
+    68→  id: string
+    69→  content: string
+    70→  userId: string
+    71→  user: { id: string; name: string | null; email: string | null }
+    72→  createdAt: string
+    73→  updatedAt: string
+    74→}
+    75→
+    76→interface TimelineItem {
+    77→  id: string
+    78→  type: 'ACTIVITY' | 'NOTE'
+    79→  activityType: string
+    80→  title: string
+    81→  description: string | null
+    82→  metadata: Record<string, unknown> | null
+    83→  user: { id: string; name: string | null; email: string | null }
+    84→  createdAt: string
+    85→}
+    86→
+    87→interface FollowUp {
+    88→  id: string
+    89→  title: string
+    90→  description: string | null
+    91→  status: string
+    92→  followUpAt: string
+    93→  completedAt: string | null
+    94→  createdAt: string
+    95→  owner: { id: string; name: string | null; email: string | null }
+    96→}
+    97→
+    98→// ============================================
+    99→// Badge Styles (same as list page)
+   100→// ============================================
+   101→
+   102→const STATUS_BADGE_STYLES: Record<string, string> = {
+   103→  NEW: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400',
+   104→  CONTACTED: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+   105→  QUALIFIED: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',
+   106→  PROPOSAL: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+   107→  NEGOTIATION: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+   108→  WON: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+   109→  LOST: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+   110→  CONVERTED: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+   111→}
+   112→
+   113→const PRIORITY_BADGE_STYLES: Record<string, string> = {
+   114→  LOW: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+   115→  MEDIUM: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+   116→  HIGH: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+   117→  URGENT: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+   118→}
+   119→
+   120→const SOURCE_LABELS: Record<string, string> = {
+   121→  WEBSITE: 'Website',
+   122→  REFERRAL: 'Referral',
+   123→  LINKEDIN: 'LinkedIn',
+   124→  COLD_CALL: 'Cold Call',
+   125→  EMAIL_CAMPAIGN: 'Email Campaign',
+   126→  ADVERTISEMENT: 'Advertisement',
+   127→  TRADE_SHOW: 'Trade Show',
+   128→  SOCIAL_MEDIA: 'Social Media',
+   129→  OTHER: 'Other',
+   130→}
+   131→
+   132→const FOLLOWUP_STATUS_CONFIG: Record<string, { label: string; className: string; icon: React.ReactNode }> = {
+   133→  PENDING: {
+   134→    label: 'Pending',
+   135→    className: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+   136→    icon: <Clock className='size-3' />,
+   137→  },
+   138→  COMPLETED: {
+   139→    label: 'Completed',
+   140→    className: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+   141→    icon: <CheckCircle className='size-3' />,
+   142→  },
+   143→  MISSED: {
+   144→    label: 'Missed',
+   145→    className: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+   146→    icon: <XCircle className='size-3' />,
+   147→  },
+   148→  CANCELLED: {
+   149→    label: 'Cancelled',
+   150→    className: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+   151→    icon: <XCircle className='size-3' />,
+   152→  },
+   153→}
+   154→
+   155→// ============================================
+   156→// Helpers
+   157→// ============================================
+   158→
+   159→function formatDate(dateStr: string) {
+   160→  if (!dateStr) return '-'
+   161→  try {
+   162→    return new Date(dateStr).toLocaleDateString('en-US', {
+   163→      month: 'short',
+   164→      day: 'numeric',
+   165→      year: 'numeric',
+   166→    })
+   167→  } catch {
+   168→    return '-'
+   169→  }
+   170→}
+   171→
+   172→function formatDateTime(dateStr: string) {
+   173→  if (!dateStr) return '-'
+   174→  try {
+   175→    return new Date(dateStr).toLocaleDateString('en-US', {
+   176→      month: 'short',
+   177→      day: 'numeric',
+   178→      year: 'numeric',
+   179→      hour: '2-digit',
+   180→      minute: '2-digit',
+   181→    })
+   182→  } catch {
+   183→    return '-'
+   184→  }
+   185→}
+   186→
+   187→function formatCurrency(val: number | null): string {
+   188→  if (val == null) return '-'
+   189→  return new Intl.NumberFormat('en-US', {
+   190→    style: 'currency',
+   191→    currency: 'USD',
+   192→    minimumFractionDigits: 0,
+   193→    maximumFractionDigits: 0,
+   194→  }).format(val)
+   195→}
+   196→
+   197→function getLeadName(lead: Lead): string {
+   198→  return [lead.firstName, lead.lastName].filter(Boolean).join(' ') || '-'
+   199→}
+   200→
+   201→function timeAgo(dateStr: string): string {
+   202→  const now = new Date()
+   203→  const date = new Date(dateStr)
+   204→  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+   205→  if (seconds < 60) return 'just now'
+   206→  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`
+   207→  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`
+   208→  if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`
+   209→  return formatDate(dateStr)
+   210→}
+   211→
+   212→function DetailRow({ label, value, icon }: { label: string; value: React.ReactNode; icon?: React.ReactNode }) {
+   213→  return (
+   214→    <div className='flex items-start gap-3 py-2'>
+   215→      {icon && <div className='mt-0.5 text-muted-foreground'>{icon}</div>}
+   216→      <div className='min-w-0 flex-1'>
+   217→        <p className='text-xs text-muted-foreground'>{label}</p>
+   218→        <p className='text-sm font-medium'>{value || '-'}</p>
+   219→      </div>
+   220→    </div>
+   221→  )
+   222→}
+   223→
+   224→// ============================================
+   225→// Sub-Components
+   226→// ============================================
+   227→
+   228→function LoadingState() {
+   229→  return (
+   230→    <div className='space-y-6'>
+   231→      <div className='flex items-center gap-3'>
+   232→        <Skeleton className='size-8 w-8 rounded-md' />
+   233→        <Skeleton className='h-7 w-48' />
+   234→      </div>
+   235→      <Card>
+   236→        <CardContent className='p-6'>
+   237→          <Skeleton className='mb-4 h-8 w-64' />
+   238→          <div className='grid grid-cols-1 gap-2 sm:grid-cols-2'>
+   239→            {Array.from({ length: 8 }).map((_, i) => (
+   240→              <div key={i} className='flex gap-3 py-2'>
+   241→                <Skeleton className='size-4 w-4 rounded' />
+   242→                <div className='flex-1 space-y-1'>
+   243→                  <Skeleton className='h-3 w-20' />
+   244→                  <Skeleton className='h-4 w-32' />
+   245→                </div>
+   246→              </div>
+   247→            ))}
+   248→          </div>
+   249→        </CardContent>
+   250→      </Card>
+   251→    </div>
+   252→  )
+   253→}
+   254→
+   255→// ============================================
+   256→// Main Page
+   257→// ============================================
+   258→
+   259→export default function LeadDetailPage() {
+   260→  const router = useRouter()
+   261→  const params = useParams()
+   262→  const leadId = params.id as string
+   263→
+   264→  // Lead data
+   265→  const [lead, setLead] = useState<Lead | null>(null)
+   266→  const [loadingLead, setLoadingLead] = useState(true)
+   267→  const [errorLead, setErrorLead] = useState<string | null>(null)
+   268→
+   269→  // Notes
+   270→  const [notes, setNotes] = useState<Note[]>([])
+   271→  const [noteContent, setNoteContent] = useState('')
+   272→  const [submittingNote, setSubmittingNote] = useState(false)
+   273→  const [loadingNotes, setLoadingNotes] = useState(true)
+   274→
+   275→  // Timeline
+   276→  const [timeline, setTimeline] = useState<TimelineItem[]>([])
+   277→  const [loadingTimeline, setLoadingTimeline] = useState(true)
+   278→
+   279→  // Follow-ups
+   280→  const [followUps, setFollowUps] = useState<FollowUp[]>([])
+   281→  const [loadingFollowUps, setLoadingFollowUps] = useState(true)
+   282→
+   283→  // Edit dialog
+   284→  const [editOpen, setEditOpen] = useState(false)
+   285→
+   286→  // Converting
+   287→  const [converting, setConverting] = useState(false)
+   288→
+   289→  // ---- Fetch lead ----
+   290→  const fetchLead = useCallback(async () => {
+   291→    try {
+   292→      setLoadingLead(true)
+   293→      setErrorLead(null)
+   294→      const res = await apiFetch<{ success: boolean; data: Lead }>(
+   295→        `/api/v1/crm/leads/${leadId}`
+   296→      )
+   297→      setLead(res.data)
+   298→    } catch (err) {
+   299→      const message = err instanceof Error ? err.message : 'Failed to load lead'
+   300→      setErrorLead(message)
+   301→      toast.error(message)
+   302→    } finally {
+   303→      setLoadingLead(false)
+   304→    }
+   305→  }, [leadId])
+   306→
+   307→  // ---- Fetch notes ----
+   308→  const fetchNotes = useCallback(async () => {
+   309→    try {
+   310→      setLoadingNotes(true)
+   311→      const res = await apiFetch<{ success: boolean; data: Note[] }>(
+   312→        `/api/v1/crm/notes?entityType=LEAD&entityId=${leadId}&limit=50`
+   313→      )
+   314→      setNotes(res.data ?? [])
+   315→    } catch {
+   316→      // Silently fail for notes
+   317→    } finally {
+   318→      setLoadingNotes(false)
+   319→    }
+   320→  }, [leadId])
+   321→
+   322→  // ---- Fetch timeline ----
+   323→  const fetchTimeline = useCallback(async () => {
+   324→    try {
+   325→      setLoadingTimeline(true)
+   326→      const res = await apiFetch<{ success: boolean; data: TimelineItem[] }>(
+   327→        `/api/v1/crm/timeline?entityType=LEAD&entityId=${leadId}&limit=50`
+   328→      )
+   329→      setTimeline(res.data ?? [])
+   330→    } catch {
+   331→      // Silently fail for timeline
+   332→    } finally {
+   333→      setLoadingTimeline(false)
+   334→    }
+   335→  }, [leadId])
+   336→
+   337→  // ---- Fetch follow-ups ----
+   338→  const fetchFollowUps = useCallback(async () => {
+   339→    try {
+   340→      setLoadingFollowUps(true)
+   341→      const res = await apiFetch<{ success: boolean; data: FollowUp[] }>(
+   342→        `/api/v1/crm/follow-ups?leadId=${leadId}&limit=50`
+   343→      )
+   344→      setFollowUps(res.data ?? [])
+   345→    } catch {
+   346→      // Silently fail
+   347→    } finally {
+   348→      setLoadingFollowUps(false)
+   349→    }
+   350→  }, [leadId])
+   351→
+   352→  useEffect(() => {
+   353→    fetchLead()
+   354→  }, [fetchLead])
+   355→
+   356→  useEffect(() => {
+   357→    if (lead) {
+   358→      fetchNotes()
+   359→      fetchTimeline()
+   360→      fetchFollowUps()
+   361→    }
+   362→  }, [lead, fetchNotes, fetchTimeline, fetchFollowUps])
+   363→
+   364→  // ---- Add Note ----
+   365→  const handleAddNote = async (e: FormEvent) => {
+   366→    e.preventDefault()
+   367→    if (!noteContent.trim()) return
+   368→    try {
+   369→      setSubmittingNote(true)
+   370→      await apiFetch('/api/v1/crm/notes', {
+   371→        method: 'POST',
+   372→        body: JSON.stringify({
+   373→          content: noteContent.trim(),
+   374→          entityType: 'LEAD',
+   375→          entityId: leadId,
+   376→        }),
+   377→      })
+   378→      setNoteContent('')
+   379→      toast.success('Note added')
+   380→      fetchNotes()
+   381→      fetchTimeline()
+   382→    } catch (err) {
+   383→      const message = err instanceof Error ? err.message : 'Failed to add note'
+   384→      toast.error(message)
+   385→    } finally {
+   386→      setSubmittingNote(false)
+   387→    }
+   388→  }
+   389→
+   390→  // ---- Convert to Contact ----
+   391→  const handleConvert = async () => {
+   392→    if (!lead) return
+   393→    try {
+   394→      setConverting(true)
+   395→      await apiFetch(`/api/v1/crm/leads/${leadId}/convert`, {
+   396→        method: 'POST',
+   397→      })
+   398→      toast.success('Lead converted to contact successfully')
+   399→      fetchLead()
+   400→    } catch (err) {
+   401→      const message = err instanceof Error ? err.message : 'Failed to convert lead'
+   402→      toast.error(message)
+   403→    } finally {
+   404→      setConverting(false)
+   405→    }
+   406→  }
+   407→
+   408→  // ---- Loading State ----
+   409→  if (loadingLead) return <LoadingState />
+   410→
+   411→  // ---- Error State ----
+   412→  if (errorLead || !lead) {
+   413→    return (
+   414→      <div className='space-y-4'>
+   415→        <Button variant='ghost' size='sm' onClick={() => router.push('/crm/leads')}>
+   416→          <ArrowLeft className='size-4' />
+   417→          Back to Leads
+   418→        </Button>
+   419→        <Card className='border-destructive/50'>
+   420→          <CardContent className='flex flex-col items-center justify-center gap-3 py-12 text-center'>
+   421→            <AlertCircle className='size-10 text-destructive' />
+   422→            <p className='text-sm font-medium text-destructive'>
+   423→              {errorLead || 'Lead not found'}
+   424→            </p>
+   425→            <Button variant='outline' size='sm' onClick={fetchLead}>
+   426→              Retry
+   427→            </Button>
+   428→          </CardContent>
+   429→        </Card>
+   430→      </div>
+   431→    )
+   432→  }
+   433→
+   434→  const isConverted = !!lead.convertedToContactId
+   435→
+   436→  return (
+   437→    <div className='space-y-6'>
+   438→      {/* Back Button */}
+   439→      <Button
+   440→        variant='ghost'
+   441→        size='sm'
+   442→        onClick={() => router.push('/crm/leads')}
+   443→        className='-ml-2'
+   444→      >
+   445→        <ArrowLeft className='size-4' />
+   446→        Back to Leads
+   447→      </Button>
+   448→
+   449→      {/* Lead Header */}
+   450→      <Card>
+   451→        <CardContent className='p-4 sm:p-6'>
+   452→          <div className='flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between'>
+   453→            <div className='min-w-0'>
+   454→              <div className='flex flex-wrap items-center gap-2'>
+   455→                <h1 className='text-xl font-bold sm:text-2xl'>{getLeadName(lead)}</h1>
+   456→                <Badge variant='outline' className={STATUS_BADGE_STYLES[lead.status ?? 'NEW'] || ''}>
+   457→                  {lead.status ?? 'NEW'}
+   458→                </Badge>
+   459→                <Badge variant='outline' className={PRIORITY_BADGE_STYLES[lead.priority ?? 'MEDIUM'] || ''}>
+   460→                  {lead.priority ?? 'MEDIUM'}
+   461→                </Badge>
+   462→                {isConverted && (
+   463→                  <Badge className='bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'>
+   464→                    Converted
+   465→                  </Badge>
+   466→                )}
+   467→              </div>
+   468→              {lead.company && (
+   469→                <p className='mt-1 text-sm text-muted-foreground'>{lead.company}</p>
+   470→              )}
+   471→            </div>
+   472→            <div className='flex shrink-0 gap-2'>
+   473→              <Button variant='outline' size='sm' onClick={() => setEditOpen(true)}>
+   474→                <Pencil className='size-4' />
+   475→                <span className='hidden sm:inline'>Edit</span>
+   476→              </Button>
+   477→              {!isConverted && (
+   478→                <Button
+   479→                  variant='outline'
+   480→                  size='sm'
+   481→                  onClick={handleConvert}
+   482→                  disabled={converting}
+   483→                >
+   484→                  {converting ? (
+   485→                    <Loader2 className='size-4 animate-spin' />
+   486→                  ) : (
+   487→                    <UserCheck className='size-4' />
+   488→                  )}
+   489→                  <span className='hidden sm:inline'>Convert to Contact</span>
+   490→                </Button>
+   491→              )}
+   492→            </div>
+   493→          </div>
+   494→        </CardContent>
+   495→      </Card>
+   496→
+   497→      {/* Tabs */}
+   498→      <Tabs defaultValue='details'>
+   499→        <TabsList className='w-full justify-start overflow-x-auto'>
+   500→          <TabsTrigger value='details' className='gap-1.5'>
+   501→            <User className='hidden size-3.5 sm:inline-block' />
+   502→            Details
+   503→          </TabsTrigger>
+   504→          <TabsTrigger value='notes' className='gap-1.5'>
+   505→            <StickyNote className='hidden size-3.5 sm:inline-block' />
+   506→            Notes
+   507→          </TabsTrigger>
+   508→          <TabsTrigger value='activities' className='gap-1.5'>
+   509→            <Activity className='hidden size-3.5 sm:inline-block' />
+   510→            Activities
+   511→          </TabsTrigger>
+   512→          <TabsTrigger value='followups' className='gap-1.5'>
+   513→            <Clock className='hidden size-3.5 sm:inline-block' />
+   514→            Follow-ups
+   515→          </TabsTrigger>
+   516→        </TabsList>
+   517→
+   518→        {/* ======== Details Tab ======== */}
+   519→        <TabsContent value='details' className='mt-4'>
+   520→          <Card>
+   521→            <CardContent className='p-4 sm:p-6'>
+   522→              <div className='grid grid-cols-1 gap-0 sm:grid-cols-2'>
+   523→                <DetailRow label='First Name' value={lead.firstName} icon={<User className='size-4' />} />
+   524→                <DetailRow label='Last Name' value={lead.lastName} />
+   525→                <DetailRow label='Email' value={lead.email} icon={<Mail className='size-4' />} />
+   526→                <DetailRow label='Mobile' value={lead.mobile} icon={<Phone className='size-4' />} />
+   527→                <DetailRow label='Company' value={lead.company} icon={<Building className='size-4' />} />
+   528→                <DetailRow label='Source' value={SOURCE_LABELS[lead.source ?? ''] || lead.source} icon={<Tag className='size-4' />} />
+   529→                <DetailRow label='Status' value={
+   530→                  <Badge variant='outline' className={STATUS_BADGE_STYLES[lead.status ?? 'NEW'] || ''}>
+   531→                    {lead.status ?? 'NEW'}
+   532→                  </Badge>
+   533→                } />
+   534→                <DetailRow label='Priority' value={
+   535→                  <Badge variant='outline' className={PRIORITY_BADGE_STYLES[lead.priority ?? 'MEDIUM'] || ''}>
+   536→                    {lead.priority ?? 'MEDIUM'}
+   537→                  </Badge>
+   538→                } />
+   539→                <DetailRow label='Deal Value' value={formatCurrency(lead.value)} icon={<DollarSign className='size-4' />} />
+   540→                <DetailRow label='Owner' value={lead.owner?.name || lead.owner?.email || '-'} icon={<User className='size-4' />} />
+   541→                <DetailRow label='Created' value={formatDateTime(lead.createdAt)} icon={<Calendar className='size-4' />} />
+   542→                <DetailRow label='Last Updated' value={formatDateTime(lead.updatedAt)} icon={<Calendar className='size-4' />} />
+   543→              </div>
+   544→
+   545→              {lead.description && (
+   546→                <>
+   547→                  <Separator className='my-4' />
+   548→                  <div>
+   549→                    <p className='mb-1 text-xs text-muted-foreground'>Description</p>
+   550→                    <p className='whitespace-pre-wrap text-sm'>{lead.description}</p>
+   551→                  </div>
+   552→                </>
+   553→              )}
+   554→
+   555→              {lead.tags.length > 0 && (
+   556→                <>
+   557→                  <Separator className='my-4' />
+   558→                  <div>
+   559→                    <p className='mb-2 text-xs text-muted-foreground'>Tags</p>
+   560→                    <div className='flex flex-wrap gap-1.5'>
+   561→                      {lead.tags.map((tag) => (
+   562→                        <Badge key={tag.id} variant='secondary'>{tag.name}</Badge>
+   563→                      ))}
+   564→                    </div>
+   565→                  </div>
+   566→                </>
+   567→              )}
+   568→            </CardContent>
+   569→          </Card>
+   570→        </TabsContent>
+   571→
+   572→        {/* ======== Notes Tab ======== */}
+   573→        <TabsContent value='notes' className='mt-4'>
+   574→          <div className='space-y-4'>
+   575→            {/* Add Note Form */}
+   576→            <Card>
+   577→              <CardContent className='p-4 sm:p-6'>
+   578→                <form onSubmit={handleAddNote} className='space-y-3'>
+   579→                  <Textarea
+   580→                    placeholder='Add a note...'
+   581→                    value={noteContent}
+   582→                    onChange={(e) => setNoteContent(e.target.value)}
+   583→                    rows={3}
+   584→                    aria-label='Note content'
+   585→                  />
+   586→                  <div className='flex justify-end'>
+   587→                    <Button
+   588→                      type='submit'
+   589→                      size='sm'
+   590→                      disabled={submittingNote || !noteContent.trim()}
+   591→                    >
+   592→                      {submittingNote ? (
+   593→                        <Loader2 className='size-4 animate-spin' />
+   594→                      ) : (
+   595→                        <Send className='size-4' />
+   596→                      )}
+   597→                      Add Note
+   598→                    </Button>
+   599→                  </div>
+   600→                </form>
+   601→              </CardContent>
+   602→            </Card>
+   603→
+   604→            {/* Notes List */}
+   605→            {loadingNotes ? (
+   606→              <Card>
+   607→                <CardContent className='space-y-4 p-6'>
+   608→                  {Array.from({ length: 3 }).map((_, i) => (
+   609→                    <div key={i} className='space-y-2'>
+   610→                      <Skeleton className='h-4 w-32' />
+   611→                      <Skeleton className='h-4 w-full' />
+   612→                      <Skeleton className='h-4 w-3/4' />
+   613→                    </div>
+   614→                  ))}
+   615→                </CardContent>
+   616→              </Card>
+   617→            ) : notes.length === 0 ? (
+   618→              <Card>
+   619→                <CardContent className='flex flex-col items-center justify-center py-10 text-center'>
+   620→                  <StickyNote className='mb-3 size-10 text-muted-foreground/40' />
+   621→                  <p className='text-sm font-medium text-muted-foreground'>No notes yet</p>
+   622→                  <p className='mt-1 text-xs text-muted-foreground'>
+   623→                    Add the first note for this lead.
+   624→                  </p>
+   625→                </CardContent>
+   626→              </Card>
+   627→            ) : (
+   628→              <div className='space-y-3'>
+   629→                {notes.map((note) => (
+   630→                  <Card key={note.id}>
+   631→                    <CardContent className='p-4'>
+   632→                      <div className='flex items-start justify-between gap-2'>
+   633→                        <p className='text-xs text-muted-foreground'>
+   634→                          {note.user?.name || note.user?.email || 'Unknown'}
+   635→                        </p>
+   636→                        <p className='shrink-0 text-xs text-muted-foreground'>
+   637→                          {timeAgo(note.createdAt)}
+   638→                        </p>
+   639→                      </div>
+   640→                      <p className='mt-2 whitespace-pre-wrap text-sm'>{note.content}</p>
+   641→                    </CardContent>
+   642→                  </Card>
+   643→                ))}
+   644→              </div>
+   645→            )}
+   646→          </div>
+   647→        </TabsContent>
+   648→
+   649→        {/* ======== Activities Tab ======== */}
+   650→        <TabsContent value='activities' className='mt-4'>
+   651→          {loadingTimeline ? (
+   652→            <Card>
+   653→              <CardContent className='space-y-4 p-6'>
+   654→                {Array.from({ length: 4 }).map((_, i) => (
+   655→                  <div key={i} className='flex gap-3'>
+   656→                    <Skeleton className='size-8 w-8 shrink-0 rounded-full' />
+   657→                    <div className='flex-1 space-y-1'>
+   658→                      <Skeleton className='h-4 w-48' />
+   659→                      <Skeleton className='h-3 w-32' />
+   660→                    </div>
+   661→                  </div>
+   662→                ))}
+   663→              </CardContent>
+   664→            </Card>
+   665→          ) : timeline.length === 0 ? (
+   666→            <Card>
+   667→              <CardContent className='flex flex-col items-center justify-center py-10 text-center'>
+   668→                <Activity className='mb-3 size-10 text-muted-foreground/40' />
+   669→                <p className='text-sm font-medium text-muted-foreground'>No activities yet</p>
+   670→                <p className='mt-1 text-xs text-muted-foreground'>
+   671→                  Activities will appear here as this lead progresses.
+   672→                </p>
+   673→              </CardContent>
+   674→            </Card>
+   675→          ) : (
+   676→            <div className='relative space-y-0'>
+   677→              {timeline.map((item, idx) => (
+   678→                <div key={item.id} className='relative flex gap-4 pb-6 last:pb-0'>
+   679→                  {/* Timeline line */}
+   680→                  {idx < timeline.length - 1 && (
+   681→                    <div className='absolute bottom-0 left-[15px] top-8 w-px bg-border' />
+   682→                  )}
+   683→
+   684→                  {/* Icon dot */}
+   685→                  <div className='flex size-8 shrink-0 items-center justify-center rounded-full border bg-background'>
+   686→                    {item.type === 'NOTE' ? (
+   687→                      <StickyNote className='size-3.5 text-muted-foreground' />
+   688→                    ) : (
+   689→                      <Activity className='size-3.5 text-muted-foreground' />
+   690→                    )}
+   691→                  </div>
+   692→
+   693→                  {/* Content */}
+   694→                  <div className='min-w-0 flex-1 pt-0.5'>
+   695→                    <div className='flex flex-wrap items-center gap-x-2 gap-y-0.5'>
+   696→                      <p className='text-sm font-medium'>{item.title}</p>
+   697→                      {item.type === 'ACTIVITY' && (
+   698→                        <Badge variant='secondary' className='text-[10px]'>
+   699→                          {item.activityType}
+   700→                        </Badge>
+   701→                      )}
+   702→                    </div>
+   703→                    {item.description && (
+   704→                      <p className='mt-0.5 text-sm text-muted-foreground line-clamp-2'>
+   705→                        {item.description}
+   706→                      </p>
+   707→                    )}
+   708→                    <div className='mt-1 flex items-center gap-2 text-xs text-muted-foreground'>
+   709→                      <span>{item.user?.name || item.user?.email || 'System'}</span>
+   710→                      <span>·</span>
+   711→                      <span>{timeAgo(item.createdAt)}</span>
+   712→                    </div>
+   713→                  </div>
+   714→                </div>
+   715→              ))}
+   716→            </div>
+   717→          )}
+   718→        </TabsContent>
+   719→
+   720→        {/* ======== Follow-ups Tab ======== */}
+   721→        <TabsContent value='followups' className='mt-4'>
+   722→          {loadingFollowUps ? (
+   723→            <Card>
+   724→              <CardContent className='space-y-4 p-6'>
+   725→                {Array.from({ length: 3 }).map((_, i) => (
+   726→                  <div key={i} className='space-y-2'>
+   727→                    <Skeleton className='h-5 w-48' />
+   728→                    <Skeleton className='h-4 w-32' />
+   729→                    <Skeleton className='h-3 w-64' />
+   730→                  </div>
+   731→                ))}
+   732→              </CardContent>
+   733→            </Card>
+   734→          ) : followUps.length === 0 ? (
+   735→            <Card>
+   736→              <CardContent className='flex flex-col items-center justify-center py-10 text-center'>
+   737→                <Clock className='mb-3 size-10 text-muted-foreground/40' />
+   738→                <p className='text-sm font-medium text-muted-foreground'>No follow-ups yet</p>
+   739→                <p className='mt-1 text-xs text-muted-foreground'>
+   740→                  Schedule follow-ups to stay on top of this lead.
+   741→                </p>
+   742→              </CardContent>
+   743→            </Card>
+   744→          ) : (
+   745→            <div className='space-y-3'>
+   746→              {followUps.map((fu) => {
+   747→                const config = FOLLOWUP_STATUS_CONFIG[fu.status] || FOLLOWUP_STATUS_CONFIG.PENDING
+   748→                return (
+   749→                  <Card key={fu.id}>
+   750→                    <CardContent className='p-4'>
+   751→                      <div className='flex items-start justify-between gap-2'>
+   752→                        <div className='min-w-0 flex-1'>
+   753→                          <p className='font-medium'>{fu.title}</p>
+   754→                          {fu.description && (
+   755→                            <p className='mt-0.5 text-sm text-muted-foreground line-clamp-2'>
+   756→                              {fu.description}
+   757→                            </p>
+   758→                          )}
+   759→                          <div className='mt-2 flex flex-wrap items-center gap-3 text-xs text-muted-foreground'>
+   760→                            <span className='flex items-center gap-1'>
+   761→                              <Calendar className='size-3' />
+   762→                              {formatDateTime(fu.followUpAt)}
+   763→                            </span>
+   764→                            {fu.owner?.name && (
+   765→                              <span className='flex items-center gap-1'>
+   766→                                <User className='size-3' />
+   767→                                {fu.owner.name}
+   768→                              </span>
+   769→                            )}
+   770→                          </div>
+   771→                        </div>
+   772→                        <Badge variant='outline' className={config.className}>
+   773→                          {config.icon}
+   774→                          {config.label}
+   775→                        </Badge>
+   776→                      </div>
+   777→                    </CardContent>
+   778→                  </Card>
+   779→                )
+   780→              })}
+   781→            </div>
+   782→          )}
+   783→        </TabsContent>
+   784→      </Tabs>
+   785→
+   786→      {/* Edit Dialog */}
+   787→      <LeadFormDialog
+   788→        open={editOpen}
+   789→        onOpenChange={setEditOpen}
+   790→        lead={lead}
+   791→        onSuccess={fetchLead}
+   792→      />
+   793→    </div>
+   794→  )
+   795→}
+   796→
